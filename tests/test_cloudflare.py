@@ -402,6 +402,12 @@ def test_clef_refuses_a_state_json_cannot_hold_and_a_kind_it_does_not_answer() -
     surrogate = State(parts=(TextPart(text="a\ud800"),))
     error = _raises(_clef(wire), WireRequest(state=surrogate, questions=CLEF_QUESTIONS["noul"]))
     assert "cannot be sent as JSON" in error.message
+    deep: Any = 1
+    for _ in range(100_000):
+        deep = (deep,)
+    nested = State(parts=(JsonPart(value=deep),))
+    error = _raises(_clef(wire), WireRequest(state=nested, questions=CLEF_QUESTIONS["noul"]))
+    assert "cannot be sent as JSON" in error.message
     error = _raises(_clef(wire), EXTRACTION)
     assert "does not answer 'extraction'" in error.message
     assert wire.requests == []

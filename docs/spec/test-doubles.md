@@ -29,7 +29,7 @@ Its name, model and capabilities record are the test's; with no estimator it cou
 `Recorded(leaf, log, mode, *, capabilities=None)`, in `idia.providers.recorded`, satisfies `Leaf` by its shape and is not a `Provider` until wrapped.
 It records the calls of the leaf it wraps to the file `log` and replays them, never calling the wrapped leaf for a call it replays.
 
-- **The key** of a call is the SHA-256, in hex, of the canonical wire request: the leaf's `name` and `model`, the state, the questions in order and the request's options, rendered as sorted, compact JSON; empty options are left out of the key and out of every rendering, so a key or a log written before requests carried options is unchanged.
+- **The key** of a call is the SHA-256, in hex, of the canonical wire request: the leaf's `name` and `model`, the state, the questions in order and the request's options, rendered as sorted, compact JSON; empty options are left out of the key and out of every rendering.
   The recorded leaf adds no warning of its own: a recording keeps the wrapped leaf's `unknown-option` warning and the replay returns it.
   Nothing else of a leaf's construction is in it, so a test keeps one log per leaf configuration and names the log for it.
   The key is computed over the canonical wire request, not the text the leaf sends for it, so a leaf whose serialisation changes keeps its keys and replays what its old text drew: delete its logs and record them again, since no mode replaces a recording its key already holds.

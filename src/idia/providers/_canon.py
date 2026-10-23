@@ -107,7 +107,7 @@ def json_bytes(value: JsonValue) -> bytes:
 
 def _left_out(value: object, name: str) -> bool:
     """Whether ``encode`` leaves a field out: a request's empty ``options``, a usage's
-    ``passes`` when ``None``, so renderings made before either existed are unchanged."""
+    ``passes`` when ``None``."""
     if name == "options" and isinstance(value, (Request, WireRequest)):
         return not value.options
     return name == "passes" and isinstance(value, Usage) and value.passes is None
@@ -120,9 +120,8 @@ def encode(value: object) -> JsonValue:
     timedelta an object tagged with its type's name, holding its ISO form or its seconds;
     a non-finite float an object tagged ``float`` holding its ``repr``, so no string is
     ever read as a float; bytes base64; an enum member its value; a set a sorted array.
-    A request's empty ``options`` are left out, and a usage's ``passes`` when ``None``, so a
-    rendering made before either existed is unchanged. Any other type raises
-    :class:`TypeError`.
+    A request's empty ``options`` are left out, and a usage's ``passes`` when ``None``. Any
+    other type raises :class:`TypeError`.
 
     The recorded leaf's logs and the HTTP harness's cassettes are written in this
     rendering: a change to it bumps the recorded leaf's ``_FORMAT`` and the cassettes'
@@ -165,8 +164,7 @@ def encode(value: object) -> JsonValue:
 def canonical_hash(name: str, model: str, wire_request: WireRequest) -> str:
     """The key a recorded call is filed under: the SHA-256, in hex, of the leaf's name and
     model, the state, the questions in order and the options, rendered as sorted, compact
-    JSON. Empty options are left out, so a request without options keeps the key it had
-    before requests carried them."""
+    JSON. Empty options are left out."""
     held: dict[str, object] = {
         "name": name,
         "model": model,
