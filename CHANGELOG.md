@@ -21,6 +21,7 @@ The first release.
 - Test doubles: `Scripted`, a leaf answered from a script, and `Recorded`, which records a leaf's calls under the hash of the canonical wire request and replays them in modes `none`, `once` and `new`.
 - The conformance suite, `idia.conformance`: `leaf_checks` (L1 to L31) and `provider_checks` (P1 to P23), run with `run_checks` against a harness built from exchanges, so a leaf written outside idia can check itself.
 - The spec in `docs/spec`.
+- The public API: the names in `idia.__all__` and in the `__all__` of `idia.cloudflare`, `idia.conformance`, `idia.providers.http`, `idia.providers.system_one`, `idia.providers.openai_decisions`, `idia.providers.chat`, `idia.providers.cloudflare`, `idia.providers.scripted` and `idia.providers.recorded`; a public name is removed or changed only after a minor release of `DeprecationWarning`.
 
 ### Notes
 

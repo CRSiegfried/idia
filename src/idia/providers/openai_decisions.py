@@ -60,6 +60,10 @@ from idia.providers._openai import (
     usage,
 )
 
+__all__ = [
+    "OpenAIDecisions",
+]
+
 DEFAULT_MODEL: Final = "gpt-6-luna"
 
 _WIRE_TYPE: Final[Mapping[Kind, str]] = {"noul": "predicate", "choice": "choice", "score": "score"}

@@ -63,6 +63,11 @@ from idia.core import (
 )
 from idia.providers.http import HttpLeaf
 
+__all__ = [
+    "Clairic",
+    "Clef",
+]
+
 _BASE_URL: Final = "https://api.cloudflare.com/client/v4/accounts/{account}/ai/run"
 _CLEF_PATH: Final = "/@cf/cloudflare/{model}"
 _CLAIRIC_PATH: Final = "/@cf/cloudflare/clairic"

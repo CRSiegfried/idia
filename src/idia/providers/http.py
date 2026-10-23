@@ -46,6 +46,20 @@ from idia.core import (
     _without_keys,  # pyright: ignore[reportPrivateUsage]
 )
 
+__all__ = [
+    "HttpLeaf",
+    "client_failed",
+    "created_client",
+    "follow_the_loop",
+    "malformed_request",
+    "on_this_loop",
+    "read_object",
+    "retry_after",
+    "status_error",
+    "unreadable",
+    "within",
+]
+
 _USER_AGENT: Final = f"idia/{__version__}"
 _RETRYABLE: Final = frozenset({408, 409, 429})
 _MESSAGE_CHARS: Final = 300

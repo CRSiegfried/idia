@@ -54,6 +54,11 @@ from idia.providers._canon import (
 )
 from idia.providers.scripted import ScriptedCall
 
+__all__ = [
+    "Recorded",
+    "ReplayMiss",
+]
+
 _Mode: TypeAlias = Literal["none", "once", "new"]
 """How the recorded leaf treats a call: replay only, record a fresh log, or add to one."""
 

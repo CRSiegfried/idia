@@ -4,7 +4,7 @@ The shapes every part of idia speaks, the closed sets, the answer union, the rul
 Every shape is a frozen, slotted, keyword-only dataclass; a map-valued field is a read-only view.
 In the shapes a caller builds, `Deadline`, `TextPart`, `ImagePart`, `State`, `Label`, `Question`, `Request` and `WireRequest`, a tuple-valued field takes a tuple: a list or other sequence is refused with `TypeError`, not converted, while a map-valued field takes any mapping and holds a read-only view of it.
 Each of them refuses a field of the wrong type with `TypeError` and an empty key, instruction, label name, label description or media type with `ValueError`, each naming the field; a text part may be empty and a JSON part's value is not checked.
-The public names are those `idia.__all__` lists.
+The public names are those in `idia.__all__` and in the `__all__` of each module [the contributing notes](../../CONTRIBUTING.md#ground-rules-for-changes) list.
 
 ## State and question
 
