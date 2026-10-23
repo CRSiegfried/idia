@@ -305,6 +305,14 @@ timer up to this much (or one float ulp of the clock, if larger) before its time
 # ----------------------------------------------------------------------------------------
 
 
+def _finite(number: float) -> bool:
+    """Whether a number is finite as a float: an int too large for one is not."""
+    try:
+        return math.isfinite(number)
+    except OverflowError:
+        return False
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Deadline:
     """The instant after which the caller no longer wants an answer.
@@ -319,7 +327,7 @@ class Deadline:
         at = cast(object, self.at)
         if isinstance(at, bool) or not isinstance(at, (int, float)):
             raise TypeError(f"Deadline.at must be a number, got {type(at).__name__}")
-        if not math.isfinite(at):
+        if not _finite(at):
             raise ValueError(f"Deadline.at must be finite, got {at!r}")
         if at - time.monotonic() > _DEADLINE_HORIZON:
             raise ValueError(
@@ -332,7 +340,7 @@ class Deadline:
         """The deadline ``seconds`` from now; more than 30 days, or not finite, is refused.
 
         Zero or negative seconds give a deadline already passed, which is allowed."""
-        if not math.isfinite(seconds) or seconds > _DEADLINE_HORIZON:
+        if not _finite(seconds) or seconds > _DEADLINE_HORIZON:
             raise ValueError(
                 "Deadline.after takes a finite number of seconds, at most 30 days "
                 f"({_DEADLINE_HORIZON:.0f} seconds), got {seconds!r}"
@@ -716,13 +724,24 @@ class Capabilities:
 
     def __post_init__(self) -> None:
         for name in _LIMIT_FIELDS:
-            limit: Limit = getattr(self, name)
-            if isinstance(limit, bool) or (isinstance(limit, int) and limit < 0):
-                raise ValueError(f"{name} must be a non-negative int, UNBOUNDED or None")
+            limit: object = getattr(self, name)
+            if limit is not None and not isinstance(limit, Unbounded):
+                if not isinstance(limit, int):
+                    raise TypeError(
+                        f"Capabilities.{name} must be an int, UNBOUNDED or None, "
+                        f"got {type(limit).__name__}"
+                    )
+                if isinstance(limit, bool) or limit < 0:
+                    raise ValueError(f"{name} must be a non-negative int, UNBOUNDED or None")
         for name in ("min_levels", "min_image_side"):
-            least: int | None = getattr(self, name)
-            if isinstance(least, bool) or (isinstance(least, int) and least < 0):
-                raise ValueError(f"{name} must be a non-negative int or None")
+            least: object = getattr(self, name)
+            if least is not None:
+                if not isinstance(least, int):
+                    raise TypeError(
+                        f"Capabilities.{name} must be an int or None, got {type(least).__name__}"
+                    )
+                if isinstance(least, bool) or least < 0:
+                    raise ValueError(f"{name} must be a non-negative int or None")
         _check_media_types(self)
         _check_image_caps(self)
         if not self.composite and self.truncates_silently is True and self.max_input_tokens is None:
@@ -823,14 +842,23 @@ class TokenEstimate:
     """An estimator's figure for a state and questions, with its stated margin.
 
     ``margin`` is a fraction of ``tokens``, at least 0: preflight checks
-    ``ceil(tokens * (1 + margin))`` against the limit. Neither may be negative.
+    ``ceil(tokens * (1 + margin))`` against the limit. ``tokens`` is an int and ``margin``
+    a finite number; neither may be negative.
     """
 
     tokens: int
     margin: float
 
     def __post_init__(self) -> None:
-        if self.tokens < 0 or self.margin < 0:
+        tokens = cast(object, self.tokens)
+        margin = cast(object, self.margin)
+        if isinstance(tokens, bool) or not isinstance(tokens, int):
+            raise TypeError(f"TokenEstimate.tokens must be an int, got {type(tokens).__name__}")
+        if isinstance(margin, bool) or not isinstance(margin, (int, float)):
+            raise TypeError(f"TokenEstimate.margin must be a number, got {type(margin).__name__}")
+        if not _finite(margin):
+            raise ValueError(f"TokenEstimate.margin must be finite, got {margin!r}")
+        if tokens < 0 or margin < 0:
             raise ValueError("tokens and margin are at least 0")
 
 
@@ -948,9 +976,9 @@ def noul_complement(probability: float) -> float:
     held = cast(object, probability)
     if isinstance(held, bool) or not isinstance(held, (int, float)):
         raise TypeError(f"noul_complement takes a number, got {type(held).__name__}")
+    if not _finite(held) or not 0 <= held <= 1:
+        raise ValueError(f"noul_complement takes a probability from 0 to 1, got {held!r}")
     value = float(held)
-    if not math.isfinite(value) or not 0 <= value <= 1:
-        raise ValueError(f"noul_complement takes a probability from 0 to 1, got {value!r}")
     with decimal.localcontext() as context:
         context.prec = _COMPLEMENT_PRECISION
         return float(decimal.Decimal(1) - decimal.Decimal(repr(value)))

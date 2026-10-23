@@ -280,6 +280,41 @@ def test_token_estimate_refuses_a_negative_figure_or_margin() -> None:
         TokenEstimate(tokens=10, margin=-0.1)
 
 
+@pytest.mark.parametrize("margin", [math.nan, math.inf])
+def test_token_estimate_refuses_a_margin_that_is_not_finite(margin: float) -> None:
+    with pytest.raises(ValueError, match=r"TokenEstimate\.margin must be finite"):
+        TokenEstimate(tokens=1, margin=margin)
+
+
+@pytest.mark.parametrize(
+    ("tokens", "margin", "field"),
+    [(True, 0.1, "tokens"), (1.5, 0.1, "tokens"), ("1", 0.1, "tokens"), (1, True, "margin")],
+)
+def test_token_estimate_refuses_a_field_of_the_wrong_type(
+    tokens: object, margin: object, field: str
+) -> None:
+    with pytest.raises(TypeError, match=rf"TokenEstimate\.{field}"):
+        TokenEstimate(tokens=cast(int, tokens), margin=cast(float, margin))
+
+
+@pytest.mark.parametrize("bad", [1.5, math.nan, -1.5, "8"])
+@pytest.mark.parametrize("field", ["max_questions", "min_levels", "min_image_side"])
+def test_a_limit_that_is_not_an_int_is_refused(field: str, bad: object) -> None:
+    with pytest.raises(TypeError, match=rf"Capabilities\.{field}"):
+        capabilities(**{field: bad})
+
+
+def test_an_int_too_large_for_a_float_is_refused_with_value_error() -> None:
+    with pytest.raises(ValueError, match=r"Deadline\.at"):
+        Deadline(at=10**400)
+    with pytest.raises(ValueError, match=r"Deadline\.after"):
+        Deadline.after(10**400)
+    with pytest.raises(ValueError, match=r"Deadline\.after"):
+        Deadline.after(-(10**400))
+    with pytest.raises(ValueError, match="noul_complement"):
+        idia.noul_complement(10**400)
+
+
 # ----------------------------------------------------------------------------------------
 # Questions and the kind set
 # ----------------------------------------------------------------------------------------

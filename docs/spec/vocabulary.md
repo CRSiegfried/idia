@@ -42,8 +42,8 @@ The public names are those `idia.__all__` lists.
 
 A `Capabilities` instance is a capabilities record, a leaf's or a composite's derived one; in this spec "record" alone means it.
 `Capabilities` states every field with no default on any limit.
-A limit is a non-negative `int`, `UNBOUNDED` (the wire API documents no cap) or `None` (unknown), by type; the constructor refuses a `bool` and a negative `int`.
-`min_levels` is a non-negative `int` or `None`, and the constructor refuses a `bool` and a negative `int` there too.
+A limit is a non-negative `int`, `UNBOUNDED` (the wire API documents no cap) or `None` (unknown); the constructor refuses any other type, a `float` included, with `TypeError` naming the field, and a `bool` or a negative `int` with `ValueError`.
+`min_levels` and `min_image_side` are each a non-negative `int` or `None`, refused the same way.
 Four fields bear only on a state with an image: `max_image_bytes`, each image's raw bytes, and `max_total_image_bytes`, the sum over the state's images, are limits; `min_image_side`, the fewest pixels on each side of an image, is a non-negative `int` or `None`, refused as `min_levels` is, 0 meaning no minimum; and `image_media_types` is a set of media types or `None` (unknown), held frozen.
 The constructor refuses a media type that is not lower-case and canonical, `image/jpg` among them, naming the form to write; on a leaf's record it refuses an empty `image_media_types`, or a `max_images`, `max_images_per_question`, `max_image_bytes` or `max_total_image_bytes` of 0, beside the image modality, any of which would refuse every image.
 `Rounding(probability_decimals, score_decimals)` gives the decimals the provider rounds to, `None` for unrounded.
@@ -90,6 +90,7 @@ Nothing is renormalized, rounded or corrected.
 - **`box`**: each edge is in [0, 1] (`box_range`); top is at most bottom and left at most right (`box_order`).
 - **Any `confidence`** present is in [0, 1] (`confidence_range`).
 - **Every probability, confidence, `p_null` and box edge** is a number, not a bool, and finite (`not_finite`, observing a non-number as its type's name, such as `bool`); the sum, the chosen label, the expected level and the box order are not judged over a value that is not a number.
+- **A score's `expected_level`** present is a number, not a bool (`not_finite`, observing its type's name), and is then judged against the probabilities.
 
 For a range rule `observed` is the value and `bound` the limit crossed; for a tolerance rule `observed` is the deviation and `bound` the tolerance; for an order rule the two values out of order.
 `Rule.candidate_shape`, `empty_logprobs`, `label_absent_from_logprobs` and `off_label_mass_above_bound` are set by a leaf itself; `validate` never checks the off-label bound.
@@ -141,3 +142,4 @@ Their data members are read-only: a plain attribute, a property or a frozen data
 - `TokenEstimator`: `estimate(state, questions) -> TokenEstimate(tokens, margin)`, the type every leaf's `estimator` satisfies.
   `questions` may be empty, meaning the state alone; preflight asks for that to check the state for overflow.
   `margin` is a fraction of `tokens`, at least 0, and preflight checks `ceil(tokens * (1 + margin))`.
+  `TokenEstimate` refuses a `tokens` that is not an `int` or a `margin` that is not a number, a `bool` included, with `TypeError` naming the field, and a margin that is not finite or either value below 0 with `ValueError`.

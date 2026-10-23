@@ -211,11 +211,17 @@ def _label_failures(
                 )
             )
     if question.kind == "score" and answer.expected_level is not None:
-        mean = sum(index * probability for index, probability in enumerate(probabilities))
-        bound = _expected_level_bound(len(asked), rounding)
-        deviation = abs(answer.expected_level - mean)
-        if not deviation <= bound:
-            failures.append(RuleFailure(rule=Rule.expected_level, observed=deviation, bound=bound))
+        if not _is_number(answer.expected_level):
+            observed = type(answer.expected_level).__name__
+            failures.append(RuleFailure(rule=Rule.not_finite, observed=observed, bound=None))
+        else:
+            mean = sum(index * probability for index, probability in enumerate(probabilities))
+            bound = _expected_level_bound(len(asked), rounding)
+            deviation = abs(answer.expected_level - mean)
+            if not deviation <= bound:
+                failures.append(
+                    RuleFailure(rule=Rule.expected_level, observed=deviation, bound=bound)
+                )
     failures.extend(_confidence(answer.confidence))
     return failures
 

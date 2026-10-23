@@ -211,6 +211,17 @@ def test_expected_level_off_by_rounded_mean_passes() -> None:
     assert validate(score(), answer, TWO_DECIMALS) is answer
 
 
+@pytest.mark.parametrize(("level", "observed"), [("1", "str"), (True, "bool")])
+def test_an_expected_level_that_is_not_a_number_is_not_finite(level: object, observed: str) -> None:
+    answer = LabelAnswer(
+        probabilities=(("level 0", 0.33), ("level 1", 0.37), ("level 2", 0.30)),
+        expected_level=cast(float, level),
+    )
+    result = validate(score(), answer, TWO_DECIMALS)
+    assert _rules(result) == [Rule.not_finite]
+    assert _failure(result, Rule.not_finite).observed == observed
+
+
 def test_expected_level_outside_its_bound_is_a_fault() -> None:
     answer = LabelAnswer(
         probabilities=(("level 0", 0.33), ("level 1", 0.37), ("level 2", 0.30)),
