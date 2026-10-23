@@ -14,6 +14,21 @@ that make up a compound eye and combine into one picture: *ommat-* is the Greek 
 "eye", *-idia* "little ones". Many small, cheap questions add up to one full picture.
 Idia puts them to the models; Ommat is the engine that asks them.
 
+```text
+       ______            _____            ______
+      /      \          /     \          /      \
+     /  .  .  \        / .   . \        /  . .   \
+     \        /        \       /        \        /
+      \______/          \_____/          \______/
+
+
+             ______              ______
+            /      \            /      \
+           / .    . \          /  .  .  \
+           \        /          \        /
+            \______/            \______/
+```
+
 The core installs with no dependency. Each wire provider is an optional extra.
 
 ## Kinds and providers
