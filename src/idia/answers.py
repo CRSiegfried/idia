@@ -206,7 +206,8 @@ def _label_failures(
         # is not a number.
         failures.extend(_confidence(answer.confidence))
         return failures
-    total = sum(probabilities)
+    # Each is summed as a float, so ints a float can each hold never overflow together.
+    total = sum(float(probability) for probability in probabilities)
     tolerance = _sum_tolerance(len(asked), rounding.probability_decimals)
     deviation = abs(total - 1.0)
     if not deviation <= tolerance:
@@ -229,7 +230,7 @@ def _label_failures(
         if observed is not None:
             failures.append(RuleFailure(rule=Rule.not_finite, observed=observed, bound=None))
         else:
-            mean = sum(index * probability for index, probability in enumerate(probabilities))
+            mean = sum(index * float(p) for index, p in enumerate(probabilities))
             bound = _expected_level_bound(len(asked), rounding)
             deviation = abs(answer.expected_level - mean)
             if not deviation <= bound:

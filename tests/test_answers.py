@@ -226,6 +226,17 @@ def test_an_expected_level_that_is_not_a_number_is_not_finite(level: object, obs
     assert _failure(result, Rule.not_finite).observed == observed
 
 
+def test_probabilities_whose_sum_overflows_a_float_fault_the_sum() -> None:
+    huge = 10**308
+    answer = LabelAnswer(
+        probabilities=(("level 0", huge), ("level 1", huge), ("level 2", huge)),
+        expected_level=1.0,
+    )
+    rules = _rules(validate(score(), answer, TWO_DECIMALS))
+    assert Rule.sum_tolerance in rules
+    assert Rule.expected_level in rules
+
+
 def test_expected_level_outside_its_bound_is_a_fault() -> None:
     answer = LabelAnswer(
         probabilities=(("level 0", 0.33), ("level 1", 0.37), ("level 2", 0.30)),
