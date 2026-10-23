@@ -99,6 +99,7 @@ Composites are built from idia's own providers, a `Dispatcher`, `Router` or `Fal
 A composite has no `plan`; its members' checks run inside `answer`.
 
 `Router(members: Mapping[Kind, Provider])` refuses at build a kind routed to a member whose record lacks it, with a `ValueError` naming the member, a dispatcher by its leaf's name and model, and the kinds its record has.
+An empty `members` raises `ValueError` at build, as an empty `Fallback` does.
 A mapping held in a variable is annotated, as `routes: dict[Kind, Provider] = {"noul": decisions, "extraction": clairic}`, because a type checker infers an unannotated dict literal's keys as `str` and its values as the members' own type, and `Mapping` is invariant in its key, so a strict checker refuses `Router(routes)`; a literal written in the call itself needs no annotation.
 Each member gets the questions of its kinds as one request of its own, with the request's state, deadline and options unchanged, the members in the mapping's order of first appearance; a member with no questions is not called.
 Members run concurrently, so a credential error stops only the plan of the dispatcher it came from: every other member with questions still makes its first call.

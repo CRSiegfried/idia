@@ -48,4 +48,5 @@ class RetryPolicy:
         if self.honour_retry_after and retry_after is not None:
             return retry_after
         spread = 1 + self.jitter * (2 * random.random() - 1)
-        return self.base_delay * 2 ** (failures - 1) * spread
+        # The exponent is capped so a policy of very many attempts never overflows a float.
+        return self.base_delay * 2.0 ** min(failures - 1, 1000) * spread

@@ -471,6 +471,8 @@ class Router:
     capabilities: Capabilities
 
     def __init__(self, members: Mapping[Kind, Provider]) -> None:
+        if not members:
+            raise ValueError("a router needs at least one member")
         own = dict(zip(members, _own(list(members.values())), strict=True))
         for kind, member in own.items():
             if kind not in member.capabilities.kinds:

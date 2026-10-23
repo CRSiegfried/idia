@@ -479,6 +479,11 @@ def test_fallback_carries_onto_the_answering_members_first_outcome_when_it_faile
     assert second.failed_attempts == ()
 
 
+def test_router_with_no_members_is_refused() -> None:
+    with pytest.raises(ValueError, match="at least one member"):
+        Router({})
+
+
 def test_fallback_with_no_members_is_refused() -> None:
     with pytest.raises(ValueError, match="at least one member"):
         Fallback([])
