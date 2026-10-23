@@ -33,6 +33,7 @@ from idia import (
     Fault,
     ImagePart,
     JsonPart,
+    JsonValue,
     Label,
     LabelAnswer,
     Leaf,
@@ -125,6 +126,14 @@ def _raised(leaf: SystemOne, wire_request: WireRequest) -> ProviderError:
 
 def _answering(answers: Mapping[str, object], model: str = "jev-1.13.0") -> Wire:
     return Wire({"model": model, "answers": answers, "usage": {"input_tokens": 9}})
+
+
+def test_a_json_part_nested_too_deeply_to_encode_is_a_provider_error() -> None:
+    value: JsonValue = 1
+    for _ in range(100_000):
+        value = (value,)
+    error = _raised(_answering({}).leaf(), _one(_NOUL, State(parts=(JsonPart(value=value),))))
+    assert "cannot be sent as JSON" in error.message
 
 
 def test_a_state_with_a_lone_surrogate_is_refused_as_a_provider_error() -> None:

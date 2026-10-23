@@ -311,7 +311,7 @@ class _CloudflareLeaf(HttpLeaf):
             content = json.dumps(
                 body, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=_plain
             ).encode()
-        except (ValueError, TypeError) as error:
+        except (ValueError, TypeError, RecursionError) as error:
             raise ProviderError(f"the state cannot be sent as JSON: {error}") from None
         response, envelope = await self._post(path, content, deadline, headers=self._headers)
         if envelope.get("success") is not True:
@@ -686,8 +686,9 @@ def _reference_date(wire_request: WireRequest) -> datetime.date | None:
             raise ValueError
         return datetime.date.fromisoformat(held)
     except ValueError:
+        shown = repr(held)[:_MESSAGE_CHARS] if isinstance(held, str) else type(held).__name__
         raise ProviderError(
-            f"the reference_date option must be an ISO date string, not {held!r}"
+            f"the reference_date option must be an ISO date string, not {shown}"
         ) from None
 
 

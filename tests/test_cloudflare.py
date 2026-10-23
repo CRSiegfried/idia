@@ -834,6 +834,14 @@ def test_clairic_refuses_a_reference_date_that_is_not_an_iso_date(held: object) 
     assert wire.requests == []
 
 
+def test_clairic_refuses_a_reference_date_too_long_to_print() -> None:
+    wire = _Wire()
+    request = replace(EXTRACTION, options={"reference_date": 10**5000})
+    error = _raises(_clairic(wire), request)
+    assert error.message.endswith("not int")
+    assert wire.requests == []
+
+
 def test_clef_takes_clairics_reference_date_without_a_warning() -> None:
     wire = _Wire(_ok(_clef_result(_NOUL)), _ok(_clef_result(_NOUL)))
     leaf = _clef(wire)

@@ -212,7 +212,7 @@ def compact(value: JsonValue) -> str:
         return json.dumps(
             value, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=plain
         )
-    except (ValueError, TypeError) as error:
+    except (ValueError, TypeError, RecursionError) as error:
         raise ProviderError(f"the state cannot be sent as JSON: {error}") from None
 
 

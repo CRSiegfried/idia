@@ -35,6 +35,7 @@ from idia.core import (
     LabelAnswer,
     MappedAnswer,
     NoulAnswer,
+    ProviderError,
     Question,
     Refusal,
     Rounding,
@@ -259,6 +260,8 @@ def _parts(
 
 
 def _question(index: int, question: Question) -> dict[str, JsonValue]:
+    if question.kind not in _WIRE_TYPE:
+        raise ProviderError(f"the decisions leaf does not answer {question.kind!r} questions")
     wire: dict[str, JsonValue] = {
         "type": _WIRE_TYPE[question.kind],
         "name": _name(index),

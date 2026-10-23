@@ -30,6 +30,7 @@ from idia import (
     Fault,
     ImagePart,
     JsonPart,
+    JsonValue,
     Label,
     LabelAnswer,
     Leaf,
@@ -124,6 +125,27 @@ def _one(question: Question, state: State = TEXT) -> WireRequest:
 
 
 _NOUL = Question(key="n", kind="noul", instruction="Did it rain?")
+
+
+def _deep(levels: int) -> JsonValue:
+    value: JsonValue = 1
+    for _ in range(levels):
+        value = (value,)
+    return value
+
+
+def test_a_kind_the_leaf_does_not_answer_is_a_provider_error_not_a_key_error() -> None:
+    extraction = Question(key="x", kind="extraction", instruction="Who?", value_type="text")
+    error = _raised(_answering([]).leaf(), _one(extraction))
+    assert "does not answer 'extraction'" in error.message
+
+
+def test_a_json_part_nested_too_deeply_to_encode_is_a_provider_error() -> None:
+    state = State(parts=(JsonPart(value=_deep(100_000)),))
+    error = _raised(_answering([]).leaf(), _one(_NOUL, state))
+    assert "cannot be sent as JSON" in error.message
+
+
 _CHOICE = TEXT_QUESTIONS["choice"][0]  # rain (described), sun, snow (described)
 _SCORE = TEXT_QUESTIONS["score"][1]  # low, mid, high
 
