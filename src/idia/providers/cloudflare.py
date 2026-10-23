@@ -310,12 +310,10 @@ class _CloudflareLeaf(HttpLeaf):
         try:
             content = json.dumps(
                 body, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=_plain
-            )
+            ).encode()
         except (ValueError, TypeError) as error:
             raise ProviderError(f"the state cannot be sent as JSON: {error}") from None
-        response, envelope = await self._post(
-            path, content.encode(), deadline, headers=self._headers
-        )
+        response, envelope = await self._post(path, content, deadline, headers=self._headers)
         if envelope.get("success") is not True:
             raise self._unreadable(response, "the envelope does not report success")
         result = envelope.get("result")

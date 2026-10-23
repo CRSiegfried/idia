@@ -399,6 +399,9 @@ def test_clef_refuses_a_state_json_cannot_hold_and_a_kind_it_does_not_answer() -
     bad = State(parts=(JsonPart(value=float("nan")),))
     error = _raises(_clef(wire), WireRequest(state=bad, questions=CLEF_QUESTIONS["noul"]))
     assert "cannot be sent as JSON" in error.message
+    surrogate = State(parts=(TextPart(text="a\ud800"),))
+    error = _raises(_clef(wire), WireRequest(state=surrogate, questions=CLEF_QUESTIONS["noul"]))
+    assert "cannot be sent as JSON" in error.message
     error = _raises(_clef(wire), EXTRACTION)
     assert "does not answer 'extraction'" in error.message
     assert wire.requests == []

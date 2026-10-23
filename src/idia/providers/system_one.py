@@ -249,10 +249,10 @@ class SystemOne(HttpLeaf):
         try:
             content = json.dumps(
                 body, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=_plain
-            )
+            ).encode()
         except (ValueError, TypeError) as error:
             raise ProviderError(f"the state cannot be sent as JSON: {error}") from None
-        response, read = await self._post(_PATH, content.encode(), deadline, headers=self._headers)
+        response, read = await self._post(_PATH, content, deadline, headers=self._headers)
         answers_json, model_reported, usage = self._top_level(response, read)
         mapped = _map_answers(wire_request.questions, answers_json)
         answers, warnings = validate_answers(

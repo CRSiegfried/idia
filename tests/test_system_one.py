@@ -127,6 +127,12 @@ def _answering(answers: Mapping[str, object], model: str = "jev-1.13.0") -> Wire
     return Wire({"model": model, "answers": answers, "usage": {"input_tokens": 9}})
 
 
+def test_a_state_with_a_lone_surrogate_is_refused_as_a_provider_error() -> None:
+    surrogate = State(parts=(TextPart(text="a\ud800"),))
+    error = _raised(_answering({}).leaf(), _one(_NOUL, surrogate))
+    assert "cannot be sent as JSON" in error.message
+
+
 def _one(question: Question, state: State = TEXT) -> WireRequest:
     return WireRequest(state=state, questions=(question,))
 
