@@ -357,7 +357,7 @@ def retry_after(headers: Mapping[str, str]) -> float | None:
         return seconds
     try:
         when = email.utils.parsedate_to_datetime(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     if when.tzinfo is None:
         when = when.replace(tzinfo=datetime.UTC)

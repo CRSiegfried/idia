@@ -111,7 +111,13 @@ def test_an_http_date_without_a_zone_is_read_as_utc() -> None:
 
 @pytest.mark.parametrize(
     "headers",
-    [{}, {"retry-after": "soon"}, {"retry-after-ms": "-5"}, {"retry-after-ms": "nan"}],
+    [
+        {},
+        {"retry-after": "soon"},
+        {"retry-after-ms": "-5"},
+        {"retry-after-ms": "nan"},
+        {"retry-after": "Wed, 21 Oct 99999999999 07:28:00 GMT"},
+    ],
 )
 def test_an_unreadable_retry_after_is_none(headers: dict[str, str]) -> None:
     assert _error(_respond(429, headers=headers)).retry_after is None
