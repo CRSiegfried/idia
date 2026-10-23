@@ -26,6 +26,7 @@ from idia.conformance._base import (
     Unreadable,
     expect,
     is_a,
+    missing,
     validate_spy,
 )
 from idia.core import (
@@ -158,7 +159,9 @@ async def _l3(harness: LeafHarness) -> str | None:
 
 async def _l4(harness: LeafHarness) -> str | None:
     leaf = harness.make([])
-    found = _review.class_limits(_review.parse(type(leaf).__module__))
+    module = type(leaf).__module__
+    own = {cls.__name__ for cls in type(leaf).__mro__ if cls.__module__ == module}
+    found = _review.class_limits(_review.parse(module), own)
     expect(not found, f"a limit is declared as a class attribute: {'; '.join(found)}")
     return _source_note(leaf)
 
@@ -351,18 +354,13 @@ async def _l15(harness: LeafHarness) -> str | None:
     return None
 
 
-def _missing(answer: Answer | None) -> bool:
-    """A fault for a key the wire left out, which ``validate_answers`` builds itself."""
-    return isinstance(answer, Fault) and [f.rule for f in answer.failures] == [Rule.missing_key]
-
-
 async def _l16(harness: LeafHarness) -> str | None:
     for kind in _claimed(harness):
         leaf = harness.make([Success(kind)])
         wire_request = harness.wire_request(kind)
         with validate_spy() as validated:
             response = await leaf.call(wire_request, Deadline.after(_SECONDS))
-        mapped = {k for k, answer in response.answers.items() if not _missing(answer)}
+        mapped = {k for k, answer in response.answers.items() if not missing(answer)}
         skipped = sorted(mapped - {key for key, _ in validated})
         expect(not skipped, f"answers returned without passing validate: {skipped}")
         declared = harness.capabilities.rounding
@@ -419,7 +417,7 @@ async def _l19(harness: LeafHarness) -> str | None:
     expect(set(response.answers) == asked, f"answers {sorted(response.answers)} for {asked}")
     changed = _changed(response, baseline)
     expect(
-        len(changed) == 1 and all(_missing(answer) for answer in changed.values()),
+        len(changed) == 1 and all(missing(answer) for answer in changed.values()),
         f"one removed key changed {changed!r}, not one missing_key fault",
     )
     [(key, fault)] = changed.items()
@@ -685,7 +683,7 @@ _CHECKS: Final[tuple[tuple[str, str, _LeafCheck], ...]] = (
     ("L1", "The leaf satisfies Leaf, and call returns a WireResponse.", _l1),
     ("L2", "The leaf is not a Provider until wrapped in a Dispatcher.", _l2),
     ("L3", "Its capabilities are the declared, frozen Capabilities.", _l3),
-    ("L4", "No class in the leaf's module declares a limit as a class attribute.", _l4),
+    ("L4", "The leaf's class declares no capabilities field as a class attribute.", _l4),
     ("L5", "Each claimed kind's recorded success maps to that kind's shape.", _l5),
     ("L6", "Every recorded success validates with no sum or expected-level fault.", _l6),
     (

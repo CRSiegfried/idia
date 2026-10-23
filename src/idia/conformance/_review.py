@@ -11,6 +11,7 @@ import dataclasses
 import importlib.util
 import inspect
 import sys
+from collections.abc import Collection
 from typing import Final
 
 from idia.conformance._base import CheckNotApplicable
@@ -175,12 +176,15 @@ def provider_error_catches(tree: ast.Module, module_name: str) -> list[str]:
     return found
 
 
-def class_limits(tree: ast.Module) -> list[str]:
+def class_limits(tree: ast.Module, classes: Collection[str] | None = None) -> list[str]:
     """Each class attribute given a value under a capabilities field's name, in any case,
-    or under ``capabilities`` itself."""
+    or under ``capabilities`` itself: in the classes named, or in every class when none
+    are."""
     found: list[str] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
+            continue
+        if classes is not None and node.name not in classes:
             continue
         for statement in node.body:
             targets: list[ast.expr] = []

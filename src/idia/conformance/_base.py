@@ -13,6 +13,7 @@ from idia.core import (
     Answer,
     Capabilities,
     Deadline,
+    Fault,
     Kind,
     Leaf,
     MappedAnswer,
@@ -20,6 +21,7 @@ from idia.core import (
     Question,
     Request,
     Rounding,
+    Rule,
     WireRequest,
 )
 
@@ -83,6 +85,11 @@ async def run_checks(checks: Iterable[Check]) -> tuple[Verdict, ...]:
         else:
             verdicts.append(Verdict(check.id, "pass", note))
     return tuple(verdicts)
+
+
+def missing(answer: Answer | None) -> bool:
+    """A fault for a key the wire left out, which ``validate_answers`` builds itself."""
+    return isinstance(answer, Fault) and [f.rule for f in answer.failures] == [Rule.missing_key]
 
 
 def is_a(value: object, kind: type | tuple[type, ...]) -> bool:

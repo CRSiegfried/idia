@@ -23,6 +23,7 @@ from idia.conformance._base import (
     Unreadable,
     expect,
     is_a,
+    missing,
     validate_spy,
 )
 from idia.core import (
@@ -419,10 +420,13 @@ async def _p13(harness: ProviderHarness) -> str | None:
     request = harness.request()
     provider = harness.make(_answering(harness, request))
     with validate_spy() as validated:
-        await provider.answer(request)
+        response = await provider.answer(request)
     counts = Counter(key for key, _ in validated)
     twice = sorted(key for key, n in counts.items() if n != 1)
     expect(not twice, f"validate ran more than once for {twice}")
+    answered = {key for key, answer in response.answers.items() if not missing(answer)}
+    never = sorted(answered - set(counts))
+    expect(not never, f"answers returned without passing validate: {never}")
     return None
 
 
@@ -817,7 +821,7 @@ _CHECKS: Final[tuple[tuple[str, str, _ProviderCheck], ...]] = (
     ("P10", "Partly failed: a Response with the failed keys absent.", _p10),
     ("P11", "No wire request answered: RequestFailed carrying the full response.", _p11),
     ("P12", "A fault or an unreadable body takes exactly one attempt.", _p12),
-    ("P13", "validate runs once per answer, never again in the provider.", _p13),
+    ("P13", "Every answer passes validate exactly once, never again in the provider.", _p13),
     ("P14", "A composite's record is derived at build, the most restrictive per field.", _p14),
     ("P15", "A composite's kinds and confidence map are derived as expected.", _p15),
     ("P16", "A composite preflights its derived record before calling any member.", _p16),

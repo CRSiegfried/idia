@@ -549,6 +549,27 @@ def test_the_recorded_leaf_wrapped_passes_the_provider_half(tmp_path: Path) -> N
     assert _ids(verdicts, "not_applicable") == {"P14", "P15", "P16", "P17", "P18", "P23"}
 
 
+class _OwnRulesProvider(ScriptedProviders):
+    """A dispatcher over a leaf that validates by its own rules, never calling validate."""
+
+    def make(
+        self,
+        exchanges: Sequence[Sequence[Exchange]],
+        *,
+        overrides: Mapping[str, object] | None = None,
+    ) -> Provider:
+        harness = _dishonest.OwnRulesHarness(replace(self._records[0], **(overrides or {})))
+        self._harnesses = [harness]
+        return Dispatcher(harness.make(exchanges[0]), retry=_ZERO_DELAY)
+
+
+def test_p13_fails_a_provider_whose_answers_never_pass_validate() -> None:
+    checks = provider_checks(lambda: _OwnRulesProvider("leaf", [CAPABILITIES], CAPABILITIES))
+    [p13] = [check for check in checks if check.id == "P13"]
+    with pytest.raises(AssertionError, match="without passing validate"):
+        asyncio.run(p13.run())
+
+
 def test_unreadable_body_half_of_p12_runs_where_the_harness_can_make_one() -> None:
     verdicts = _verdicts(provider_checks(lambda: _wrapped(WireLikeHarness)))
     assert verdicts["P12"] == Verdict("P12", "pass")
@@ -631,6 +652,26 @@ class Leaf(Scripted):
         """
 class Leaf(Scripted):
     MAX_INPUT_TOKENS = 4096
+""",
+    ),
+    "base-class-limit": (
+        {"L4"},
+        """
+class _Base(Scripted):
+    max_labels = 3
+
+class Leaf(_Base):
+    pass
+""",
+    ),
+    "wire-model-beside-the-leaf": (
+        set(),
+        """
+class _Wire:
+    confidence: float | None = None
+
+class Leaf(Scripted):
+    pass
 """,
     ),
     "swallows-a-provider-error": (
