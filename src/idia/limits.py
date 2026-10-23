@@ -59,8 +59,8 @@ class RateLimiter:
 
     The bucket holds at most ``rate`` tokens and starts full, so a burst of ``rate`` calls
     goes through at once; with a ``rate`` below 1 it never holds a whole token, so even the
-    first call waits for one (``RateLimiter(1, 2.0)`` is one call every two seconds with no
-    first wait). When the bucket is empty the caller waits for the next token, unless that
+    first call waits for one, whereas ``RateLimiter(1, 2.0)`` is one call every two seconds
+    with no first wait. When the bucket is empty the caller waits for the next token, unless that
     wait would end after the deadline, in which case it raises at once, consuming nothing.
     """
 

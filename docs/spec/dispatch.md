@@ -56,7 +56,7 @@ The delay after `n` failures is the error's `retry_after` when it has one and th
 A fault in an answer is not a `ProviderError` and never reaches the policy.
 
 `ConcurrencyLimit(limit)` allows `limit` calls in flight at once.
-`RateLimiter(rate, per=1.0)` is a token bucket of `rate` calls per `per` seconds, holding at most `rate` tokens and starting full, one token per attempt; with a `rate` below 1 the bucket never holds a whole token, so even the first attempt waits for one, and `RateLimiter(1, 2.0)` is one call every two seconds with no first wait.
+`RateLimiter(rate, per=1.0)` is a token bucket of `rate` calls per `per` seconds, holding at most `rate` tokens and starting full, one token per attempt; with a `rate` below 1 the bucket never holds a whole token, so even the first attempt waits for one, whereas `RateLimiter(1, 2.0)` is one call every two seconds with no first wait.
 One instance may be shared by two dispatchers whose leaves share one vendor limit.
 A `ConcurrencyLimit` follows the running event loop: its semaphore is made for the loop it is first used on and made again on another, so one `Dispatcher` serves successive `asyncio.run` calls, the limit holding within each loop.
 

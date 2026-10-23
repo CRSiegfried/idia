@@ -177,8 +177,9 @@ class DeadlineExceeded(ProviderError):
 class KindNotInRelease(IdiaError):
     """A question was built with a kind or value type this release does not admit.
 
-    ``candidate`` is true when the name is a known candidate waiting on a release, false
-    when it is unknown altogether.
+    ``candidate`` is true when the name is a known candidate kind or value type waiting on
+    a release, false when it is no kind at all; a value type that is unknown altogether
+    raises ``ValueError`` instead.
     """
 
     kind: str
@@ -809,7 +810,7 @@ def _check_feature_map(
     _check_type("Capabilities", name, mapping, Mapping, "a mapping")
     for feature, values in mapping.items():
         _check_type("Capabilities", f"{name}[{feature!r}]", values, (set, frozenset), "a set")
-    field = name.removeprefix("feature_")
+    field_name = name.removeprefix("feature_")
     for feature, values in sorted(mapping.items()):
         if feature not in record.opt_in_features:
             raise ValueError(f"{name} names {feature!r}, which is not in opt_in_features")
@@ -821,7 +822,7 @@ def _check_feature_map(
         if feature in record.enabled_features and undeclared:
             raise ValueError(
                 f"{name} says the enabled feature {feature!r} adds "
-                f"{', '.join(sorted(undeclared))}, which {field} does not declare"
+                f"{', '.join(sorted(undeclared))}, which {field_name} does not declare"
             )
 
 

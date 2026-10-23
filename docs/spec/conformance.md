@@ -68,3 +68,5 @@ A scripted refusal is a `Refusal` answer, so L23 runs for a record whose `return
 
 A leaf's tests parametrize one test over the checks, each case named by its ID, and run each with `asyncio.run(check.run())`, turning `CheckNotApplicable` into a skip.
 idia's own `tests/_conformance.py` holds that helper.
+Outside pytest, `asyncio.run(run_checks(leaf_checks(make_harness)))` returns one `Verdict` per check.
+idia's own harnesses are test code and are not installed, so a leaf's author writes the `LeafHarness` over the leaf's own transport.

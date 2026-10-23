@@ -119,7 +119,8 @@ class Success:
 
 @dataclass(frozen=True, slots=True)
 class Failure:
-    """A failure response. With no status, the recorded failure the harness serves;
+    """A failure response. With no status, the recorded failure the harness serves,
+    which carries a status, is not retryable and is not a credential error (401 or 403);
     with one, a response of that status carrying the request id given.
 
     An HTTP harness sends ``retry_after`` as ``retry-after-ms`` and a different,

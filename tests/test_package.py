@@ -1,4 +1,4 @@
-"""The package installs with no dependency and exposes its version."""
+"""The package exposes its version and what `__all__` lists."""
 
 import importlib.metadata
 

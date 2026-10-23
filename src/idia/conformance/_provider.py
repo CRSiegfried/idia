@@ -234,13 +234,13 @@ async def _p6(harness: ProviderHarness) -> str | None:
         refused = await _refused(harness, label, request)
         expected = off
         if refused.check in ("kinds", "modalities"):
-            missing = _missing(request, record, refused.check)
+            absent = _missing(request, record, refused.check)
             expect(
-                refused.observed == missing,
-                f"{label} observes {refused.observed!r}, not the missing {sorted(missing)}",
+                refused.observed == absent,
+                f"{label} observes {refused.observed!r}, not the missing {sorted(absent)}",
             )
             adds = record.feature_kinds if refused.check == "kinds" else record.feature_modalities
-            expected = frozenset(f for f in off if missing & adds.get(f, frozenset()))
+            expected = frozenset(f for f in off if absent & adds.get(f, frozenset()))
         expect(
             refused.off_features == expected,
             f"{label} names off features {sorted(refused.off_features)}, not {sorted(expected)}",
@@ -278,7 +278,7 @@ async def _p8(harness: ProviderHarness) -> str | None:
     expect(not hasattr(response, "provenance"), "the Response has a provenance attribute")
     members = set(harness.member_names())
     for outcome in response.outcomes:
-        missing = [
+        absent = [
             name
             for name, held in (
                 ("provider", bool(outcome.provider)),
@@ -293,7 +293,7 @@ async def _p8(harness: ProviderHarness) -> str | None:
             )
             if not held
         ]
-        expect(not missing, f"the outcome for {outcome.keys} leaves out {missing}")
+        expect(not absent, f"the outcome for {outcome.keys} leaves out {absent}")
         named = (outcome.provider, outcome.model_requested)
         expect(named in members, f"the outcome names {named}, which is no member's leaf")
         held = [f.name for f in dataclasses.fields(outcome)]

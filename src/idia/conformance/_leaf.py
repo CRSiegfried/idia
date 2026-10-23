@@ -538,7 +538,7 @@ async def _l25(harness: LeafHarness) -> str | None:
 async def _l26(harness: LeafHarness) -> str | None:
     for kind in _claimed(harness):
         response = await _send(harness, kind, Success(kind))
-        missing = [
+        absent = [
             name
             for name, held in (
                 ("model_reported", bool(response.model_reported)),
@@ -556,7 +556,7 @@ async def _l26(harness: LeafHarness) -> str | None:
             )
             if not held
         ]
-        expect(not missing, f"the {kind} wire response leaves out {missing}")
+        expect(not absent, f"the {kind} wire response leaves out {absent}")
     return None
 
 

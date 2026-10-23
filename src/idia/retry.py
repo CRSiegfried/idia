@@ -18,7 +18,8 @@ class RetryPolicy:
     ``attempts`` counts calls, so ``attempts=1`` never retries. The delay before the retry
     after ``failures`` failed calls is ``retry_after`` when the error carried one and
     ``honour_retry_after`` is set, used exactly as given; otherwise
-    ``base_delay * 2 ** (failures - 1)``, spread by up to ``jitter`` either way.
+    ``base_delay * 2 ** (failures - 1)``, the exponent stopping at 1000, spread by up to
+    ``jitter`` either way.
     """
 
     attempts: int = 3
