@@ -101,15 +101,17 @@ def _not_finite_cases(bad: float) -> list[tuple[Question, object]]:
         (False, "bool"),
         (cast("float", "0.5"), "str"),
         (cast("float", [0.5]), "list"),
+        (cast("float", 10**400), "int beyond float"),
     ],
 )
 @pytest.mark.parametrize("case", range(10))
 def test_a_bool_or_non_number_probability_faults_not_finite(
     bad: float, observed: str, case: int
 ) -> None:
-    """A bool or any value that is not a number, in any probability, confidence, ``p_null``
-    or box edge, is a ``not_finite`` fault observed as its type's name, and the sum, order
-    and level checks are not judged over it."""
+    """A bool, an int too large for a float or any value that is not a number, in any
+    probability, confidence, ``p_null`` or box edge, is a ``not_finite`` fault observed as
+    its type's name or ``int beyond float``, and the sum, order and level checks are not
+    judged over it."""
     question, answer = _not_finite_cases(bad)[case]
     result = validate(question, answer, UNROUNDED)  # pyright: ignore[reportArgumentType]
     assert _rules(result) == [Rule.not_finite]
@@ -211,7 +213,9 @@ def test_expected_level_off_by_rounded_mean_passes() -> None:
     assert validate(score(), answer, TWO_DECIMALS) is answer
 
 
-@pytest.mark.parametrize(("level", "observed"), [("1", "str"), (True, "bool")])
+@pytest.mark.parametrize(
+    ("level", "observed"), [("1", "str"), (True, "bool"), (10**400, "int beyond float")]
+)
 def test_an_expected_level_that_is_not_a_number_is_not_finite(level: object, observed: str) -> None:
     answer = LabelAnswer(
         probabilities=(("level 0", 0.33), ("level 1", 0.37), ("level 2", 0.30)),

@@ -114,17 +114,31 @@ def _wrong_shape(mapped: Answer) -> RuleFailure:
     return RuleFailure(rule=Rule.kind_shape, observed=type(mapped).__name__, bound=None)
 
 
+def _not_a_number(value: object) -> str | None:
+    """What a value that cannot be judged as a number is observed as: its type's name when
+    it is not an int or a float, or is a bool; ``int beyond float`` for an int too large
+    for a float; ``None`` for a number."""
+    if not isinstance(value, int | float) or isinstance(value, bool):
+        return type(value).__name__
+    try:
+        float(value)
+    except OverflowError:
+        return "int beyond float"
+    return None
+
+
 def _is_number(value: object) -> bool:
-    """Whether ``value`` is an int or a float and not a bool."""
-    return isinstance(value, int | float) and not isinstance(value, bool)
+    """Whether ``value`` is an int or a float, not a bool, that a float can hold."""
+    return _not_a_number(value) is None
 
 
 def _unit_interval(value: float, rule: Rule) -> list[RuleFailure]:
-    """``not_finite`` when the value is not a number (a bool is not one) or not finite, else
-    ``rule`` when it is outside [0, 1]. A value that is not a number is observed as its
-    type's name."""
-    if not _is_number(value):
-        return [RuleFailure(rule=Rule.not_finite, observed=type(value).__name__, bound=None)]
+    """``not_finite`` when the value is not a number (a bool is not one, nor an int too large
+    for a float) or not finite, else ``rule`` when it is outside [0, 1]. A value that is not
+    a number is observed as its type's name, or as ``int beyond float``."""
+    observed = _not_a_number(value)
+    if observed is not None:
+        return [RuleFailure(rule=Rule.not_finite, observed=observed, bound=None)]
     if not math.isfinite(value):
         return [RuleFailure(rule=Rule.not_finite, observed=value, bound=None)]
     if value < 0.0:
@@ -211,8 +225,8 @@ def _label_failures(
                 )
             )
     if question.kind == "score" and answer.expected_level is not None:
-        if not _is_number(answer.expected_level):
-            observed = type(answer.expected_level).__name__
+        observed = _not_a_number(answer.expected_level)
+        if observed is not None:
             failures.append(RuleFailure(rule=Rule.not_finite, observed=observed, bound=None))
         else:
             mean = sum(index * probability for index, probability in enumerate(probabilities))
@@ -230,7 +244,7 @@ def _has_type(value: object, value_type: str) -> bool:
     if value_type == "text":
         return isinstance(value, str)
     if value_type == "number":
-        return _is_number(value)
+        return isinstance(value, int | float) and not isinstance(value, bool)
     if value_type == "date":
         return isinstance(value, datetime.date) and not isinstance(value, datetime.datetime)
     if value_type == "time":

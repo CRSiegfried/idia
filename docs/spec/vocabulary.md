@@ -89,8 +89,8 @@ Nothing is renormalized, rounded or corrected.
   The span is not checked.
 - **`box`**: each edge is in [0, 1] (`box_range`); top is at most bottom and left at most right (`box_order`).
 - **Any `confidence`** present is in [0, 1] (`confidence_range`).
-- **Every probability, confidence, `p_null` and box edge** is a number, not a bool, and finite (`not_finite`, observing a non-number as its type's name, such as `bool`); the sum, the chosen label, the expected level and the box order are not judged over a value that is not a number.
-- **A score's `expected_level`** present is a number, not a bool (`not_finite`, observing its type's name), and is then judged against the probabilities.
+- **Every probability, confidence, `p_null` and box edge** is a number, not a bool, and finite (`not_finite`, observing a non-number as its type's name, such as `bool`, and an int too large for a float as `int beyond float`); the sum, the chosen label, the expected level and the box order are not judged over a value that is not a number.
+- **A score's `expected_level`** present is a number, not a bool, that a float can hold (`not_finite`, observed as above), and is then judged against the probabilities.
 
 For a range rule `observed` is the value and `bound` the limit crossed; for a tolerance rule `observed` is the deviation and `bound` the tolerance; for an order rule the two values out of order.
 `Rule.candidate_shape`, `empty_logprobs`, `label_absent_from_logprobs` and `off_label_mass_above_bound` are set by a leaf itself; `validate` never checks the off-label bound.
