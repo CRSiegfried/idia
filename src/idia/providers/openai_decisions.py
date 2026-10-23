@@ -117,8 +117,9 @@ class OpenAIDecisions(OpenAILeafBase):
     raises ``ValueError``. ``client`` is an injected ``AsyncOpenAI``, used with its retries
     at zero and never closed by the leaf. ``max_questions`` replaces the record's question
     cap, 200, for a caller who knows the wire takes more; ``capabilities`` replaces the
-    whole record. Any model name is sent as given, but the record was taken from
-    ``gpt-6-luna``'s documentation; a caller of another model passes its own.
+    whole record, and ``max_questions`` is then not read. Any model name is sent as given,
+    but the record was taken from ``gpt-6-luna``'s documentation; a caller of another model
+    passes its own.
     """
 
     def __init__(

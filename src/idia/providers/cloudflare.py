@@ -855,7 +855,11 @@ def _clef_answer(question: Question, answer: Mapping[str, JsonValue]) -> MappedA
 def _level_order(index: str) -> tuple[int, str]:
     """A legend's levels by index; a key that is no index, or too long to be one, sorts
     last, by its text."""
-    return (int(index), "") if index.isdecimal() and len(index) <= 9 else (1 << 30, index)
+    return (
+        (int(index), "")
+        if index.isascii() and index.isdecimal() and len(index) <= 9
+        else (1 << 30, index)
+    )
 
 
 def _in_label_order(

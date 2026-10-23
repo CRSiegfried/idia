@@ -324,8 +324,9 @@ def unreadable(response: httpx2.Response, why: str, request_id: str | None) -> P
 
 
 def json_loads(content: bytes) -> JsonValue:
-    """JSON as :data:`~idia.core.JsonValue`: arrays become tuples, and a non-finite
-    number is refused."""
+    """JSON as :data:`~idia.core.JsonValue`: arrays become tuples, and the literals
+    ``NaN``, ``Infinity`` and ``-Infinity`` are refused; a number whose exponent overflows
+    still reads as an infinity, left to validation."""
 
     def refuse(constant: str) -> float:
         raise ValueError(f"{constant} is not a JSON number")

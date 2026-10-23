@@ -370,8 +370,9 @@ def test_a_letter_far_down_the_top_k_alone_takes_all_the_share() -> None:
         (800.0, "logprob 800.0 above 0"),
         (float("nan"), "logprob nan"),
         (float("-inf"), "logprob -inf"),
+        (-(10**400), "int beyond float"),
     ],
-    ids=["above-zero", "nan", "minus-inf"],
+    ids=["above-zero", "nan", "minus-inf", "int-beyond-float"],
 )
 def test_a_logprob_that_is_no_logprob_is_a_kind_shape_fault(logprob: float, observed: str) -> None:
     top = ({"token": "A", "logprob": logprob}, {"token": "B", "logprob": -1.0})
@@ -528,8 +529,11 @@ def test_a_dated_model_reported_is_the_snapshot() -> None:
     assert isinstance(response.raw_body, Mapping)
 
 
-def test_an_alias_reported_is_no_snapshot_and_a_warning() -> None:
-    response = _call(_answering({"A": 0.7, "B": 0.3}, model="gpt-4.1").leaf(), _NOUL)
+@pytest.mark.parametrize(
+    "model", ["gpt-4.1", "gpt-4.1-2025-04-14\n", "gpt-4.1-\u0662\u0660\u0662\u0665-04-14"]
+)
+def test_an_alias_reported_is_no_snapshot_and_a_warning(model: str) -> None:
+    response = _call(_answering({"A": 0.7, "B": 0.3}, model=model).leaf(), _NOUL)
     assert response.snapshot is None
     assert [w.code for w in response.warnings] == [WARNING_NO_SNAPSHOT]
 

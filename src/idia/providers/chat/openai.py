@@ -74,7 +74,7 @@ TEMPERATURE: Final = 0.0
 SYSTEM_PROMPT: Final = "Answer with the letter of one option only."
 
 _LETTERS: Final = string.ascii_uppercase[:TOP_LOGPROBS]
-_SNAPSHOT: Final = re.compile(r"-\d{4}-\d{2}-\d{2}$")
+_SNAPSHOT: Final = re.compile(r"-[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 
 # The estimator: a chat tokenizer reads about 4 characters of English a token; the
 # overhead covers the system prompt, the message framing and the letter lines' letters.
@@ -394,11 +394,15 @@ def _logprobs(top: Sequence[JsonValue]) -> dict[str, list[float]]:
             raise _Shape(type(token).__name__)
         if isinstance(logprob, bool) or not isinstance(logprob, int | float):
             raise _Shape(type(logprob).__name__)
-        if not math.isfinite(logprob):
-            raise _Shape(f"logprob {logprob}")
-        if logprob > 0:
-            raise _Shape(f"logprob {logprob} above 0")
-        found.setdefault(token, []).append(float(logprob))
+        try:
+            value = float(logprob)
+        except OverflowError:
+            raise _Shape("int beyond float") from None
+        if not math.isfinite(value):
+            raise _Shape(f"logprob {value}")
+        if value > 0:
+            raise _Shape(f"logprob {value} above 0")
+        found.setdefault(token, []).append(value)
     return found
 
 
