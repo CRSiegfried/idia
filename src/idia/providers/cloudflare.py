@@ -1,14 +1,14 @@
 """The Cloudflare leaves: Clef for the label kinds and Clairic for extraction, over raw HTTP.
 
-Both models run on Workers AI's REST route, ``POST /client/v4/accounts/<account>/ai/run/
-@cf/cloudflare/<model>`` with a Bearer token, which wraps every body in Cloudflare's envelope
-``{success, errors, messages, result}``. :class:`Clef` sends ``noul``, ``choice`` and
-``score`` in the System One field names with images in a top-level array; :class:`Clairic`
-sends ``extraction`` questions as typed ``fields``. Each maps the wire's answers to their
-kinds' shapes before :func:`~idia.answers.validate_answers` runs over them with the
-record's rounding. They are registered as ``cloudflare-clef`` and ``cloudflare-clairic``,
-installed by the ``cloudflare`` extra; ``idia.cloudflare.cloudflare`` routes between
-them over one client.
+Both models run on Workers AI's REST route,
+``POST /client/v4/accounts/<account>/ai/run/@cf/cloudflare/<model>``, with a Bearer token,
+which wraps every body in Cloudflare's envelope ``{success, errors, messages, result}``.
+:class:`Clef` sends ``noul``, ``choice`` and ``score`` in the System One field names with
+images in a top-level array; :class:`Clairic` sends ``extraction`` questions as typed
+``fields``. Each maps the wire's answers to their kinds' shapes before
+:func:`~idia.answers.validate_answers` runs over them with the record's rounding. They are
+registered as ``cloudflare-clef`` and ``cloudflare-clairic``, installed by the
+``cloudflare`` extra; ``idia.cloudflare.cloudflare`` routes between them over one client.
 
 Neither model has a pinned version: the wire reports the short name, so every response
 carries a ``no-snapshot`` warning saying that alias drift cannot be detected from it.
@@ -292,7 +292,7 @@ class _CloudflareLeaf(HttpLeaf):
         if code is None and message is None:
             return base
         # Key-shaped text is filtered before the cut, so no piece of a key survives it.
-        detail = _without_keys(f"{code}: {message}" if code is not None else str(message))
+        detail = _without_keys(": ".join(str(part) for part in (code, message) if part is not None))
         if len(detail) > _MESSAGE_CHARS:
             detail = detail[:_MESSAGE_CHARS] + "..."
         return ProviderError(

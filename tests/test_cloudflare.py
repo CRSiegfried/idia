@@ -567,6 +567,7 @@ def _errors(code: int, message: str) -> dict[str, object]:
         (500, {"errors": ["text"]}, True, "HTTP 500"),
         (500, [1], True, "HTTP 500"),
         (502, {"errors": [{"code": "x", "message": "upstream"}]}, True, "HTTP 502: upstream"),
+        (422, {"errors": [{"code": 3030}]}, False, "HTTP 422: 3030"),
     ],
 )
 def test_the_status_mapper_reads_the_envelopes_error(
