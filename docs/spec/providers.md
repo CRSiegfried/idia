@@ -113,7 +113,7 @@ The client follows the event loop as `HttpLeaf`'s does: a created client is made
 Each call goes through the SDK's `with_raw_response` under `within(deadline, ...)` and the raw body is read as a whole, as above.
 The SDK's errors map to `ProviderError`: a status error through the status table, except that a 429 whose error `code` is `insufficient_quota` is not retryable; a connection error or timeout is retryable, but one whose cause is a request the client refuses as malformed before sending, as in the status table above, is not, and nor is a value the SDK cannot encode, a key among them; any other SDK error is not; a bare `RuntimeError` the SDK lets through during the call is retryable, the backstop for a connection that died under the client, and such a call may have reached the wire; a subclass propagates.
 The request id is `x-request-id`.
-The key a 401 echoes, which the wire masks itself (`sk-apost********alid`, its first characters, stars and its last four), is not key-shaped and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
+The key a 401 echoes, which the wire masks itself (`sk-idia-***alid`, its first characters, stars and its last four), is not key-shaped and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
 
 **The decisions leaf**, `OpenAIDecisions(*, model="gpt-6-luna", api_key=None, client=None, max_questions=200, capabilities=None)`, named `openai-decisions`, sends one `POST /v1/decisions`.
 Any model name is sent; the record is `gpt-6-luna`'s.

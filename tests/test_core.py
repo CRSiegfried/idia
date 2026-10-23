@@ -1144,7 +1144,7 @@ def test_a_request_failed_message_carries_no_key_shaped_substring() -> None:
 
 def test_text_that_is_not_key_shaped_passes_unchanged() -> None:
     for text in (
-        "Incorrect API key provided: sk-apost********alid.",
+        "Incorrect API key provided: sk-idia-***alid.",
         "task-sk-abcdefghijklmnopqrstuvwx",
         "the request id is req_76f189c39eda412dbdf7edef202ea06b",
     ):

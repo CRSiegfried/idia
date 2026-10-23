@@ -105,7 +105,7 @@ def test_a_request_id_quoted_in_an_error_body_leaves_the_request_id_field_intact
 
 
 def test_a_key_the_wire_masked_itself_passes_as_sent() -> None:
-    masked = "sk-apost********alid"
+    masked = "sk-idia-***alid"
     error = _raised(_wire(401, {"error": {"message": f"Incorrect API key provided: {masked}."}}))
     assert masked in error.message
 
