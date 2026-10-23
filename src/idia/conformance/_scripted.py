@@ -154,8 +154,8 @@ class ScriptedHarness:
     """A :class:`~idia.conformance.LeafHarness` over the scripted leaf.
 
     ``cases`` maps each kind to its questions and the answers the scripted wire gives
-    them; a key not in the cases is left unanswered. A test changes ``_build`` to put a
-    different leaf over the same script, and ``_refuse`` and ``_item`` to make more
+    them; a key not in the cases is left unanswered. A subclass overrides ``_build`` to put
+    a different leaf over the same script, and ``_refuse`` and ``_item`` to make more
     exchanges.
     """
 

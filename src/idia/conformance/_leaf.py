@@ -339,7 +339,7 @@ async def _l14(harness: LeafHarness) -> str | None:
         elapsed = time.monotonic() - start
     expect(
         not isinstance(error, TimeoutError),
-        f"a stalled call was still running {elapsed:.1f} s past a {_STALL} s deadline",
+        f"a stalled call was still running after {elapsed:.1f} s against a {_STALL} s deadline",
     )
     expect(isinstance(error, ProviderError), f"a stalled call ended in {error!r}")
     return None
@@ -690,13 +690,17 @@ _CHECKS: Final[tuple[tuple[str, str, _LeafCheck], ...]] = (
     ("L6", "Every recorded success validates with no sum or expected-level fault.", _l6),
     (
         "L7",
-        "Built with each opt-in feature on or off, the record lists it and changes, and its "
-        "feature maps do not.",
+        "Built with each opt-in feature on and off, the record lists what is on and equals "
+        "capabilities_for; its feature maps do not change.",
         _l7,
     ),
     ("L8", "One call sends one wire request, over a success or a retryable failure.", _l8),
     ("L9", "A leaf built on an SDK sets its retries to zero.", _l9),
-    ("L10", "The leaf's module imports no call loop and catches no ProviderError.", _l10),
+    (
+        "L10",
+        "The leaf's module imports nothing of the call loop and keeps no ProviderError from it.",
+        _l10,
+    ),
     ("L11", "call raises ProviderError and nothing else for every failure.", _l11),
     (
         "L12",
@@ -713,8 +717,12 @@ _CHECKS: Final[tuple[tuple[str, str, _LeafCheck], ...]] = (
     ("L20", "A noul outside [0, 1] is a Fault.", _l20),
     ("L21", "The leaf's module computes no 1 - p and uses no noul_complement.", _l21),
     ("L22", "Confidence only for declared kinds, and only the wire's own.", _l22),
-    ("L23", "A refusal is a Refusal where returns_refusal holds, and never otherwise.", _l23),
-    ("L24", "A candidate shape is a Fault the leaf builds, naming the candidate.", _l24),
+    (
+        "L23",
+        "A refusal is a Refusal where returns_refusal holds; otherwise no success holds one.",
+        _l23,
+    ),
+    ("L24", "A candidate shape is a Fault the leaf builds, naming a candidate kind.", _l24),
     ("L25", "An extraction keeps the wire's guess and never moves it into value.", _l25),
     ("L26", "The wire response fills the provenance only the leaf knows.", _l26),
     ("L27", "calibrated on the wire response equals the declared calibrated.", _l27),

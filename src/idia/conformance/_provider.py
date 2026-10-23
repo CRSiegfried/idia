@@ -778,7 +778,7 @@ async def _p23(harness: ProviderHarness) -> str | None:
     held = sum(isinstance(part, ImagePart) for part in harness.request().state.parts)
     drivers = _image_drivers(record, held)
     if not drivers:
-        raise CheckNotApplicable("no image field of the record is known, so nothing to exceed")
+        raise CheckNotApplicable("nothing in the record's image limits can be exceeded")
     # A router hands every member the whole state, so a member that takes no images may
     # refuse it on its modalities first: still before any call, but not on the field.
     allowed = {"modalities"} if harness.shape == "router" else set[str]()
@@ -803,7 +803,7 @@ _CHECKS: Final[tuple[tuple[str, str, _ProviderCheck], ...]] = (
     ("P2", "A request that fits gets one answer per question key.", _p2),
     ("P3", "A request that does not fit raises before any wire request.", _p3),
     ("P4", "An unknown limit passes with an unchecked-limit warning on each outcome.", _p4),
-    ("P5", "An UNBOUNDED limit is neither checked nor warned.", _p5),
+    ("P5", "An UNBOUNDED limit passes with no warning naming it.", _p5),
     (
         "P6",
         "The reason a request does not fit names the off opt-in features that may make it "

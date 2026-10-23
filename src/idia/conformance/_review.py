@@ -14,7 +14,7 @@ import sys
 from typing import Final
 
 from idia.conformance._base import CheckNotApplicable
-from idia.core import Capabilities, ProviderError
+from idia.core import Capabilities, ProviderError, noul_complement
 
 _LOOP_MODULES: Final = frozenset({"idia.retry", "idia.limits", "idia.dispatch", "idia._provider"})
 """The call loop's modules, which no leaf imports."""
@@ -230,8 +230,6 @@ def complement_calls(tree: ast.Module, module_name: str) -> list[str]:
     """Each reference to ``noul_complement``, and each import of it from idia, under
     whatever name: a leaf hands over the probability of yes alone, so it has no use for
     the complement. A value in the module bound to the function, under any name, too."""
-    from idia.core import noul_complement
-
     found: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and _resolve(node, module_name) in (

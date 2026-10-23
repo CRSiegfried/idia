@@ -310,7 +310,7 @@ def test_scripted_leaf_not_applicable_set_is_exactly_what_a_script_cannot_reach(
     assert _ids(verdicts, "fail") == set()
 
 
-def test_leaf_raises_only_provider_error() -> None:
+def test_l11_notes_the_exchanges_the_scripted_leaf_cannot_make() -> None:
     [l11] = [check for check in leaf_checks(ScriptedHarness) if check.id == "L11"]
     note = asyncio.run(l11.run())
     assert note is not None

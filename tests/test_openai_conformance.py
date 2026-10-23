@@ -24,7 +24,7 @@ _DECISIONS_NOT_APPLICABLE = {"L24", "L25"}
 """The Decisions API returns no candidate shape and has no extraction kind."""
 
 _CHAT_NOT_APPLICABLE = {"L18", "L19", "L20", "L24", "L25"}
-"""Besides those two: the chat read renormalizes over the labels and its wire carries no
+"""Besides L24 and L25: the chat read renormalizes over the labels and its wire carries no
 keys, so no perturbation can move a sum, a key or a noul's range."""
 
 _PROVIDER_NOT_APPLICABLE = {"P6", "P14", "P15", "P16", "P17", "P18"}
