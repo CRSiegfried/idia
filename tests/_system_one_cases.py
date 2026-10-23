@@ -313,7 +313,10 @@ ROUNDING: Final = Rounding(probability_decimals=2, score_decimals=2)
 
 def load(configuration: Configuration, name: str) -> dict[str, Any]:
     """One cassette of a configuration, as stored."""
-    return cast(dict[str, Any], json.loads((configuration.directory / f"{name}.json").read_text()))
+    return cast(
+        dict[str, Any],
+        json.loads((configuration.directory / f"{name}.json").read_text(encoding="utf-8")),
+    )
 
 
 def decode(value: object) -> Any:

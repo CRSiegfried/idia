@@ -1,7 +1,8 @@
 """The source checks of the leaf half: walks over a module's source.
 
-Each function takes a parsed module and its dotted name and returns what it found, one
-string per finding, so a check can name every offending line.
+Each finder takes a parsed module, and its dotted name where it resolves imports or an
+allowlist, and returns what it found, one string per finding, so a check can name every
+offending line.
 """
 
 from __future__ import annotations

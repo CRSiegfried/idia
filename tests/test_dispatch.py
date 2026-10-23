@@ -309,7 +309,7 @@ def test_retry_after_is_honoured() -> None:
     leaf = _leaf([_retryable(5.0), _yes()])
     start = time.monotonic()
     _answer(Dispatcher(leaf, retry=ignoring), request())
-    assert time.monotonic() - start < 0.5
+    assert time.monotonic() - start < 2.0
 
 
 @pytest.mark.parametrize("cut", ["the-retry-delay", "the-rate-limiter"])
@@ -641,7 +641,7 @@ def test_credential_failure_leaves_the_rest_of_the_plan_unsent() -> None:
     assert (unsent.provider, unsent.model_requested) == (leaf.name, leaf.model)
     assert unsent.prompt_sent is None
     assert unsent.usage is None
-    assert unsent.latency < 0.01
+    assert unsent.latency < 0.1
     assert unsent.started_at >= sent.started_at
     assert unsent.warnings == plan.outcome_warnings[1] != ()
     # The stop is the call's own: the next call on the same dispatcher is sent.

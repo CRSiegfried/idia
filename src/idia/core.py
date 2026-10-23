@@ -733,7 +733,9 @@ class Capabilities:
                         f"got {type(limit).__name__}"
                     )
                 if isinstance(limit, bool) or limit < 0:
-                    raise ValueError(f"{name} must be a non-negative int, UNBOUNDED or None")
+                    raise ValueError(
+                        f"Capabilities.{name} must be a non-negative int, UNBOUNDED or None"
+                    )
         for name in ("min_levels", "min_image_side"):
             least: object = getattr(self, name)
             if least is not None:
@@ -742,7 +744,7 @@ class Capabilities:
                         f"Capabilities.{name} must be an int or None, got {type(least).__name__}"
                     )
                 if isinstance(least, bool) or least < 0:
-                    raise ValueError(f"{name} must be a non-negative int or None")
+                    raise ValueError(f"Capabilities.{name} must be a non-negative int or None")
         _check_media_types(self)
         _check_image_caps(self)
         if not self.composite and self.truncates_silently is True and self.max_input_tokens is None:

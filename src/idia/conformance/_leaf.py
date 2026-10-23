@@ -162,7 +162,7 @@ async def _l4(harness: LeafHarness) -> str | None:
     module = type(leaf).__module__
     own = {cls.__name__ for cls in type(leaf).__mro__ if cls.__module__ == module}
     found = _review.class_limits(_review.parse(module), own)
-    expect(not found, f"a limit is declared as a class attribute: {'; '.join(found)}")
+    expect(not found, f"a capabilities field is declared as a class attribute: {'; '.join(found)}")
     return _source_note(leaf)
 
 

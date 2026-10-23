@@ -312,4 +312,6 @@ def chat_record() -> Capabilities:
 
 def load(directory: Path, name: str) -> dict[str, Any]:
     """One cassette, as stored."""
-    return cast(dict[str, Any], json.loads((directory / f"{name}.json").read_text()))
+    return cast(
+        dict[str, Any], json.loads((directory / f"{name}.json").read_text(encoding="utf-8"))
+    )

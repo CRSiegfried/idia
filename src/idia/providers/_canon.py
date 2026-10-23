@@ -189,10 +189,10 @@ def decode(value: object, type_hint: object) -> typing.Any:
 
     The declared type decides what is built: a tagged object becomes the dataclass of that
     name only among those ``type_hint`` admits and only from the closed list; an array
-    becomes a tuple or a frozenset; a string becomes a ``Rule`` or a non-finite float where
-    the type asks for one. A part declared ``JsonValue`` is thawed as plain JSON, its arrays
-    made tuples, and never read for tags. Anything the type does not admit raises
-    :class:`TypeError`.
+    becomes a tuple or a frozenset; a string becomes a ``Rule``, and a tagged ``float``
+    object a non-finite float, where the type asks for one. A part declared ``JsonValue`` is
+    thawed as plain JSON, its arrays made tuples, and never read for tags. Anything the type
+    does not admit raises :class:`TypeError`.
     """
     if type_hint is Json:
         return thaw(value)

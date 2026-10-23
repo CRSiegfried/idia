@@ -61,7 +61,7 @@ def test_delay_after_very_many_failures_does_not_overflow() -> None:
     assert RetryPolicy(jitter=0.0).delay(1500, None) > 0
 
 
-def test_delay_follows_at_least_one_failure() -> None:
+def test_delay_refuses_a_failure_count_below_one() -> None:
     with pytest.raises(ValueError, match="at least one failure"):
         RetryPolicy().delay(0, None)
 
