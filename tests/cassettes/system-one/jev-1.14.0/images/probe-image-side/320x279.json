@@ -1,0 +1,92 @@
+{
+  "expected": null,
+  "features": [
+    "images"
+  ],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.14.0",
+  "request": {
+    "body": {
+      "model": "jev-1.14.0",
+      "state": [
+        "A test card: a white field with two coloured squares.",
+        "<image-0>"
+      ],
+      "questions": {
+        "noul_red": {
+          "type": "noul",
+          "instructions": "Is there a red square?"
+        }
+      },
+      "assets": {
+        "<image-0>": {
+          "type": "image",
+          "format": "png",
+          "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAEXCAIAAABTeQqyAAADYElEQVR42u3TwREAQAQEwc0/aZeDF6e7JECZFLBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMC7m+cW4OABSxgBCxgASNgAQsYAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhYwAhYwAhawgBGwgAWMgAUsYAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWsIAFLGABI2ABCxgBC1jACFjACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCAEbCAEbCABYyABSxgBCxgAQtYwAJGwAIWMAIWsIARsIARsIAFjIAFLGAELGABC1jAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGAQMCBgQMCBgEDAgYEDAgIBBwICAAQEz8LFyawSMgAUsYAQsYBCwgBGwgAWMgAUsYAQsYBCwgBGwgAWMgAUMAhYwCFjACFjAAkbAAgYBCxgBC1jACFjAAkbAAgYBCxgBC1jACFjAIGABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAIWsIARsIAFjIAFDAIWMAIWsIARsIAFjIAFDAIWMAIWsIARsIBBwAJGwAIWMAIWsIARsIBBwAJGwAIWMAIWMAhYwCBgASNgAQsYAQsYBCxgBCxgASNgAQsYAQsYBCxgBCxgASNgAYOABQwCFjACFrCAEbCAQcACRsACFjACFrCAEbCAQcACBgQMAgYEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAIGBAwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAoZ/PUk8OTaviDNqAAAAAElFTkSuQmCC"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "1481",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai",
+      "typesafe-danger-zone-images": "true"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "detail": {
+        "error_type": "api_usage_error",
+        "message": "Invalid image dimensions."
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-length": "81",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 14:58:04 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "x-envoy-upstream-service-time": "6",
+      "x-typesafe-request-id": "req_01a16944e1657bdabb4a4f361f32a7fa"
+    },
+    "status": 400
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Is there a red square?",
+        "is_list": false,
+        "key": "noul_red",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "A test card: a white field with two coloured squares.",
+          "type": "TextPart"
+        },
+        {
+          "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAEXCAIAAABTeQqyAAADYElEQVR42u3TwREAQAQEwc0/aZeDF6e7JECZFLBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMC7m+cW4OABSxgBCxgASNgAQsYAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhYwAhYwAhawgBGwgAWMgAUsYAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWsIAFLGABI2ABCxgBC1jACFjACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCAEbCAEbCABYyABSxgBCxgAQtYwAJGwAIWMAIWsIARsIARsIAFjIAFLGAELGABC1jAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGAQMCBgQMCBgEDAgYEDAgIBBwICAAQEz8LFyawSMgAUsYAQsYBCwgBGwgAWMgAUsYAQsYBCwgBGwgAWMgAUMAhYwCFjACFjAAkbAAgYBCxgBC1jACFjAAkbAAgYBCxgBC1jACFjAIGABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAIWsIARsIAFjIAFDAIWMAIWsIARsIAFjIAFDAIWMAIWsIARsIBBwAJGwAIWMAIWsIARsIBBwAJGwAIWMAIWMAhYwCBgASNgAQsYAQsYBCxgBCxgASNgAQsYAQsYBCxgBCxgASNgAYOABQwCFjACFrCAEbCAQcACRsACFjACFrCAEbCAQcACBgQMAgYEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAIGBAwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAoZ/PUk8OTaviDNqAAAAAElFTkSuQmCC",
+          "media_type": "image/png",
+          "type": "ImagePart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "expected": {
+    "noul_rain": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.961,
+      "type": "NoulAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clef",
+  "model": "clef-flash",
+  "request": {
+    "body": {
+      "model": "clef-flash",
+      "state": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+      "questions": {
+        "noul_rain": {
+          "type": "noul",
+          "instructions": "Did it rain?"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "6044",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clef-flash"
+  },
+  "response": {
+    "body": {
+      "result": {
+        "model": "clef-flash",
+        "answers": {
+          "noul_rain": {
+            "type": "noul",
+            "noul": 0.961
+          }
+        },
+        "usage": {
+          "input_tokens": 1625,
+          "output_tokens": 0
+        }
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-neurons": "5.61",
+      "cf-ai-req-id": "c0b2e9cf-d9a9-41d0-9cef-871b4504fb21",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:28:21 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Did it rain?",
+        "is_list": false,
+        "key": "noul_rain",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes. Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

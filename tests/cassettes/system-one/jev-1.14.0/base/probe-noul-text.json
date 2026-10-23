@@ -1,0 +1,114 @@
+{
+  "expected": {
+    "noul_green": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.39,
+      "type": "NoulAnswer"
+    },
+    "noul_red": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.52,
+      "type": "NoulAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.14.0",
+  "request": {
+    "body": {
+      "model": "jev-1.14.0",
+      "state": "A test card: a white field with two coloured squares.",
+      "questions": {
+        "noul_red": {
+          "type": "noul",
+          "instructions": "Is there a red square?"
+        },
+        "noul_green": {
+          "type": "noul",
+          "instructions": "Is there a green square?"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "238",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.14.0",
+      "answers": {
+        "noul_red": {
+          "type": "noul",
+          "noul": 0.52
+        },
+        "noul_green": {
+          "type": "noul",
+          "noul": 0.39
+        }
+      },
+      "usage": {
+        "input_tokens": 297,
+        "output_tokens": 40
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 14:58:05 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "62",
+      "x-typesafe-request-id": "req_01a16944e48c769abfac0f05bd88a86c"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Is there a red square?",
+        "is_list": false,
+        "key": "noul_red",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is there a green square?",
+        "is_list": false,
+        "key": "noul_green",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "A test card: a white field with two coloured squares.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

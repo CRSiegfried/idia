@@ -1,0 +1,347 @@
+{
+  "expected": {
+    "choice_weather": {
+      "chosen": "rain",
+      "confidence": null,
+      "derived": [
+        "chosen"
+      ],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": null,
+      "off_label_mass": 7.83852780461558e-08,
+      "probabilities": [
+        [
+          "rain",
+          0.9999992887552602
+        ],
+        [
+          "sun",
+          7.112435818631816e-07
+        ],
+        [
+          "snow",
+          1.1579442033030713e-12
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "openai-chat",
+  "model": "gpt-4.1",
+  "request": {
+    "body": {
+      "model": "gpt-4.1",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer with the letter of one option only."
+        },
+        {
+          "role": "user",
+          "content": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.\n\nThe weather?\n\nA. rain: It rained.\nB. sun\nC. snow: It snowed."
+        }
+      ],
+      "logprobs": true,
+      "max_completion_tokens": 1,
+      "temperature": 0.0,
+      "top_logprobs": 20
+    },
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "399",
+      "content-type": "application/json",
+      "host": "api.openai.com",
+      "x-stainless-async": "async:asyncio",
+      "x-stainless-lang": "python",
+      "x-stainless-package-version": "3.36.0",
+      "x-stainless-raw-response": "true",
+      "x-stainless-retry-count": "0"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions"
+  },
+  "response": {
+    "body": {
+      "id": "chatcmpl-Ebpul4w4lonzhzifBnQhM310XUCGB",
+      "object": "chat.completion",
+      "created": 1792686403,
+      "model": "gpt-4.1-2025-04-14",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "A",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": {
+            "content": [
+              {
+                "token": "A",
+                "logprob": -7.896309739408025e-07,
+                "bytes": [
+                  65
+                ],
+                "top_logprobs": [
+                  {
+                    "token": "A",
+                    "logprob": -7.896309739408025e-07,
+                    "bytes": [
+                      65
+                    ]
+                  },
+                  {
+                    "token": "B",
+                    "logprob": -14.156250953674316,
+                    "bytes": [
+                      66
+                    ]
+                  },
+                  {
+                    "token": "C",
+                    "logprob": -27.484375,
+                    "bytes": [
+                      67
+                    ]
+                  },
+                  {
+                    "token": " A",
+                    "logprob": -28.046875,
+                    "bytes": [
+                      32,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "\u0410",
+                    "logprob": -29.25,
+                    "bytes": [
+                      208,
+                      144
+                    ]
+                  },
+                  {
+                    "token": "Answer",
+                    "logprob": -29.8125,
+                    "bytes": [
+                      65,
+                      110,
+                      115,
+                      119,
+                      101,
+                      114
+                    ]
+                  },
+                  {
+                    "token": "\uff21",
+                    "logprob": -30.25,
+                    "bytes": [
+                      239,
+                      188,
+                      161
+                    ]
+                  },
+                  {
+                    "token": "a",
+                    "logprob": -30.84375,
+                    "bytes": [
+                      97
+                    ]
+                  },
+                  {
+                    "token": "_A",
+                    "logprob": -31.546875,
+                    "bytes": [
+                      95,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "D",
+                    "logprob": -32.359375,
+                    "bytes": [
+                      68
+                    ]
+                  },
+                  {
+                    "token": "(A",
+                    "logprob": -32.375,
+                    "bytes": [
+                      40,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "\tA",
+                    "logprob": -32.578125,
+                    "bytes": [
+                      9,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "Option",
+                    "logprob": -33.40625,
+                    "bytes": [
+                      79,
+                      112,
+                      116,
+                      105,
+                      111,
+                      110
+                    ]
+                  },
+                  {
+                    "token": ".A",
+                    "logprob": -33.421875,
+                    "bytes": [
+                      46,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "*A",
+                    "logprob": -33.484375,
+                    "bytes": [
+                      42,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "**",
+                    "logprob": -33.5625,
+                    "bytes": [
+                      42,
+                      42
+                    ]
+                  },
+                  {
+                    "token": "The",
+                    "logprob": -33.59375,
+                    "bytes": [
+                      84,
+                      104,
+                      101
+                    ]
+                  },
+                  {
+                    "token": "\u0391",
+                    "logprob": -34.2421875,
+                    "bytes": [
+                      206,
+                      145
+                    ]
+                  },
+                  {
+                    "token": "A\u7ea7",
+                    "logprob": -35.1484375,
+                    "bytes": [
+                      65,
+                      231,
+                      186,
+                      167
+                    ]
+                  },
+                  {
+                    "token": ":A",
+                    "logprob": -35.265625,
+                    "bytes": [
+                      58,
+                      65
+                    ]
+                  }
+                ]
+              }
+            ],
+            "refusal": null
+          },
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 70,
+        "completion_tokens": 1,
+        "total_tokens": 71,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "audio_tokens": 0,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "service_tier": "default",
+      "system_fingerprint": "fp_10687f7978"
+    },
+    "headers": {
+      "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:26:44 GMT",
+      "openai-organization": "<filtered>",
+      "openai-processing-ms": "743",
+      "openai-project": "<filtered>",
+      "openai-version": "2020-10-01",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "transfer-encoding": "chunked",
+      "x-content-type-options": "nosniff",
+      "x-openai-proxy-wasm": "v0.1",
+      "x-request-id": "req_69c0ee0d5c1b4d938b319086261a4d34"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "The weather?",
+        "is_list": false,
+        "key": "choice_weather",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": "It rained.",
+            "name": "rain",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "sun",
+            "type": "Label"
+          },
+          {
+            "description": "It snowed.",
+            "name": "snow",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

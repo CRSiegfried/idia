@@ -1,0 +1,95 @@
+{
+  "expected": null,
+  "features": [],
+  "format": 1,
+  "leaf": "openai-chat",
+  "model": "gpt-4.1",
+  "request": {
+    "body": {
+      "model": "gpt-4.1",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer with the letter of one option only."
+        },
+        {
+          "role": "user",
+          "content": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.\n\nDid it rain?\n\nA. Yes\nB. No"
+        }
+      ],
+      "logprobs": true,
+      "max_completion_tokens": 1,
+      "temperature": 0.0,
+      "top_logprobs": 20
+    },
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "364",
+      "content-type": "application/json",
+      "host": "api.openai.com",
+      "x-stainless-async": "async:asyncio",
+      "x-stainless-lang": "python",
+      "x-stainless-package-version": "3.36.0",
+      "x-stainless-raw-response": "true",
+      "x-stainless-retry-count": "0"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "message": "Incorrect API key provided: sk-apost********alid. You can find your API key at https://platform.openai.com/account/api-keys.",
+        "type": "invalid_request_error",
+        "code": "invalid_api_key",
+        "param": null
+      },
+      "status": 401
+    },
+    "headers": {
+      "access-control-expose-headers": "CF-Ray, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-length": "266",
+      "content-type": "text/plain",
+      "date": "Thu, 22 Oct 2026 19:48:25 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "x-content-type-options": "nosniff",
+      "x-error-json": "ewogICJlcnJvciI6IHsKICAgICJtZXNzYWdlIjogIkluY29ycmVjdCBBUEkga2V5IHByb3ZpZGVkOiBzay1hcG9zdCoqKioqKioqYWxpZC4gWW91IGNhbiBmaW5kIHlvdXIgQVBJIGtleSBhdCBodHRwczovL3BsYXRmb3JtLm9wZW5haS5jb20vYWNjb3VudC9hcGkta2V5cy4iLAogICAgInR5cGUiOiAiaW52YWxpZF9yZXF1ZXN0X2Vycm9yIiwKICAgICJjb2RlIjogImludmFsaWRfYXBpX2tleSIsCiAgICAicGFyYW0iOiBudWxsCiAgfSwKICAic3RhdHVzIjogNDAxCn0=",
+      "x-openai-authorization-error": "401",
+      "x-openai-ide-error-code": "invalid_api_key",
+      "x-openai-internal-caller": "unknown_through_ide",
+      "x-request-id": "req_76f189c39eda412dbdf7edef202ea06b"
+    },
+    "status": 401
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Did it rain?",
+        "is_list": false,
+        "key": "noul_rain",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "expected": {
+    "score_mood": {
+      "chosen": null,
+      "confidence": 0.7012,
+      "derived": [],
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 0.1483,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "low",
+          0.8913
+        ],
+        [
+          "mid",
+          0.0691
+        ],
+        [
+          "high",
+          0.0396
+        ]
+      ],
+      "type": "LabelAnswer"
+    },
+    "score_rain": {
+      "chosen": null,
+      "confidence": 0.94,
+      "derived": [],
+      "echo": [
+        "No rain",
+        "Light rain",
+        "Heavy rain"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 1.9701,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "none",
+          0.0095
+        ],
+        [
+          "light",
+          0.0108
+        ],
+        [
+          "heavy",
+          0.9797
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clef",
+  "model": "clef-flash",
+  "request": {
+    "body": {
+      "model": "clef-flash",
+      "state": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+      "questions": {
+        "score_rain": {
+          "type": "score",
+          "instructions": "How hard?",
+          "criteria": [
+            "No rain",
+            "Light rain",
+            "Heavy rain"
+          ]
+        },
+        "score_mood": {
+          "type": "score",
+          "instructions": "The mood?",
+          "criteria": [
+            "low",
+            "mid",
+            "high"
+          ]
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "538",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clef-flash"
+  },
+  "response": {
+    "body": {
+      "result": {
+        "model": "clef-flash",
+        "answers": {
+          "score_rain": {
+            "type": "score",
+            "score": 1.9701,
+            "legend": {
+              "0": "No rain",
+              "1": "Light rain",
+              "2": "Heavy rain"
+            },
+            "probabilities": {
+              "0": 0.0095,
+              "1": 0.0108,
+              "2": 0.9797
+            },
+            "confidence": 0.94
+          },
+          "score_mood": {
+            "type": "score",
+            "score": 0.1483,
+            "legend": {
+              "0": "low",
+              "1": "mid",
+              "2": "high"
+            },
+            "probabilities": {
+              "0": 0.8913,
+              "1": 0.0691,
+              "2": 0.0396
+            },
+            "confidence": 0.7012
+          }
+        },
+        "usage": {
+          "input_tokens": 298,
+          "output_tokens": 0
+        }
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-neurons": "1.03",
+      "cf-ai-req-id": "83958ec5-9529-4b4a-a87d-bd4c819e8bdc",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:28:19 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "How hard?",
+        "is_list": false,
+        "key": "score_rain",
+        "kind": "score",
+        "labels": [
+          {
+            "description": "No rain",
+            "name": "none",
+            "type": "Label"
+          },
+          {
+            "description": "Light rain",
+            "name": "light",
+            "type": "Label"
+          },
+          {
+            "description": "Heavy rain",
+            "name": "heavy",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "The mood?",
+        "is_list": false,
+        "key": "score_mood",
+        "kind": "score",
+        "labels": [
+          {
+            "description": null,
+            "name": "low",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "mid",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "high",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

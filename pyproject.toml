@@ -1,0 +1,99 @@
+[project]
+name = "idia"
+version = "0.1.0"
+description = "Put type-1 questions to decision-model providers and get the provider's probabilities back, with whether it claims them calibrated, and limits, retries and provenance handled once."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Christopher Siegfried", email = "160437306+CRSiegfried@users.noreply.github.com" }
+]
+requires-python = ">=3.11"
+dependencies = []
+keywords = ["decision model", "classification", "calibrated probabilities", "llm", "provider"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/CRSiegfried/idia"
+Documentation = "https://github.com/CRSiegfried/idia/tree/main/docs/spec"
+Repository = "https://github.com/CRSiegfried/idia"
+Issues = "https://github.com/CRSiegfried/idia/issues"
+Changelog = "https://github.com/CRSiegfried/idia/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+# One extra per wire provider; the core needs none of them.
+system-one = ["httpx2>=2.16"]
+openai = ["openai>=3.35.1", "httpx2>=2.16"]
+cloudflare = ["httpx2>=2.16"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=6",
+    "ruff>=0.14",
+    "pyright>=1.1.400",
+    "httpx2>=2.16",
+    "openai>=3.35.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+markers = [
+    "live: makes a real call to a wire API; skipped unless IDIA_LIVE=1",
+]
+
+[tool.coverage.run]
+source = ["idia"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 90
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "UP",       # pyupgrade
+    "B",        # bugbear
+    "SIM",      # simplify
+    "C4",       # comprehensions
+    "PT",       # pytest style
+    "ASYNC",    # async pitfalls
+    "RUF",      # ruff-specific
+]
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+
+[tool.hatch.build.targets.sdist]
+# scripts/ is left out: its spec check is a repository check, not part of the package.
+include = ["/src", "/tests", "/docs", "/*.md", "/LICENSE"]

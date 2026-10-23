@@ -1,0 +1,90 @@
+{
+  "expected": null,
+  "features": [],
+  "format": 1,
+  "leaf": "openai-chat",
+  "model": "gpt-4.1",
+  "request": {
+    "body": {
+      "model": "gpt-4.1",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer with the letter of one option only."
+        },
+        {
+          "role": "user",
+          "content": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.\n\nDid it rain?\n\nA. Yes\nB. No"
+        }
+      ],
+      "logprobs": true,
+      "top_logprobs": 21,
+      "temperature": 0.0,
+      "max_completion_tokens": 1
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "382",
+      "content-type": "application/json",
+      "host": "api.openai.com"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "message": "Invalid value for 'top_logprobs': must be less than or equal to 20.",
+        "type": "invalid_request_error",
+        "param": "top_logprobs",
+        "code": null
+      }
+    },
+    "headers": {
+      "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-length": "189",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:26:45 GMT",
+      "openai-organization": "<filtered>",
+      "openai-processing-ms": "11",
+      "openai-project": "<filtered>",
+      "openai-version": "2020-10-01",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "x-content-type-options": "nosniff",
+      "x-openai-proxy-wasm": "v0.1",
+      "x-request-id": "req_d8f10d9ddb4e43cfa72bb084ed3cf2c7"
+    },
+    "status": 400
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Did it rain?",
+        "is_list": false,
+        "key": "noul_rain",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

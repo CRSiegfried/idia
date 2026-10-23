@@ -1,0 +1,122 @@
+{
+  "expected": {
+    "noul_0": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "openai-decisions",
+  "model": "gpt-6-luna",
+  "request": {
+    "body": {
+      "model": "gpt-6-luna",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "type": "predicate",
+          "name": "q0",
+          "instructions": "Is statement 0 about rain true?"
+        }
+      ]
+    },
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "307",
+      "content-type": "application/json",
+      "host": "api.openai.com",
+      "x-stainless-async": "async:asyncio",
+      "x-stainless-lang": "python",
+      "x-stainless-package-version": "3.36.0",
+      "x-stainless-raw-response": "true",
+      "x-stainless-retry-count": "0"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/decisions"
+  },
+  "response": {
+    "body": {
+      "model": "gpt-6-luna",
+      "answers": [
+        {
+          "type": "predicate",
+          "name": "q0",
+          "probability": 1.0
+        }
+      ],
+      "usage": {
+        "input_tokens": 183,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 183
+      }
+    },
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "x-request-id,retry-after,server-timing-total, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:26:01 GMT",
+      "openai-processing-ms": "1321",
+      "server": "cloudflare",
+      "server-timing-total": "1321.498",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "transfer-encoding": "chunked",
+      "vary": "origin, access-control-request-method, access-control-request-headers",
+      "x-content-type-options": "nosniff",
+      "x-openai-proxy-wasm": "v0.1",
+      "x-request-id": "req_efbb4c0cd74e41b8a4211f17513ff4cb"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Is statement 0 about rain true?",
+        "is_list": false,
+        "key": "noul_0",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "expected": {
+    "box_red": {
+      "confidence": 0.3,
+      "region": {
+        "bottom": 0.55,
+        "left": 0.2,
+        "right": 0.64,
+        "top": 0.22,
+        "type": "Box"
+      },
+      "type": "BoxAnswer"
+    }
+  },
+  "features": [
+    "images"
+  ],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.14.0",
+  "request": {
+    "body": {
+      "model": "jev-1.14.0",
+      "state": [
+        "A test card: a white field with two coloured squares.",
+        "<image-0>"
+      ],
+      "questions": {
+        "box_red": {
+          "type": "box",
+          "instructions": "The red square."
+        }
+      },
+      "assets": {
+        "<image-0>": {
+          "type": "image",
+          "format": "png",
+          "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "1636",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai",
+      "typesafe-danger-zone-images": "true"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.14.0",
+      "answers": {
+        "box_red": {
+          "type": "box",
+          "box": {
+            "top": 0.22,
+            "bottom": 0.55,
+            "left": 0.2,
+            "right": 0.64
+          },
+          "confidence": 0.3
+        }
+      },
+      "usage": {
+        "input_tokens": 582,
+        "output_tokens": 21
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 14:59:18 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "81",
+      "x-typesafe-request-id": "req_01a1694603687f0b85c6cd34be0560ec"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "The red square.",
+        "is_list": false,
+        "key": "box_red",
+        "kind": "box",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "A test card: a white field with two coloured squares.",
+          "type": "TextPart"
+        },
+        {
+          "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
+          "media_type": "image/png",
+          "type": "ImagePart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

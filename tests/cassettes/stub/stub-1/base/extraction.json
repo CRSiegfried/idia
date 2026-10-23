@@ -1,0 +1,138 @@
+{
+  "expected": {
+    "extraction_a": {
+      "confidence": null,
+      "guess": null,
+      "p_null": 0.1,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": "Ada"
+    },
+    "extraction_b": {
+      "confidence": null,
+      "guess": "Bob",
+      "p_null": 0.7,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": null
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "stub",
+  "model": "stub-1",
+  "request": {
+    "body": {
+      "model": "stub-1",
+      "request": {
+        "type": "WireRequest",
+        "state": {
+          "type": "State",
+          "parts": [
+            {
+              "type": "TextPart",
+              "text": "The state every conformance question is about."
+            }
+          ]
+        },
+        "questions": [
+          {
+            "type": "Question",
+            "key": "extraction_a",
+            "kind": "extraction",
+            "instruction": "Who?",
+            "labels": [],
+            "value_type": "text",
+            "is_list": false
+          },
+          {
+            "type": "Question",
+            "key": "extraction_b",
+            "kind": "extraction",
+            "instruction": "Whom?",
+            "labels": [],
+            "value_type": "text",
+            "is_list": false
+          }
+        ]
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "437",
+      "content-type": "application/json",
+      "host": "stub.invalid"
+    },
+    "method": "POST",
+    "url": "https://stub.invalid/v1/answer"
+  },
+  "response": {
+    "body": {
+      "answers": {
+        "extraction_a": {
+          "confidence": null,
+          "guess": null,
+          "p_null": 0.1,
+          "span": null,
+          "type": "ExtractionAnswer",
+          "value": "Ada"
+        },
+        "extraction_b": {
+          "confidence": null,
+          "guess": "Bob",
+          "p_null": 0.7,
+          "span": null,
+          "type": "ExtractionAnswer",
+          "value": null
+        }
+      },
+      "model": "stub-1-20260101",
+      "usage": {
+        "input_tokens": 40,
+        "output_tokens": 12
+      }
+    },
+    "headers": {
+      "content-length": "312",
+      "content-type": "application/json",
+      "set-cookie": "<filtered>",
+      "x-request-id": "stub-extraction"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Who?",
+        "is_list": false,
+        "key": "extraction_a",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      },
+      {
+        "instruction": "Whom?",
+        "is_list": false,
+        "key": "extraction_b",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The state every conformance question is about.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

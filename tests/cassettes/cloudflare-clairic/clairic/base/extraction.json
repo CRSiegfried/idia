@@ -1,0 +1,298 @@
+{
+  "expected": {
+    "attendance": {
+      "confidence": 0.03599526404472994,
+      "guess": 300,
+      "p_null": 0.9999998807907104,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": null
+    },
+    "home_team": {
+      "confidence": 0.6441899538040161,
+      "guess": "Riverside Rovers",
+      "p_null": 0.6884178519248962,
+      "span": {
+        "end": 16,
+        "part": 0,
+        "start": 0,
+        "type": "Span"
+      },
+      "type": "ExtractionAnswer",
+      "value": null
+    },
+    "inspection": {
+      "confidence": 0.9999336034224678,
+      "guess": {
+        "type": "timedelta",
+        "value": 2700.0
+      },
+      "p_null": 6.279661874941667e-07,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": {
+        "type": "timedelta",
+        "value": 2700.0
+      }
+    },
+    "match_date": {
+      "confidence": 0.9989451495480582,
+      "guess": {
+        "type": "date",
+        "value": "2026-10-17"
+      },
+      "p_null": 0.0005334904417395592,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": {
+        "type": "date",
+        "value": "2026-10-17"
+      }
+    },
+    "referees": {
+      "confidence": 0.9987507230500803,
+      "guess": null,
+      "p_null": null,
+      "span": [
+        {
+          "end": 240,
+          "part": 0,
+          "start": 232,
+          "type": "Span"
+        },
+        {
+          "end": 253,
+          "part": 0,
+          "start": 245,
+          "type": "Span"
+        }
+      ],
+      "type": "ExtractionAnswer",
+      "value": [
+        "Ana Ruiz",
+        "Tom Bell"
+      ]
+    },
+    "refunds": {
+      "confidence": 0.9999946356095605,
+      "guess": 4250.5,
+      "p_null": 1.6672748870405485e-06,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": 4250.5
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clairic",
+  "model": "clairic",
+  "request": {
+    "body": {
+      "model": "clairic",
+      "state": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+      "fields": {
+        "home_team": {
+          "type": "text",
+          "instructions": "The home team."
+        },
+        "refunds": {
+          "type": "number",
+          "instructions": "The ticket refunds, in pounds, to two decimals."
+        },
+        "match_date": {
+          "type": "date",
+          "instructions": "The date the match was due to be played."
+        },
+        "referees": {
+          "type": "list",
+          "instructions": "The referees' names.",
+          "items": "text"
+        },
+        "inspection": {
+          "type": "duration",
+          "instructions": "How long the pitch inspection took."
+        },
+        "attendance": {
+          "type": "number",
+          "instructions": "The number of spectators at the ground."
+        }
+      },
+      "reference_date": "2026-10-21"
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "861",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clairic"
+  },
+  "response": {
+    "body": {
+      "result": {
+        "model": "clairic",
+        "answers": {
+          "home_team": {
+            "type": "text",
+            "p_null": 0.6884178519248962,
+            "span": [
+              0,
+              16
+            ],
+            "guess": "Riverside Rovers",
+            "confidence": 0.6441899538040161,
+            "value": null
+          },
+          "refunds": {
+            "type": "number",
+            "p_null": 1.6672748870405485e-06,
+            "guess": 4250.5,
+            "confidence": 0.9999946356095605,
+            "value": 4250.5
+          },
+          "match_date": {
+            "type": "date",
+            "p_null": 0.0005334904417395592,
+            "guess": "2026-10-17",
+            "confidence": 0.9989451495480582,
+            "value": "2026-10-17"
+          },
+          "referees": {
+            "type": "list",
+            "value": [
+              "Ana Ruiz",
+              "Tom Bell"
+            ],
+            "spans": [
+              [
+                232,
+                240
+              ],
+              [
+                245,
+                253
+              ]
+            ],
+            "confidence": 0.9987507230500803
+          },
+          "inspection": {
+            "type": "duration",
+            "p_null": 6.279661874941667e-07,
+            "unit": "seconds",
+            "guess": 2700,
+            "confidence": 0.9999336034224678,
+            "value": 2700
+          },
+          "attendance": {
+            "type": "number",
+            "p_null": 0.9999998807907104,
+            "guess": 300,
+            "confidence": 0.03599526404472994,
+            "value": null
+          }
+        },
+        "truncated": false,
+        "usage": {
+          "state_tokens": 76,
+          "image_tokens": 0,
+          "schema_tokens": 411,
+          "input_tokens": 563,
+          "output_tokens": 0,
+          "passes": 2
+        }
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-neurons": "5.12",
+      "cf-ai-req-id": "2ca445f8-37e4-410b-97fb-d85f0e1ca504",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:28:48 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "options": {
+      "reference_date": "2026-10-21"
+    },
+    "questions": [
+      {
+        "instruction": "The home team.",
+        "is_list": false,
+        "key": "home_team",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      },
+      {
+        "instruction": "The ticket refunds, in pounds, to two decimals.",
+        "is_list": false,
+        "key": "refunds",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "number"
+      },
+      {
+        "instruction": "The date the match was due to be played.",
+        "is_list": false,
+        "key": "match_date",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "date"
+      },
+      {
+        "instruction": "The referees' names.",
+        "is_list": true,
+        "key": "referees",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      },
+      {
+        "instruction": "How long the pitch inspection took.",
+        "is_list": false,
+        "key": "inspection",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "duration"
+      },
+      {
+        "instruction": "The number of spectators at the ground.",
+        "is_list": false,
+        "key": "attendance",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "number"
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

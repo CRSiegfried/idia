@@ -1,0 +1,220 @@
+{
+  "expected": {
+    "score_mood": {
+      "chosen": null,
+      "confidence": 0.78,
+      "derived": [],
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 0.14,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "low",
+          0.86
+        ],
+        [
+          "mid",
+          0.13
+        ],
+        [
+          "high",
+          0.01
+        ]
+      ],
+      "type": "LabelAnswer"
+    },
+    "score_rain": {
+      "chosen": null,
+      "confidence": 1.0,
+      "derived": [],
+      "echo": [
+        "No rain",
+        "Light rain",
+        "Heavy rain"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 2.0,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "none",
+          0.0
+        ],
+        [
+          "light",
+          0.0
+        ],
+        [
+          "heavy",
+          1.0
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.13.0",
+  "request": {
+    "body": {
+      "model": "jev-1.13.0",
+      "state": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+      "questions": {
+        "score_rain": {
+          "type": "score",
+          "instructions": "How hard?",
+          "criteria": [
+            "No rain",
+            "Light rain",
+            "Heavy rain"
+          ]
+        },
+        "score_mood": {
+          "type": "score",
+          "instructions": "The mood?",
+          "criteria": [
+            "low",
+            "mid",
+            "high"
+          ]
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "361",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.13.0",
+      "answers": {
+        "score_rain": {
+          "type": "score",
+          "score": 2.0,
+          "confidence": 1.0,
+          "legend": {
+            "0": "No rain",
+            "1": "Light rain",
+            "2": "Heavy rain"
+          },
+          "probabilities": {
+            "0": 0.0,
+            "1": 0.0,
+            "2": 1.0
+          }
+        },
+        "score_mood": {
+          "type": "score",
+          "score": 0.14,
+          "confidence": 0.78,
+          "legend": {
+            "0": "low",
+            "1": "mid",
+            "2": "high"
+          },
+          "probabilities": {
+            "0": 0.86,
+            "1": 0.13,
+            "2": 0.01
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 357,
+        "output_tokens": 34
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:24:04 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "64",
+      "x-typesafe-request-id": "req_01a1646d42477c0dba12f16d277bdab7"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "How hard?",
+        "is_list": false,
+        "key": "score_rain",
+        "kind": "score",
+        "labels": [
+          {
+            "description": "No rain",
+            "name": "none",
+            "type": "Label"
+          },
+          {
+            "description": "Light rain",
+            "name": "light",
+            "type": "Label"
+          },
+          {
+            "description": "Heavy rain",
+            "name": "heavy",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "The mood?",
+        "is_list": false,
+        "key": "score_mood",
+        "kind": "score",
+        "labels": [
+          {
+            "description": null,
+            "name": "low",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "mid",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "high",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

@@ -1,0 +1,238 @@
+{
+  "expected": {
+    "score_rain": {
+      "chosen": null,
+      "confidence": 0.56,
+      "derived": [],
+      "echo": [
+        "No rain",
+        "Light rain",
+        "Heavy rain"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 0.29,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "none",
+          0.78
+        ],
+        [
+          "light",
+          0.15
+        ],
+        [
+          "heavy",
+          0.07
+        ]
+      ],
+      "type": "LabelAnswer"
+    },
+    "score_red": {
+      "chosen": null,
+      "confidence": 0.22,
+      "derived": [],
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 0.67,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "low",
+          0.42
+        ],
+        [
+          "mid",
+          0.48
+        ],
+        [
+          "high",
+          0.1
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [
+    "images"
+  ],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.14.0",
+  "request": {
+    "body": {
+      "model": "jev-1.14.0",
+      "state": [
+        "A test card: a white field with two coloured squares.",
+        "<image-0>"
+      ],
+      "questions": {
+        "score_red": {
+          "type": "score",
+          "instructions": "How much red?",
+          "criteria": [
+            "low",
+            "mid",
+            "high"
+          ]
+        },
+        "score_rain": {
+          "type": "score",
+          "instructions": "How hard?",
+          "criteria": [
+            "No rain",
+            "Light rain",
+            "Heavy rain"
+          ]
+        }
+      },
+      "assets": {
+        "<image-0>": {
+          "type": "image",
+          "format": "png",
+          "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "1776",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai",
+      "typesafe-danger-zone-images": "true"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.14.0",
+      "answers": {
+        "score_red": {
+          "type": "score",
+          "score": 0.67,
+          "confidence": 0.22,
+          "legend": {
+            "0": "low",
+            "1": "mid",
+            "2": "high"
+          },
+          "probabilities": {
+            "0": 0.42,
+            "1": 0.48,
+            "2": 0.1
+          }
+        },
+        "score_rain": {
+          "type": "score",
+          "score": 0.29,
+          "confidence": 0.56,
+          "legend": {
+            "0": "No rain",
+            "1": "Light rain",
+            "2": "Heavy rain"
+          },
+          "probabilities": {
+            "0": 0.78,
+            "1": 0.15,
+            "2": 0.07
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 643,
+        "output_tokens": 33
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 14:57:38 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "70",
+      "x-typesafe-request-id": "req_01a169447a887c01b6e25466ae31c2f3"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "How much red?",
+        "is_list": false,
+        "key": "score_red",
+        "kind": "score",
+        "labels": [
+          {
+            "description": null,
+            "name": "low",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "mid",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "high",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "How hard?",
+        "is_list": false,
+        "key": "score_rain",
+        "kind": "score",
+        "labels": [
+          {
+            "description": "No rain",
+            "name": "none",
+            "type": "Label"
+          },
+          {
+            "description": "Light rain",
+            "name": "light",
+            "type": "Label"
+          },
+          {
+            "description": "Heavy rain",
+            "name": "heavy",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "A test card: a white field with two coloured squares.",
+          "type": "TextPart"
+        },
+        {
+          "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
+          "media_type": "image/png",
+          "type": "ImagePart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "expected": null,
+  "features": [],
+  "format": 1,
+  "leaf": "openai-decisions",
+  "model": "gpt-5.6-luna",
+  "request": {
+    "body": {
+      "model": "gpt-5.6-luna",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "type": "predicate",
+          "name": "q0",
+          "instructions": "Did it rain?"
+        },
+        {
+          "type": "predicate",
+          "name": "q1",
+          "instructions": "Did the sun come out?"
+        }
+      ]
+    },
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "362",
+      "content-type": "application/json",
+      "host": "api.openai.com",
+      "x-stainless-async": "async:asyncio",
+      "x-stainless-lang": "python",
+      "x-stainless-package-version": "3.36.0",
+      "x-stainless-raw-response": "true",
+      "x-stainless-retry-count": "0"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/decisions"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "message": "The model `gpt-5.6-luna` does not exist or you do not have access to it.",
+        "type": "invalid_request_error",
+        "param": null,
+        "code": "model_not_found"
+      }
+    },
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "x-request-id,retry-after,server-timing-total, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 22:27:08 GMT",
+      "openai-processing-ms": "2",
+      "server": "cloudflare",
+      "server-timing-total": "2.142",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "transfer-encoding": "chunked",
+      "vary": "origin, access-control-request-method, access-control-request-headers",
+      "x-content-type-options": "nosniff",
+      "x-openai-proxy-wasm": "v0.1",
+      "x-request-id": "req_41aa5c2471c246f28ac959c95b181257"
+    },
+    "status": 404
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Did it rain?",
+        "is_list": false,
+        "key": "noul_rain",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Did the sun come out?",
+        "is_list": false,
+        "key": "noul_sun",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

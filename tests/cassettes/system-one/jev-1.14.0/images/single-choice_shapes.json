@@ -1,0 +1,141 @@
+{
+  "expected": {
+    "choice_shapes": {
+      "chosen": "squares",
+      "confidence": 1.0,
+      "derived": [],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": null,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "squares",
+          1.0
+        ],
+        [
+          "circles",
+          0.0
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [
+    "images"
+  ],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.14.0",
+  "request": {
+    "body": {
+      "model": "jev-1.14.0",
+      "state": [
+        "A test card: a white field with two coloured squares.",
+        "<image-0>"
+      ],
+      "questions": {
+        "choice_shapes": {
+          "type": "choice",
+          "instructions": "The shapes?",
+          "criteria": {
+            "squares": null,
+            "circles": null
+          }
+        }
+      },
+      "assets": {
+        "<image-0>": {
+          "type": "image",
+          "format": "png",
+          "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "1684",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai",
+      "typesafe-danger-zone-images": "true"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.14.0",
+      "answers": {
+        "choice_shapes": {
+          "type": "choice",
+          "choice": "squares",
+          "confidence": 1.0,
+          "probabilities": {
+            "squares": 1.0,
+            "circles": 0.0
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 600,
+        "output_tokens": 37
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 14:57:38 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "49",
+      "x-typesafe-request-id": "req_01a169447c077263a5e47ac5c11007d4"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "The shapes?",
+        "is_list": false,
+        "key": "choice_shapes",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": null,
+            "name": "squares",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "circles",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "A test card: a white field with two coloured squares.",
+          "type": "TextPart"
+        },
+        {
+          "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
+          "media_type": "image/png",
+          "type": "ImagePart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

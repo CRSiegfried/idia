@@ -1,0 +1,132 @@
+{
+  "expected": {
+    "noul_green": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.01,
+      "type": "NoulAnswer"
+    },
+    "noul_red": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    }
+  },
+  "features": [
+    "images"
+  ],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.14.0",
+  "request": {
+    "body": {
+      "model": "jev-1.14.0",
+      "state": [
+        "A test card: a white field with two coloured squares.",
+        "<image-0>"
+      ],
+      "questions": {
+        "noul_red": {
+          "type": "noul",
+          "instructions": "Is there a red square?"
+        },
+        "noul_green": {
+          "type": "noul",
+          "instructions": "Is there a green square?"
+        }
+      },
+      "assets": {
+        "<image-0>": {
+          "type": "image",
+          "format": "png",
+          "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC"
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "1716",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai",
+      "typesafe-danger-zone-images": "true"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.14.0",
+      "answers": {
+        "noul_red": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "noul_green": {
+          "type": "noul",
+          "noul": 0.01
+        }
+      },
+      "usage": {
+        "input_tokens": 597,
+        "output_tokens": 40
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 14:57:37 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "112",
+      "x-typesafe-request-id": "req_01a1694479967d768fe5ae8037adc9e6"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Is there a red square?",
+        "is_list": false,
+        "key": "noul_red",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is there a green square?",
+        "is_list": false,
+        "key": "noul_green",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "A test card: a white field with two coloured squares.",
+          "type": "TextPart"
+        },
+        {
+          "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
+          "media_type": "image/png",
+          "type": "ImagePart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

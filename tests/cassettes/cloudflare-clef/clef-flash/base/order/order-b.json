@@ -1,0 +1,297 @@
+{
+  "expected": {
+    "choice_outcome": {
+      "chosen": "called_off",
+      "confidence": 0.9686,
+      "derived": [],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": null,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "played",
+          0.0079
+        ],
+        [
+          "called_off",
+          0.9921
+        ]
+      ],
+      "type": "LabelAnswer"
+    },
+    "choice_weather": {
+      "chosen": "rain",
+      "confidence": 0.8098,
+      "derived": [],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": null,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "rain",
+          0.9326
+        ],
+        [
+          "sun",
+          0.0586
+        ],
+        [
+          "snow",
+          0.0088
+        ]
+      ],
+      "type": "LabelAnswer"
+    },
+    "noul_sun": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.9341,
+      "type": "NoulAnswer"
+    },
+    "score_mood": {
+      "chosen": null,
+      "confidence": 0.7617,
+      "derived": [],
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "descriptions",
+      "expected_level": 0.1054,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "low",
+          0.9146
+        ],
+        [
+          "mid",
+          0.0654
+        ],
+        [
+          "high",
+          0.02
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clef",
+  "model": "clef-flash",
+  "request": {
+    "body": {
+      "model": "clef-flash",
+      "state": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+      "questions": {
+        "choice_outcome": {
+          "type": "choice",
+          "instructions": "The match?",
+          "criteria": {
+            "played": null,
+            "called_off": null
+          }
+        },
+        "noul_sun": {
+          "type": "noul",
+          "instructions": "Did the sun come out?"
+        },
+        "score_mood": {
+          "type": "score",
+          "instructions": "The mood?",
+          "criteria": [
+            "low",
+            "mid",
+            "high"
+          ]
+        },
+        "choice_weather": {
+          "type": "choice",
+          "instructions": "The weather?",
+          "criteria": {
+            "rain": "It rained.",
+            "sun": null,
+            "snow": "It snowed."
+          }
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "735",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clef-flash"
+  },
+  "response": {
+    "body": {
+      "result": {
+        "model": "clef-flash",
+        "answers": {
+          "choice_outcome": {
+            "type": "choice",
+            "choice": "called_off",
+            "probabilities": {
+              "played": 0.0079,
+              "called_off": 0.9921
+            },
+            "confidence": 0.9686
+          },
+          "noul_sun": {
+            "type": "noul",
+            "noul": 0.9341
+          },
+          "score_mood": {
+            "type": "score",
+            "score": 0.1054,
+            "legend": {
+              "0": "low",
+              "1": "mid",
+              "2": "high"
+            },
+            "probabilities": {
+              "0": 0.9146,
+              "1": 0.0654,
+              "2": 0.02
+            },
+            "confidence": 0.7617
+          },
+          "choice_weather": {
+            "type": "choice",
+            "choice": "rain",
+            "probabilities": {
+              "rain": 0.9326,
+              "sun": 0.0586,
+              "snow": 0.0088
+            },
+            "confidence": 0.8098
+          }
+        },
+        "usage": {
+          "input_tokens": 433,
+          "output_tokens": 0
+        }
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-neurons": "1.50",
+      "cf-ai-req-id": "c2e350d8-9978-44da-9a82-5be83c1389ef",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 17:21:53 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "The match?",
+        "is_list": false,
+        "key": "choice_outcome",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": null,
+            "name": "played",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "called_off",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Did the sun come out?",
+        "is_list": false,
+        "key": "noul_sun",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "The mood?",
+        "is_list": false,
+        "key": "score_mood",
+        "kind": "score",
+        "labels": [
+          {
+            "description": null,
+            "name": "low",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "mid",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "high",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "The weather?",
+        "is_list": false,
+        "key": "choice_weather",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": "It rained.",
+            "name": "rain",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "sun",
+            "type": "Label"
+          },
+          {
+            "description": "It snowed.",
+            "name": "snow",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

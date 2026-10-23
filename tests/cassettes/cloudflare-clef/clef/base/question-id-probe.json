@@ -1,0 +1,99 @@
+{
+  "expected": null,
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clef",
+  "model": "clef",
+  "request": {
+    "body": {
+      "model": "clef",
+      "state": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+      "questions": {
+        "match:intent": {
+          "type": "choice",
+          "instructions": "The weather?",
+          "criteria": {
+            "rain": "It rained.",
+            "sun": null,
+            "snow": "It snowed."
+          }
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "464",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clef"
+  },
+  "response": {
+    "body": {
+      "errors": [
+        {
+          "message": "AiError: AiError: Request body failed validation: questions.match:intent.[key]: String should match pattern '^[A-Za-z0-9_.-]{1,100}$' (65388770-1b1f-4471-b07d-01e4366f90de)",
+          "code": 3030
+        }
+      ],
+      "success": false,
+      "result": {},
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-req-id": "65388770-1b1f-4471-b07d-01e4366f90de",
+      "connection": "keep-alive",
+      "content-length": "253",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 10:38:42 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>"
+    },
+    "status": 422
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "The weather?",
+        "is_list": false,
+        "key": "match:intent",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": "It rained.",
+            "name": "rain",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "sun",
+            "type": "Label"
+          },
+          {
+            "description": "It snowed.",
+            "name": "snow",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

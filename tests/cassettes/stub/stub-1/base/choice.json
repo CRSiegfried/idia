@@ -1,0 +1,266 @@
+{
+  "expected": {
+    "choice_a": {
+      "chosen": "red",
+      "confidence": 0.5,
+      "derived": [],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": null,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "red",
+          0.5
+        ],
+        [
+          "green",
+          0.3
+        ],
+        [
+          "blue",
+          0.2
+        ]
+      ],
+      "type": "LabelAnswer"
+    },
+    "choice_b": {
+      "chosen": null,
+      "confidence": 0.8,
+      "derived": [],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": null,
+      "off_label_mass": null,
+      "probabilities": [
+        [
+          "red",
+          0.1
+        ],
+        [
+          "green",
+          0.1
+        ],
+        [
+          "blue",
+          0.8
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "stub",
+  "model": "stub-1",
+  "request": {
+    "body": {
+      "model": "stub-1",
+      "request": {
+        "type": "WireRequest",
+        "state": {
+          "type": "State",
+          "parts": [
+            {
+              "type": "TextPart",
+              "text": "The state every conformance question is about."
+            }
+          ]
+        },
+        "questions": [
+          {
+            "type": "Question",
+            "key": "choice_a",
+            "kind": "choice",
+            "instruction": "Which?",
+            "labels": [
+              {
+                "type": "Label",
+                "name": "red",
+                "description": null
+              },
+              {
+                "type": "Label",
+                "name": "green",
+                "description": null
+              },
+              {
+                "type": "Label",
+                "name": "blue",
+                "description": null
+              }
+            ],
+            "value_type": null,
+            "is_list": false
+          },
+          {
+            "type": "Question",
+            "key": "choice_b",
+            "kind": "choice",
+            "instruction": "Which else?",
+            "labels": [
+              {
+                "type": "Label",
+                "name": "red",
+                "description": null
+              },
+              {
+                "type": "Label",
+                "name": "green",
+                "description": null
+              },
+              {
+                "type": "Label",
+                "name": "blue",
+                "description": null
+              }
+            ],
+            "value_type": null,
+            "is_list": false
+          }
+        ]
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "723",
+      "content-type": "application/json",
+      "host": "stub.invalid"
+    },
+    "method": "POST",
+    "url": "https://stub.invalid/v1/answer"
+  },
+  "response": {
+    "body": {
+      "answers": {
+        "choice_a": {
+          "chosen": "red",
+          "confidence": 0.5,
+          "derived": [],
+          "echo": null,
+          "echo_of": null,
+          "expected_level": null,
+          "off_label_mass": null,
+          "probabilities": [
+            [
+              "red",
+              0.5
+            ],
+            [
+              "green",
+              0.3
+            ],
+            [
+              "blue",
+              0.2
+            ]
+          ],
+          "type": "LabelAnswer"
+        },
+        "choice_b": {
+          "chosen": null,
+          "confidence": 0.8,
+          "derived": [],
+          "echo": null,
+          "echo_of": null,
+          "expected_level": null,
+          "off_label_mass": null,
+          "probabilities": [
+            [
+              "red",
+              0.1
+            ],
+            [
+              "green",
+              0.1
+            ],
+            [
+              "blue",
+              0.8
+            ]
+          ],
+          "type": "LabelAnswer"
+        }
+      },
+      "model": "stub-1-20260101",
+      "usage": {
+        "input_tokens": 40,
+        "output_tokens": 12
+      }
+    },
+    "headers": {
+      "content-length": "499",
+      "content-type": "application/json",
+      "set-cookie": "<filtered>",
+      "x-request-id": "stub-choice"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Which?",
+        "is_list": false,
+        "key": "choice_a",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": null,
+            "name": "red",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "green",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "blue",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Which else?",
+        "is_list": false,
+        "key": "choice_b",
+        "kind": "choice",
+        "labels": [
+          {
+            "description": null,
+            "name": "red",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "green",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "blue",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The state every conformance question is about.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

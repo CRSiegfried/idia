@@ -1,0 +1,4672 @@
+{
+  "expected": {
+    "noul_0": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    },
+    "noul_1": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_10": {
+      "type": "Refusal"
+    },
+    "noul_100": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_101": {
+      "type": "Refusal"
+    },
+    "noul_102": {
+      "type": "Refusal"
+    },
+    "noul_103": {
+      "type": "Refusal"
+    },
+    "noul_104": {
+      "type": "Refusal"
+    },
+    "noul_105": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_106": {
+      "type": "Refusal"
+    },
+    "noul_107": {
+      "type": "Refusal"
+    },
+    "noul_108": {
+      "type": "Refusal"
+    },
+    "noul_109": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.78,
+      "type": "NoulAnswer"
+    },
+    "noul_11": {
+      "type": "Refusal"
+    },
+    "noul_110": {
+      "type": "Refusal"
+    },
+    "noul_111": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_112": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_113": {
+      "type": "Refusal"
+    },
+    "noul_114": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.91,
+      "type": "NoulAnswer"
+    },
+    "noul_115": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.93,
+      "type": "NoulAnswer"
+    },
+    "noul_116": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_117": {
+      "type": "Refusal"
+    },
+    "noul_118": {
+      "type": "Refusal"
+    },
+    "noul_119": {
+      "type": "Refusal"
+    },
+    "noul_12": {
+      "type": "Refusal"
+    },
+    "noul_120": {
+      "type": "Refusal"
+    },
+    "noul_121": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_122": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.9,
+      "type": "NoulAnswer"
+    },
+    "noul_123": {
+      "type": "Refusal"
+    },
+    "noul_124": {
+      "type": "Refusal"
+    },
+    "noul_125": {
+      "type": "Refusal"
+    },
+    "noul_126": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_127": {
+      "type": "Refusal"
+    },
+    "noul_128": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_129": {
+      "type": "Refusal"
+    },
+    "noul_13": {
+      "type": "Refusal"
+    },
+    "noul_130": {
+      "type": "Refusal"
+    },
+    "noul_131": {
+      "type": "Refusal"
+    },
+    "noul_132": {
+      "type": "Refusal"
+    },
+    "noul_133": {
+      "type": "Refusal"
+    },
+    "noul_134": {
+      "type": "Refusal"
+    },
+    "noul_135": {
+      "type": "Refusal"
+    },
+    "noul_136": {
+      "type": "Refusal"
+    },
+    "noul_137": {
+      "type": "Refusal"
+    },
+    "noul_138": {
+      "type": "Refusal"
+    },
+    "noul_139": {
+      "type": "Refusal"
+    },
+    "noul_14": {
+      "type": "Refusal"
+    },
+    "noul_140": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_141": {
+      "type": "Refusal"
+    },
+    "noul_142": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.94,
+      "type": "NoulAnswer"
+    },
+    "noul_143": {
+      "type": "Refusal"
+    },
+    "noul_144": {
+      "type": "Refusal"
+    },
+    "noul_145": {
+      "type": "Refusal"
+    },
+    "noul_146": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_147": {
+      "type": "Refusal"
+    },
+    "noul_148": {
+      "type": "Refusal"
+    },
+    "noul_149": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.94,
+      "type": "NoulAnswer"
+    },
+    "noul_15": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_150": {
+      "type": "Refusal"
+    },
+    "noul_151": {
+      "type": "Refusal"
+    },
+    "noul_152": {
+      "type": "Refusal"
+    },
+    "noul_153": {
+      "type": "Refusal"
+    },
+    "noul_154": {
+      "type": "Refusal"
+    },
+    "noul_155": {
+      "type": "Refusal"
+    },
+    "noul_156": {
+      "type": "Refusal"
+    },
+    "noul_157": {
+      "type": "Refusal"
+    },
+    "noul_158": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_159": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_16": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    },
+    "noul_160": {
+      "type": "Refusal"
+    },
+    "noul_161": {
+      "type": "Refusal"
+    },
+    "noul_162": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_163": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_164": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_165": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_166": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_167": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    },
+    "noul_168": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.8,
+      "type": "NoulAnswer"
+    },
+    "noul_169": {
+      "type": "Refusal"
+    },
+    "noul_17": {
+      "type": "Refusal"
+    },
+    "noul_170": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_171": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.85,
+      "type": "NoulAnswer"
+    },
+    "noul_172": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_173": {
+      "type": "Refusal"
+    },
+    "noul_174": {
+      "type": "Refusal"
+    },
+    "noul_175": {
+      "type": "Refusal"
+    },
+    "noul_176": {
+      "type": "Refusal"
+    },
+    "noul_177": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_178": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_179": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_18": {
+      "type": "Refusal"
+    },
+    "noul_180": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.66,
+      "type": "NoulAnswer"
+    },
+    "noul_181": {
+      "type": "Refusal"
+    },
+    "noul_182": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_183": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.95,
+      "type": "NoulAnswer"
+    },
+    "noul_184": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.93,
+      "type": "NoulAnswer"
+    },
+    "noul_185": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.93,
+      "type": "NoulAnswer"
+    },
+    "noul_186": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.86,
+      "type": "NoulAnswer"
+    },
+    "noul_187": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_188": {
+      "type": "Refusal"
+    },
+    "noul_189": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.95,
+      "type": "NoulAnswer"
+    },
+    "noul_19": {
+      "type": "Refusal"
+    },
+    "noul_190": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_191": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.92,
+      "type": "NoulAnswer"
+    },
+    "noul_192": {
+      "type": "Refusal"
+    },
+    "noul_193": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.95,
+      "type": "NoulAnswer"
+    },
+    "noul_194": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_195": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_196": {
+      "type": "Refusal"
+    },
+    "noul_197": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_198": {
+      "type": "Refusal"
+    },
+    "noul_199": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_2": {
+      "type": "Refusal"
+    },
+    "noul_20": {
+      "type": "Refusal"
+    },
+    "noul_200": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_21": {
+      "type": "Refusal"
+    },
+    "noul_22": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.95,
+      "type": "NoulAnswer"
+    },
+    "noul_23": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.89,
+      "type": "NoulAnswer"
+    },
+    "noul_24": {
+      "type": "Refusal"
+    },
+    "noul_25": {
+      "type": "Refusal"
+    },
+    "noul_26": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_27": {
+      "type": "Refusal"
+    },
+    "noul_28": {
+      "type": "Refusal"
+    },
+    "noul_29": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_3": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    },
+    "noul_30": {
+      "type": "Refusal"
+    },
+    "noul_31": {
+      "type": "Refusal"
+    },
+    "noul_32": {
+      "type": "Refusal"
+    },
+    "noul_33": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_34": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_35": {
+      "type": "Refusal"
+    },
+    "noul_36": {
+      "type": "Refusal"
+    },
+    "noul_37": {
+      "type": "Refusal"
+    },
+    "noul_38": {
+      "type": "Refusal"
+    },
+    "noul_39": {
+      "type": "Refusal"
+    },
+    "noul_4": {
+      "type": "Refusal"
+    },
+    "noul_40": {
+      "type": "Refusal"
+    },
+    "noul_41": {
+      "type": "Refusal"
+    },
+    "noul_42": {
+      "type": "Refusal"
+    },
+    "noul_43": {
+      "type": "Refusal"
+    },
+    "noul_44": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_45": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_46": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    },
+    "noul_47": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_48": {
+      "type": "Refusal"
+    },
+    "noul_49": {
+      "type": "Refusal"
+    },
+    "noul_5": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_50": {
+      "type": "Refusal"
+    },
+    "noul_51": {
+      "type": "Refusal"
+    },
+    "noul_52": {
+      "type": "Refusal"
+    },
+    "noul_53": {
+      "type": "Refusal"
+    },
+    "noul_54": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.96,
+      "type": "NoulAnswer"
+    },
+    "noul_55": {
+      "type": "Refusal"
+    },
+    "noul_56": {
+      "type": "Refusal"
+    },
+    "noul_57": {
+      "type": "Refusal"
+    },
+    "noul_58": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    },
+    "noul_59": {
+      "type": "Refusal"
+    },
+    "noul_6": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_60": {
+      "type": "Refusal"
+    },
+    "noul_61": {
+      "type": "Refusal"
+    },
+    "noul_62": {
+      "type": "Refusal"
+    },
+    "noul_63": {
+      "type": "Refusal"
+    },
+    "noul_64": {
+      "type": "Refusal"
+    },
+    "noul_65": {
+      "type": "Refusal"
+    },
+    "noul_66": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_67": {
+      "type": "Refusal"
+    },
+    "noul_68": {
+      "type": "Refusal"
+    },
+    "noul_69": {
+      "type": "Refusal"
+    },
+    "noul_7": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 1.0,
+      "type": "NoulAnswer"
+    },
+    "noul_70": {
+      "type": "Refusal"
+    },
+    "noul_71": {
+      "type": "Refusal"
+    },
+    "noul_72": {
+      "type": "Refusal"
+    },
+    "noul_73": {
+      "type": "Refusal"
+    },
+    "noul_74": {
+      "type": "Refusal"
+    },
+    "noul_75": {
+      "type": "Refusal"
+    },
+    "noul_76": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_77": {
+      "type": "Refusal"
+    },
+    "noul_78": {
+      "type": "Refusal"
+    },
+    "noul_79": {
+      "type": "Refusal"
+    },
+    "noul_8": {
+      "type": "Refusal"
+    },
+    "noul_80": {
+      "type": "Refusal"
+    },
+    "noul_81": {
+      "type": "Refusal"
+    },
+    "noul_82": {
+      "type": "Refusal"
+    },
+    "noul_83": {
+      "type": "Refusal"
+    },
+    "noul_84": {
+      "type": "Refusal"
+    },
+    "noul_85": {
+      "type": "Refusal"
+    },
+    "noul_86": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.99,
+      "type": "NoulAnswer"
+    },
+    "noul_87": {
+      "type": "Refusal"
+    },
+    "noul_88": {
+      "type": "Refusal"
+    },
+    "noul_89": {
+      "type": "Refusal"
+    },
+    "noul_9": {
+      "type": "Refusal"
+    },
+    "noul_90": {
+      "type": "Refusal"
+    },
+    "noul_91": {
+      "type": "Refusal"
+    },
+    "noul_92": {
+      "type": "Refusal"
+    },
+    "noul_93": {
+      "type": "Refusal"
+    },
+    "noul_94": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.98,
+      "type": "NoulAnswer"
+    },
+    "noul_95": {
+      "type": "Refusal"
+    },
+    "noul_96": {
+      "type": "Refusal"
+    },
+    "noul_97": {
+      "type": "Refusal"
+    },
+    "noul_98": {
+      "type": "Refusal"
+    },
+    "noul_99": {
+      "type": "Refusal"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "openai-decisions",
+  "model": "gpt-6-luna",
+  "request": {
+    "body": {
+      "model": "gpt-6-luna",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "type": "predicate",
+          "name": "q0",
+          "instructions": "Is statement 0 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q1",
+          "instructions": "Is statement 1 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q2",
+          "instructions": "Is statement 2 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q3",
+          "instructions": "Is statement 3 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q4",
+          "instructions": "Is statement 4 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q5",
+          "instructions": "Is statement 5 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q6",
+          "instructions": "Is statement 6 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q7",
+          "instructions": "Is statement 7 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q8",
+          "instructions": "Is statement 8 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q9",
+          "instructions": "Is statement 9 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q10",
+          "instructions": "Is statement 10 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q11",
+          "instructions": "Is statement 11 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q12",
+          "instructions": "Is statement 12 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q13",
+          "instructions": "Is statement 13 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q14",
+          "instructions": "Is statement 14 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q15",
+          "instructions": "Is statement 15 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q16",
+          "instructions": "Is statement 16 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q17",
+          "instructions": "Is statement 17 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q18",
+          "instructions": "Is statement 18 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q19",
+          "instructions": "Is statement 19 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q20",
+          "instructions": "Is statement 20 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q21",
+          "instructions": "Is statement 21 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q22",
+          "instructions": "Is statement 22 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q23",
+          "instructions": "Is statement 23 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q24",
+          "instructions": "Is statement 24 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q25",
+          "instructions": "Is statement 25 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q26",
+          "instructions": "Is statement 26 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q27",
+          "instructions": "Is statement 27 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q28",
+          "instructions": "Is statement 28 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q29",
+          "instructions": "Is statement 29 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q30",
+          "instructions": "Is statement 30 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q31",
+          "instructions": "Is statement 31 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q32",
+          "instructions": "Is statement 32 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q33",
+          "instructions": "Is statement 33 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q34",
+          "instructions": "Is statement 34 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q35",
+          "instructions": "Is statement 35 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q36",
+          "instructions": "Is statement 36 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q37",
+          "instructions": "Is statement 37 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q38",
+          "instructions": "Is statement 38 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q39",
+          "instructions": "Is statement 39 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q40",
+          "instructions": "Is statement 40 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q41",
+          "instructions": "Is statement 41 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q42",
+          "instructions": "Is statement 42 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q43",
+          "instructions": "Is statement 43 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q44",
+          "instructions": "Is statement 44 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q45",
+          "instructions": "Is statement 45 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q46",
+          "instructions": "Is statement 46 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q47",
+          "instructions": "Is statement 47 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q48",
+          "instructions": "Is statement 48 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q49",
+          "instructions": "Is statement 49 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q50",
+          "instructions": "Is statement 50 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q51",
+          "instructions": "Is statement 51 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q52",
+          "instructions": "Is statement 52 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q53",
+          "instructions": "Is statement 53 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q54",
+          "instructions": "Is statement 54 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q55",
+          "instructions": "Is statement 55 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q56",
+          "instructions": "Is statement 56 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q57",
+          "instructions": "Is statement 57 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q58",
+          "instructions": "Is statement 58 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q59",
+          "instructions": "Is statement 59 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q60",
+          "instructions": "Is statement 60 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q61",
+          "instructions": "Is statement 61 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q62",
+          "instructions": "Is statement 62 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q63",
+          "instructions": "Is statement 63 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q64",
+          "instructions": "Is statement 64 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q65",
+          "instructions": "Is statement 65 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q66",
+          "instructions": "Is statement 66 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q67",
+          "instructions": "Is statement 67 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q68",
+          "instructions": "Is statement 68 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q69",
+          "instructions": "Is statement 69 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q70",
+          "instructions": "Is statement 70 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q71",
+          "instructions": "Is statement 71 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q72",
+          "instructions": "Is statement 72 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q73",
+          "instructions": "Is statement 73 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q74",
+          "instructions": "Is statement 74 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q75",
+          "instructions": "Is statement 75 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q76",
+          "instructions": "Is statement 76 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q77",
+          "instructions": "Is statement 77 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q78",
+          "instructions": "Is statement 78 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q79",
+          "instructions": "Is statement 79 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q80",
+          "instructions": "Is statement 80 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q81",
+          "instructions": "Is statement 81 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q82",
+          "instructions": "Is statement 82 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q83",
+          "instructions": "Is statement 83 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q84",
+          "instructions": "Is statement 84 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q85",
+          "instructions": "Is statement 85 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q86",
+          "instructions": "Is statement 86 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q87",
+          "instructions": "Is statement 87 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q88",
+          "instructions": "Is statement 88 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q89",
+          "instructions": "Is statement 89 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q90",
+          "instructions": "Is statement 90 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q91",
+          "instructions": "Is statement 91 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q92",
+          "instructions": "Is statement 92 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q93",
+          "instructions": "Is statement 93 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q94",
+          "instructions": "Is statement 94 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q95",
+          "instructions": "Is statement 95 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q96",
+          "instructions": "Is statement 96 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q97",
+          "instructions": "Is statement 97 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q98",
+          "instructions": "Is statement 98 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q99",
+          "instructions": "Is statement 99 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q100",
+          "instructions": "Is statement 100 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q101",
+          "instructions": "Is statement 101 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q102",
+          "instructions": "Is statement 102 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q103",
+          "instructions": "Is statement 103 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q104",
+          "instructions": "Is statement 104 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q105",
+          "instructions": "Is statement 105 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q106",
+          "instructions": "Is statement 106 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q107",
+          "instructions": "Is statement 107 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q108",
+          "instructions": "Is statement 108 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q109",
+          "instructions": "Is statement 109 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q110",
+          "instructions": "Is statement 110 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q111",
+          "instructions": "Is statement 111 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q112",
+          "instructions": "Is statement 112 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q113",
+          "instructions": "Is statement 113 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q114",
+          "instructions": "Is statement 114 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q115",
+          "instructions": "Is statement 115 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q116",
+          "instructions": "Is statement 116 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q117",
+          "instructions": "Is statement 117 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q118",
+          "instructions": "Is statement 118 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q119",
+          "instructions": "Is statement 119 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q120",
+          "instructions": "Is statement 120 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q121",
+          "instructions": "Is statement 121 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q122",
+          "instructions": "Is statement 122 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q123",
+          "instructions": "Is statement 123 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q124",
+          "instructions": "Is statement 124 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q125",
+          "instructions": "Is statement 125 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q126",
+          "instructions": "Is statement 126 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q127",
+          "instructions": "Is statement 127 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q128",
+          "instructions": "Is statement 128 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q129",
+          "instructions": "Is statement 129 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q130",
+          "instructions": "Is statement 130 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q131",
+          "instructions": "Is statement 131 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q132",
+          "instructions": "Is statement 132 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q133",
+          "instructions": "Is statement 133 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q134",
+          "instructions": "Is statement 134 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q135",
+          "instructions": "Is statement 135 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q136",
+          "instructions": "Is statement 136 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q137",
+          "instructions": "Is statement 137 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q138",
+          "instructions": "Is statement 138 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q139",
+          "instructions": "Is statement 139 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q140",
+          "instructions": "Is statement 140 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q141",
+          "instructions": "Is statement 141 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q142",
+          "instructions": "Is statement 142 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q143",
+          "instructions": "Is statement 143 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q144",
+          "instructions": "Is statement 144 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q145",
+          "instructions": "Is statement 145 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q146",
+          "instructions": "Is statement 146 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q147",
+          "instructions": "Is statement 147 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q148",
+          "instructions": "Is statement 148 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q149",
+          "instructions": "Is statement 149 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q150",
+          "instructions": "Is statement 150 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q151",
+          "instructions": "Is statement 151 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q152",
+          "instructions": "Is statement 152 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q153",
+          "instructions": "Is statement 153 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q154",
+          "instructions": "Is statement 154 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q155",
+          "instructions": "Is statement 155 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q156",
+          "instructions": "Is statement 156 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q157",
+          "instructions": "Is statement 157 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q158",
+          "instructions": "Is statement 158 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q159",
+          "instructions": "Is statement 159 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q160",
+          "instructions": "Is statement 160 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q161",
+          "instructions": "Is statement 161 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q162",
+          "instructions": "Is statement 162 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q163",
+          "instructions": "Is statement 163 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q164",
+          "instructions": "Is statement 164 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q165",
+          "instructions": "Is statement 165 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q166",
+          "instructions": "Is statement 166 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q167",
+          "instructions": "Is statement 167 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q168",
+          "instructions": "Is statement 168 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q169",
+          "instructions": "Is statement 169 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q170",
+          "instructions": "Is statement 170 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q171",
+          "instructions": "Is statement 171 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q172",
+          "instructions": "Is statement 172 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q173",
+          "instructions": "Is statement 173 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q174",
+          "instructions": "Is statement 174 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q175",
+          "instructions": "Is statement 175 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q176",
+          "instructions": "Is statement 176 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q177",
+          "instructions": "Is statement 177 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q178",
+          "instructions": "Is statement 178 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q179",
+          "instructions": "Is statement 179 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q180",
+          "instructions": "Is statement 180 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q181",
+          "instructions": "Is statement 181 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q182",
+          "instructions": "Is statement 182 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q183",
+          "instructions": "Is statement 183 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q184",
+          "instructions": "Is statement 184 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q185",
+          "instructions": "Is statement 185 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q186",
+          "instructions": "Is statement 186 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q187",
+          "instructions": "Is statement 187 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q188",
+          "instructions": "Is statement 188 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q189",
+          "instructions": "Is statement 189 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q190",
+          "instructions": "Is statement 190 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q191",
+          "instructions": "Is statement 191 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q192",
+          "instructions": "Is statement 192 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q193",
+          "instructions": "Is statement 193 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q194",
+          "instructions": "Is statement 194 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q195",
+          "instructions": "Is statement 195 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q196",
+          "instructions": "Is statement 196 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q197",
+          "instructions": "Is statement 197 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q198",
+          "instructions": "Is statement 198 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q199",
+          "instructions": "Is statement 199 about rain true?"
+        },
+        {
+          "type": "predicate",
+          "name": "q200",
+          "instructions": "Is statement 200 about rain true?"
+        }
+      ]
+    },
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "17291",
+      "content-type": "application/json",
+      "host": "api.openai.com",
+      "x-stainless-async": "async:asyncio",
+      "x-stainless-lang": "python",
+      "x-stainless-package-version": "3.36.0",
+      "x-stainless-raw-response": "true",
+      "x-stainless-retry-count": "0"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/decisions"
+  },
+  "response": {
+    "body": {
+      "model": "gpt-6-luna",
+      "answers": [
+        {
+          "type": "predicate",
+          "name": "q0",
+          "probability": 1.0
+        },
+        {
+          "type": "predicate",
+          "name": "q1",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q2"
+        },
+        {
+          "type": "predicate",
+          "name": "q3",
+          "probability": 1.0
+        },
+        {
+          "type": "refusal",
+          "name": "q4"
+        },
+        {
+          "type": "predicate",
+          "name": "q5",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q6",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q7",
+          "probability": 1.0
+        },
+        {
+          "type": "refusal",
+          "name": "q8"
+        },
+        {
+          "type": "refusal",
+          "name": "q9"
+        },
+        {
+          "type": "refusal",
+          "name": "q10"
+        },
+        {
+          "type": "refusal",
+          "name": "q11"
+        },
+        {
+          "type": "refusal",
+          "name": "q12"
+        },
+        {
+          "type": "refusal",
+          "name": "q13"
+        },
+        {
+          "type": "refusal",
+          "name": "q14"
+        },
+        {
+          "type": "predicate",
+          "name": "q15",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q16",
+          "probability": 1.0
+        },
+        {
+          "type": "refusal",
+          "name": "q17"
+        },
+        {
+          "type": "refusal",
+          "name": "q18"
+        },
+        {
+          "type": "refusal",
+          "name": "q19"
+        },
+        {
+          "type": "refusal",
+          "name": "q20"
+        },
+        {
+          "type": "refusal",
+          "name": "q21"
+        },
+        {
+          "type": "predicate",
+          "name": "q22",
+          "probability": 0.95
+        },
+        {
+          "type": "predicate",
+          "name": "q23",
+          "probability": 0.89
+        },
+        {
+          "type": "refusal",
+          "name": "q24"
+        },
+        {
+          "type": "refusal",
+          "name": "q25"
+        },
+        {
+          "type": "predicate",
+          "name": "q26",
+          "probability": 0.98
+        },
+        {
+          "type": "refusal",
+          "name": "q27"
+        },
+        {
+          "type": "refusal",
+          "name": "q28"
+        },
+        {
+          "type": "predicate",
+          "name": "q29",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q30"
+        },
+        {
+          "type": "refusal",
+          "name": "q31"
+        },
+        {
+          "type": "refusal",
+          "name": "q32"
+        },
+        {
+          "type": "predicate",
+          "name": "q33",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q34",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q35"
+        },
+        {
+          "type": "refusal",
+          "name": "q36"
+        },
+        {
+          "type": "refusal",
+          "name": "q37"
+        },
+        {
+          "type": "refusal",
+          "name": "q38"
+        },
+        {
+          "type": "refusal",
+          "name": "q39"
+        },
+        {
+          "type": "refusal",
+          "name": "q40"
+        },
+        {
+          "type": "refusal",
+          "name": "q41"
+        },
+        {
+          "type": "refusal",
+          "name": "q42"
+        },
+        {
+          "type": "refusal",
+          "name": "q43"
+        },
+        {
+          "type": "predicate",
+          "name": "q44",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q45",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q46",
+          "probability": 1.0
+        },
+        {
+          "type": "predicate",
+          "name": "q47",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q48"
+        },
+        {
+          "type": "refusal",
+          "name": "q49"
+        },
+        {
+          "type": "refusal",
+          "name": "q50"
+        },
+        {
+          "type": "refusal",
+          "name": "q51"
+        },
+        {
+          "type": "refusal",
+          "name": "q52"
+        },
+        {
+          "type": "refusal",
+          "name": "q53"
+        },
+        {
+          "type": "predicate",
+          "name": "q54",
+          "probability": 0.96
+        },
+        {
+          "type": "refusal",
+          "name": "q55"
+        },
+        {
+          "type": "refusal",
+          "name": "q56"
+        },
+        {
+          "type": "refusal",
+          "name": "q57"
+        },
+        {
+          "type": "predicate",
+          "name": "q58",
+          "probability": 0.97
+        },
+        {
+          "type": "refusal",
+          "name": "q59"
+        },
+        {
+          "type": "refusal",
+          "name": "q60"
+        },
+        {
+          "type": "refusal",
+          "name": "q61"
+        },
+        {
+          "type": "refusal",
+          "name": "q62"
+        },
+        {
+          "type": "refusal",
+          "name": "q63"
+        },
+        {
+          "type": "refusal",
+          "name": "q64"
+        },
+        {
+          "type": "refusal",
+          "name": "q65"
+        },
+        {
+          "type": "predicate",
+          "name": "q66",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q67"
+        },
+        {
+          "type": "refusal",
+          "name": "q68"
+        },
+        {
+          "type": "refusal",
+          "name": "q69"
+        },
+        {
+          "type": "refusal",
+          "name": "q70"
+        },
+        {
+          "type": "refusal",
+          "name": "q71"
+        },
+        {
+          "type": "refusal",
+          "name": "q72"
+        },
+        {
+          "type": "refusal",
+          "name": "q73"
+        },
+        {
+          "type": "refusal",
+          "name": "q74"
+        },
+        {
+          "type": "refusal",
+          "name": "q75"
+        },
+        {
+          "type": "predicate",
+          "name": "q76",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q77"
+        },
+        {
+          "type": "refusal",
+          "name": "q78"
+        },
+        {
+          "type": "refusal",
+          "name": "q79"
+        },
+        {
+          "type": "refusal",
+          "name": "q80"
+        },
+        {
+          "type": "refusal",
+          "name": "q81"
+        },
+        {
+          "type": "refusal",
+          "name": "q82"
+        },
+        {
+          "type": "refusal",
+          "name": "q83"
+        },
+        {
+          "type": "refusal",
+          "name": "q84"
+        },
+        {
+          "type": "refusal",
+          "name": "q85"
+        },
+        {
+          "type": "predicate",
+          "name": "q86",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q87"
+        },
+        {
+          "type": "refusal",
+          "name": "q88"
+        },
+        {
+          "type": "refusal",
+          "name": "q89"
+        },
+        {
+          "type": "refusal",
+          "name": "q90"
+        },
+        {
+          "type": "refusal",
+          "name": "q91"
+        },
+        {
+          "type": "refusal",
+          "name": "q92"
+        },
+        {
+          "type": "refusal",
+          "name": "q93"
+        },
+        {
+          "type": "predicate",
+          "name": "q94",
+          "probability": 0.98
+        },
+        {
+          "type": "refusal",
+          "name": "q95"
+        },
+        {
+          "type": "refusal",
+          "name": "q96"
+        },
+        {
+          "type": "refusal",
+          "name": "q97"
+        },
+        {
+          "type": "refusal",
+          "name": "q98"
+        },
+        {
+          "type": "refusal",
+          "name": "q99"
+        },
+        {
+          "type": "predicate",
+          "name": "q100",
+          "probability": 0.98
+        },
+        {
+          "type": "refusal",
+          "name": "q101"
+        },
+        {
+          "type": "refusal",
+          "name": "q102"
+        },
+        {
+          "type": "refusal",
+          "name": "q103"
+        },
+        {
+          "type": "refusal",
+          "name": "q104"
+        },
+        {
+          "type": "predicate",
+          "name": "q105",
+          "probability": 0.97
+        },
+        {
+          "type": "refusal",
+          "name": "q106"
+        },
+        {
+          "type": "refusal",
+          "name": "q107"
+        },
+        {
+          "type": "refusal",
+          "name": "q108"
+        },
+        {
+          "type": "predicate",
+          "name": "q109",
+          "probability": 0.78
+        },
+        {
+          "type": "refusal",
+          "name": "q110"
+        },
+        {
+          "type": "predicate",
+          "name": "q111",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q112",
+          "probability": 0.96
+        },
+        {
+          "type": "refusal",
+          "name": "q113"
+        },
+        {
+          "type": "predicate",
+          "name": "q114",
+          "probability": 0.91
+        },
+        {
+          "type": "predicate",
+          "name": "q115",
+          "probability": 0.93
+        },
+        {
+          "type": "predicate",
+          "name": "q116",
+          "probability": 0.97
+        },
+        {
+          "type": "refusal",
+          "name": "q117"
+        },
+        {
+          "type": "refusal",
+          "name": "q118"
+        },
+        {
+          "type": "refusal",
+          "name": "q119"
+        },
+        {
+          "type": "refusal",
+          "name": "q120"
+        },
+        {
+          "type": "predicate",
+          "name": "q121",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q122",
+          "probability": 0.9
+        },
+        {
+          "type": "refusal",
+          "name": "q123"
+        },
+        {
+          "type": "refusal",
+          "name": "q124"
+        },
+        {
+          "type": "refusal",
+          "name": "q125"
+        },
+        {
+          "type": "predicate",
+          "name": "q126",
+          "probability": 0.96
+        },
+        {
+          "type": "refusal",
+          "name": "q127"
+        },
+        {
+          "type": "predicate",
+          "name": "q128",
+          "probability": 0.98
+        },
+        {
+          "type": "refusal",
+          "name": "q129"
+        },
+        {
+          "type": "refusal",
+          "name": "q130"
+        },
+        {
+          "type": "refusal",
+          "name": "q131"
+        },
+        {
+          "type": "refusal",
+          "name": "q132"
+        },
+        {
+          "type": "refusal",
+          "name": "q133"
+        },
+        {
+          "type": "refusal",
+          "name": "q134"
+        },
+        {
+          "type": "refusal",
+          "name": "q135"
+        },
+        {
+          "type": "refusal",
+          "name": "q136"
+        },
+        {
+          "type": "refusal",
+          "name": "q137"
+        },
+        {
+          "type": "refusal",
+          "name": "q138"
+        },
+        {
+          "type": "refusal",
+          "name": "q139"
+        },
+        {
+          "type": "predicate",
+          "name": "q140",
+          "probability": 0.99
+        },
+        {
+          "type": "refusal",
+          "name": "q141"
+        },
+        {
+          "type": "predicate",
+          "name": "q142",
+          "probability": 0.94
+        },
+        {
+          "type": "refusal",
+          "name": "q143"
+        },
+        {
+          "type": "refusal",
+          "name": "q144"
+        },
+        {
+          "type": "refusal",
+          "name": "q145"
+        },
+        {
+          "type": "predicate",
+          "name": "q146",
+          "probability": 0.97
+        },
+        {
+          "type": "refusal",
+          "name": "q147"
+        },
+        {
+          "type": "refusal",
+          "name": "q148"
+        },
+        {
+          "type": "predicate",
+          "name": "q149",
+          "probability": 0.94
+        },
+        {
+          "type": "refusal",
+          "name": "q150"
+        },
+        {
+          "type": "refusal",
+          "name": "q151"
+        },
+        {
+          "type": "refusal",
+          "name": "q152"
+        },
+        {
+          "type": "refusal",
+          "name": "q153"
+        },
+        {
+          "type": "refusal",
+          "name": "q154"
+        },
+        {
+          "type": "refusal",
+          "name": "q155"
+        },
+        {
+          "type": "refusal",
+          "name": "q156"
+        },
+        {
+          "type": "refusal",
+          "name": "q157"
+        },
+        {
+          "type": "predicate",
+          "name": "q158",
+          "probability": 0.96
+        },
+        {
+          "type": "predicate",
+          "name": "q159",
+          "probability": 0.96
+        },
+        {
+          "type": "refusal",
+          "name": "q160"
+        },
+        {
+          "type": "refusal",
+          "name": "q161"
+        },
+        {
+          "type": "predicate",
+          "name": "q162",
+          "probability": 0.98
+        },
+        {
+          "type": "predicate",
+          "name": "q163",
+          "probability": 0.98
+        },
+        {
+          "type": "predicate",
+          "name": "q164",
+          "probability": 0.98
+        },
+        {
+          "type": "predicate",
+          "name": "q165",
+          "probability": 0.98
+        },
+        {
+          "type": "predicate",
+          "name": "q166",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q167",
+          "probability": 1.0
+        },
+        {
+          "type": "predicate",
+          "name": "q168",
+          "probability": 0.8
+        },
+        {
+          "type": "refusal",
+          "name": "q169"
+        },
+        {
+          "type": "predicate",
+          "name": "q170",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q171",
+          "probability": 0.85
+        },
+        {
+          "type": "predicate",
+          "name": "q172",
+          "probability": 0.97
+        },
+        {
+          "type": "refusal",
+          "name": "q173"
+        },
+        {
+          "type": "refusal",
+          "name": "q174"
+        },
+        {
+          "type": "refusal",
+          "name": "q175"
+        },
+        {
+          "type": "refusal",
+          "name": "q176"
+        },
+        {
+          "type": "predicate",
+          "name": "q177",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q178",
+          "probability": 0.98
+        },
+        {
+          "type": "predicate",
+          "name": "q179",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q180",
+          "probability": 0.66
+        },
+        {
+          "type": "refusal",
+          "name": "q181"
+        },
+        {
+          "type": "predicate",
+          "name": "q182",
+          "probability": 0.99
+        },
+        {
+          "type": "predicate",
+          "name": "q183",
+          "probability": 0.95
+        },
+        {
+          "type": "predicate",
+          "name": "q184",
+          "probability": 0.93
+        },
+        {
+          "type": "predicate",
+          "name": "q185",
+          "probability": 0.93
+        },
+        {
+          "type": "predicate",
+          "name": "q186",
+          "probability": 0.86
+        },
+        {
+          "type": "predicate",
+          "name": "q187",
+          "probability": 0.97
+        },
+        {
+          "type": "refusal",
+          "name": "q188"
+        },
+        {
+          "type": "predicate",
+          "name": "q189",
+          "probability": 0.95
+        },
+        {
+          "type": "predicate",
+          "name": "q190",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q191",
+          "probability": 0.92
+        },
+        {
+          "type": "refusal",
+          "name": "q192"
+        },
+        {
+          "type": "predicate",
+          "name": "q193",
+          "probability": 0.95
+        },
+        {
+          "type": "predicate",
+          "name": "q194",
+          "probability": 0.96
+        },
+        {
+          "type": "predicate",
+          "name": "q195",
+          "probability": 0.98
+        },
+        {
+          "type": "refusal",
+          "name": "q196"
+        },
+        {
+          "type": "predicate",
+          "name": "q197",
+          "probability": 0.98
+        },
+        {
+          "type": "refusal",
+          "name": "q198"
+        },
+        {
+          "type": "predicate",
+          "name": "q199",
+          "probability": 0.97
+        },
+        {
+          "type": "predicate",
+          "name": "q200",
+          "probability": 0.96
+        }
+      ],
+      "usage": {
+        "input_tokens": 10823,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 10823
+      }
+    },
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "x-request-id,retry-after,server-timing-total, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:26:04 GMT",
+      "openai-processing-ms": "960",
+      "server": "cloudflare",
+      "server-timing-total": "960.281",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "transfer-encoding": "chunked",
+      "vary": "origin, access-control-request-method, access-control-request-headers",
+      "x-content-type-options": "nosniff",
+      "x-openai-proxy-wasm": "v0.1",
+      "x-request-id": "req_79f07201a4714ea9a8e5f9baf0bf786d"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Is statement 0 about rain true?",
+        "is_list": false,
+        "key": "noul_0",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 1 about rain true?",
+        "is_list": false,
+        "key": "noul_1",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 2 about rain true?",
+        "is_list": false,
+        "key": "noul_2",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 3 about rain true?",
+        "is_list": false,
+        "key": "noul_3",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 4 about rain true?",
+        "is_list": false,
+        "key": "noul_4",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 5 about rain true?",
+        "is_list": false,
+        "key": "noul_5",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 6 about rain true?",
+        "is_list": false,
+        "key": "noul_6",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 7 about rain true?",
+        "is_list": false,
+        "key": "noul_7",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 8 about rain true?",
+        "is_list": false,
+        "key": "noul_8",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 9 about rain true?",
+        "is_list": false,
+        "key": "noul_9",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 10 about rain true?",
+        "is_list": false,
+        "key": "noul_10",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 11 about rain true?",
+        "is_list": false,
+        "key": "noul_11",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 12 about rain true?",
+        "is_list": false,
+        "key": "noul_12",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 13 about rain true?",
+        "is_list": false,
+        "key": "noul_13",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 14 about rain true?",
+        "is_list": false,
+        "key": "noul_14",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 15 about rain true?",
+        "is_list": false,
+        "key": "noul_15",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 16 about rain true?",
+        "is_list": false,
+        "key": "noul_16",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 17 about rain true?",
+        "is_list": false,
+        "key": "noul_17",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 18 about rain true?",
+        "is_list": false,
+        "key": "noul_18",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 19 about rain true?",
+        "is_list": false,
+        "key": "noul_19",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 20 about rain true?",
+        "is_list": false,
+        "key": "noul_20",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 21 about rain true?",
+        "is_list": false,
+        "key": "noul_21",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 22 about rain true?",
+        "is_list": false,
+        "key": "noul_22",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 23 about rain true?",
+        "is_list": false,
+        "key": "noul_23",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 24 about rain true?",
+        "is_list": false,
+        "key": "noul_24",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 25 about rain true?",
+        "is_list": false,
+        "key": "noul_25",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 26 about rain true?",
+        "is_list": false,
+        "key": "noul_26",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 27 about rain true?",
+        "is_list": false,
+        "key": "noul_27",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 28 about rain true?",
+        "is_list": false,
+        "key": "noul_28",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 29 about rain true?",
+        "is_list": false,
+        "key": "noul_29",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 30 about rain true?",
+        "is_list": false,
+        "key": "noul_30",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 31 about rain true?",
+        "is_list": false,
+        "key": "noul_31",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 32 about rain true?",
+        "is_list": false,
+        "key": "noul_32",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 33 about rain true?",
+        "is_list": false,
+        "key": "noul_33",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 34 about rain true?",
+        "is_list": false,
+        "key": "noul_34",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 35 about rain true?",
+        "is_list": false,
+        "key": "noul_35",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 36 about rain true?",
+        "is_list": false,
+        "key": "noul_36",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 37 about rain true?",
+        "is_list": false,
+        "key": "noul_37",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 38 about rain true?",
+        "is_list": false,
+        "key": "noul_38",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 39 about rain true?",
+        "is_list": false,
+        "key": "noul_39",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 40 about rain true?",
+        "is_list": false,
+        "key": "noul_40",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 41 about rain true?",
+        "is_list": false,
+        "key": "noul_41",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 42 about rain true?",
+        "is_list": false,
+        "key": "noul_42",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 43 about rain true?",
+        "is_list": false,
+        "key": "noul_43",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 44 about rain true?",
+        "is_list": false,
+        "key": "noul_44",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 45 about rain true?",
+        "is_list": false,
+        "key": "noul_45",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 46 about rain true?",
+        "is_list": false,
+        "key": "noul_46",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 47 about rain true?",
+        "is_list": false,
+        "key": "noul_47",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 48 about rain true?",
+        "is_list": false,
+        "key": "noul_48",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 49 about rain true?",
+        "is_list": false,
+        "key": "noul_49",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 50 about rain true?",
+        "is_list": false,
+        "key": "noul_50",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 51 about rain true?",
+        "is_list": false,
+        "key": "noul_51",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 52 about rain true?",
+        "is_list": false,
+        "key": "noul_52",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 53 about rain true?",
+        "is_list": false,
+        "key": "noul_53",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 54 about rain true?",
+        "is_list": false,
+        "key": "noul_54",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 55 about rain true?",
+        "is_list": false,
+        "key": "noul_55",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 56 about rain true?",
+        "is_list": false,
+        "key": "noul_56",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 57 about rain true?",
+        "is_list": false,
+        "key": "noul_57",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 58 about rain true?",
+        "is_list": false,
+        "key": "noul_58",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 59 about rain true?",
+        "is_list": false,
+        "key": "noul_59",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 60 about rain true?",
+        "is_list": false,
+        "key": "noul_60",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 61 about rain true?",
+        "is_list": false,
+        "key": "noul_61",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 62 about rain true?",
+        "is_list": false,
+        "key": "noul_62",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 63 about rain true?",
+        "is_list": false,
+        "key": "noul_63",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 64 about rain true?",
+        "is_list": false,
+        "key": "noul_64",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 65 about rain true?",
+        "is_list": false,
+        "key": "noul_65",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 66 about rain true?",
+        "is_list": false,
+        "key": "noul_66",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 67 about rain true?",
+        "is_list": false,
+        "key": "noul_67",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 68 about rain true?",
+        "is_list": false,
+        "key": "noul_68",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 69 about rain true?",
+        "is_list": false,
+        "key": "noul_69",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 70 about rain true?",
+        "is_list": false,
+        "key": "noul_70",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 71 about rain true?",
+        "is_list": false,
+        "key": "noul_71",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 72 about rain true?",
+        "is_list": false,
+        "key": "noul_72",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 73 about rain true?",
+        "is_list": false,
+        "key": "noul_73",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 74 about rain true?",
+        "is_list": false,
+        "key": "noul_74",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 75 about rain true?",
+        "is_list": false,
+        "key": "noul_75",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 76 about rain true?",
+        "is_list": false,
+        "key": "noul_76",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 77 about rain true?",
+        "is_list": false,
+        "key": "noul_77",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 78 about rain true?",
+        "is_list": false,
+        "key": "noul_78",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 79 about rain true?",
+        "is_list": false,
+        "key": "noul_79",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 80 about rain true?",
+        "is_list": false,
+        "key": "noul_80",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 81 about rain true?",
+        "is_list": false,
+        "key": "noul_81",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 82 about rain true?",
+        "is_list": false,
+        "key": "noul_82",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 83 about rain true?",
+        "is_list": false,
+        "key": "noul_83",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 84 about rain true?",
+        "is_list": false,
+        "key": "noul_84",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 85 about rain true?",
+        "is_list": false,
+        "key": "noul_85",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 86 about rain true?",
+        "is_list": false,
+        "key": "noul_86",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 87 about rain true?",
+        "is_list": false,
+        "key": "noul_87",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 88 about rain true?",
+        "is_list": false,
+        "key": "noul_88",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 89 about rain true?",
+        "is_list": false,
+        "key": "noul_89",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 90 about rain true?",
+        "is_list": false,
+        "key": "noul_90",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 91 about rain true?",
+        "is_list": false,
+        "key": "noul_91",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 92 about rain true?",
+        "is_list": false,
+        "key": "noul_92",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 93 about rain true?",
+        "is_list": false,
+        "key": "noul_93",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 94 about rain true?",
+        "is_list": false,
+        "key": "noul_94",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 95 about rain true?",
+        "is_list": false,
+        "key": "noul_95",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 96 about rain true?",
+        "is_list": false,
+        "key": "noul_96",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 97 about rain true?",
+        "is_list": false,
+        "key": "noul_97",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 98 about rain true?",
+        "is_list": false,
+        "key": "noul_98",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 99 about rain true?",
+        "is_list": false,
+        "key": "noul_99",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 100 about rain true?",
+        "is_list": false,
+        "key": "noul_100",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 101 about rain true?",
+        "is_list": false,
+        "key": "noul_101",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 102 about rain true?",
+        "is_list": false,
+        "key": "noul_102",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 103 about rain true?",
+        "is_list": false,
+        "key": "noul_103",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 104 about rain true?",
+        "is_list": false,
+        "key": "noul_104",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 105 about rain true?",
+        "is_list": false,
+        "key": "noul_105",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 106 about rain true?",
+        "is_list": false,
+        "key": "noul_106",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 107 about rain true?",
+        "is_list": false,
+        "key": "noul_107",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 108 about rain true?",
+        "is_list": false,
+        "key": "noul_108",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 109 about rain true?",
+        "is_list": false,
+        "key": "noul_109",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 110 about rain true?",
+        "is_list": false,
+        "key": "noul_110",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 111 about rain true?",
+        "is_list": false,
+        "key": "noul_111",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 112 about rain true?",
+        "is_list": false,
+        "key": "noul_112",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 113 about rain true?",
+        "is_list": false,
+        "key": "noul_113",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 114 about rain true?",
+        "is_list": false,
+        "key": "noul_114",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 115 about rain true?",
+        "is_list": false,
+        "key": "noul_115",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 116 about rain true?",
+        "is_list": false,
+        "key": "noul_116",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 117 about rain true?",
+        "is_list": false,
+        "key": "noul_117",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 118 about rain true?",
+        "is_list": false,
+        "key": "noul_118",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 119 about rain true?",
+        "is_list": false,
+        "key": "noul_119",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 120 about rain true?",
+        "is_list": false,
+        "key": "noul_120",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 121 about rain true?",
+        "is_list": false,
+        "key": "noul_121",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 122 about rain true?",
+        "is_list": false,
+        "key": "noul_122",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 123 about rain true?",
+        "is_list": false,
+        "key": "noul_123",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 124 about rain true?",
+        "is_list": false,
+        "key": "noul_124",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 125 about rain true?",
+        "is_list": false,
+        "key": "noul_125",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 126 about rain true?",
+        "is_list": false,
+        "key": "noul_126",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 127 about rain true?",
+        "is_list": false,
+        "key": "noul_127",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 128 about rain true?",
+        "is_list": false,
+        "key": "noul_128",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 129 about rain true?",
+        "is_list": false,
+        "key": "noul_129",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 130 about rain true?",
+        "is_list": false,
+        "key": "noul_130",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 131 about rain true?",
+        "is_list": false,
+        "key": "noul_131",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 132 about rain true?",
+        "is_list": false,
+        "key": "noul_132",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 133 about rain true?",
+        "is_list": false,
+        "key": "noul_133",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 134 about rain true?",
+        "is_list": false,
+        "key": "noul_134",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 135 about rain true?",
+        "is_list": false,
+        "key": "noul_135",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 136 about rain true?",
+        "is_list": false,
+        "key": "noul_136",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 137 about rain true?",
+        "is_list": false,
+        "key": "noul_137",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 138 about rain true?",
+        "is_list": false,
+        "key": "noul_138",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 139 about rain true?",
+        "is_list": false,
+        "key": "noul_139",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 140 about rain true?",
+        "is_list": false,
+        "key": "noul_140",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 141 about rain true?",
+        "is_list": false,
+        "key": "noul_141",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 142 about rain true?",
+        "is_list": false,
+        "key": "noul_142",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 143 about rain true?",
+        "is_list": false,
+        "key": "noul_143",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 144 about rain true?",
+        "is_list": false,
+        "key": "noul_144",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 145 about rain true?",
+        "is_list": false,
+        "key": "noul_145",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 146 about rain true?",
+        "is_list": false,
+        "key": "noul_146",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 147 about rain true?",
+        "is_list": false,
+        "key": "noul_147",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 148 about rain true?",
+        "is_list": false,
+        "key": "noul_148",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 149 about rain true?",
+        "is_list": false,
+        "key": "noul_149",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 150 about rain true?",
+        "is_list": false,
+        "key": "noul_150",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 151 about rain true?",
+        "is_list": false,
+        "key": "noul_151",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 152 about rain true?",
+        "is_list": false,
+        "key": "noul_152",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 153 about rain true?",
+        "is_list": false,
+        "key": "noul_153",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 154 about rain true?",
+        "is_list": false,
+        "key": "noul_154",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 155 about rain true?",
+        "is_list": false,
+        "key": "noul_155",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 156 about rain true?",
+        "is_list": false,
+        "key": "noul_156",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 157 about rain true?",
+        "is_list": false,
+        "key": "noul_157",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 158 about rain true?",
+        "is_list": false,
+        "key": "noul_158",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 159 about rain true?",
+        "is_list": false,
+        "key": "noul_159",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 160 about rain true?",
+        "is_list": false,
+        "key": "noul_160",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 161 about rain true?",
+        "is_list": false,
+        "key": "noul_161",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 162 about rain true?",
+        "is_list": false,
+        "key": "noul_162",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 163 about rain true?",
+        "is_list": false,
+        "key": "noul_163",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 164 about rain true?",
+        "is_list": false,
+        "key": "noul_164",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 165 about rain true?",
+        "is_list": false,
+        "key": "noul_165",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 166 about rain true?",
+        "is_list": false,
+        "key": "noul_166",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 167 about rain true?",
+        "is_list": false,
+        "key": "noul_167",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 168 about rain true?",
+        "is_list": false,
+        "key": "noul_168",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 169 about rain true?",
+        "is_list": false,
+        "key": "noul_169",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 170 about rain true?",
+        "is_list": false,
+        "key": "noul_170",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 171 about rain true?",
+        "is_list": false,
+        "key": "noul_171",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 172 about rain true?",
+        "is_list": false,
+        "key": "noul_172",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 173 about rain true?",
+        "is_list": false,
+        "key": "noul_173",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 174 about rain true?",
+        "is_list": false,
+        "key": "noul_174",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 175 about rain true?",
+        "is_list": false,
+        "key": "noul_175",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 176 about rain true?",
+        "is_list": false,
+        "key": "noul_176",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 177 about rain true?",
+        "is_list": false,
+        "key": "noul_177",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 178 about rain true?",
+        "is_list": false,
+        "key": "noul_178",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 179 about rain true?",
+        "is_list": false,
+        "key": "noul_179",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 180 about rain true?",
+        "is_list": false,
+        "key": "noul_180",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 181 about rain true?",
+        "is_list": false,
+        "key": "noul_181",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 182 about rain true?",
+        "is_list": false,
+        "key": "noul_182",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 183 about rain true?",
+        "is_list": false,
+        "key": "noul_183",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 184 about rain true?",
+        "is_list": false,
+        "key": "noul_184",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 185 about rain true?",
+        "is_list": false,
+        "key": "noul_185",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 186 about rain true?",
+        "is_list": false,
+        "key": "noul_186",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 187 about rain true?",
+        "is_list": false,
+        "key": "noul_187",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 188 about rain true?",
+        "is_list": false,
+        "key": "noul_188",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 189 about rain true?",
+        "is_list": false,
+        "key": "noul_189",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 190 about rain true?",
+        "is_list": false,
+        "key": "noul_190",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 191 about rain true?",
+        "is_list": false,
+        "key": "noul_191",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 192 about rain true?",
+        "is_list": false,
+        "key": "noul_192",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 193 about rain true?",
+        "is_list": false,
+        "key": "noul_193",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 194 about rain true?",
+        "is_list": false,
+        "key": "noul_194",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 195 about rain true?",
+        "is_list": false,
+        "key": "noul_195",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 196 about rain true?",
+        "is_list": false,
+        "key": "noul_196",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 197 about rain true?",
+        "is_list": false,
+        "key": "noul_197",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 198 about rain true?",
+        "is_list": false,
+        "key": "noul_198",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 199 about rain true?",
+        "is_list": false,
+        "key": "noul_199",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is statement 200 about rain true?",
+        "is_list": false,
+        "key": "noul_200",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

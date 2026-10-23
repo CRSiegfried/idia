@@ -1,0 +1,361 @@
+{
+  "expected": {
+    "score_crowd": {
+      "chosen": "very_low",
+      "confidence": null,
+      "derived": [
+        "chosen",
+        "expected_level"
+      ],
+      "echo": null,
+      "echo_of": null,
+      "expected_level": 9.329494804719768e-08,
+      "off_label_mass": 1.0031766217721838e-07,
+      "probabilities": [
+        [
+          "very_low",
+          0.9999999067050529
+        ],
+        [
+          "low",
+          9.329494602091553e-08
+        ],
+        [
+          "middling",
+          8.753788588670532e-16
+        ],
+        [
+          "high",
+          8.142291742333244e-17
+        ],
+        [
+          "very_high",
+          7.813920122399748e-18
+        ]
+      ],
+      "type": "LabelAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "openai-chat",
+  "model": "gpt-4.1",
+  "request": {
+    "body": {
+      "model": "gpt-4.1",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer with the letter of one option only."
+        },
+        {
+          "role": "user",
+          "content": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.\n\nHow cheerful was the crowd's mood that evening?\n\nA. very_low\nB. low\nC. middling\nD. high\nE. very_high"
+        }
+      ],
+      "logprobs": true,
+      "max_completion_tokens": 1,
+      "temperature": 0.0,
+      "top_logprobs": 20
+    },
+    "headers": {
+      "accept": "application/json",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "441",
+      "content-type": "application/json",
+      "host": "api.openai.com",
+      "x-stainless-async": "async:asyncio",
+      "x-stainless-lang": "python",
+      "x-stainless-package-version": "3.36.0",
+      "x-stainless-raw-response": "true",
+      "x-stainless-retry-count": "0"
+    },
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions"
+  },
+  "response": {
+    "body": {
+      "id": "chatcmpl-EbpukVQytyTKCdc0615ZlBD3alOUM",
+      "object": "chat.completion",
+      "created": 1792686402,
+      "model": "gpt-4.1-2025-04-14",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "A",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": {
+            "content": [
+              {
+                "token": "A",
+                "logprob": -1.9361264946837764e-07,
+                "bytes": [
+                  65
+                ],
+                "top_logprobs": [
+                  {
+                    "token": "A",
+                    "logprob": -1.9361264946837764e-07,
+                    "bytes": [
+                      65
+                    ]
+                  },
+                  {
+                    "token": "B",
+                    "logprob": -16.1875,
+                    "bytes": [
+                      66
+                    ]
+                  },
+                  {
+                    "token": "a",
+                    "logprob": -31.296875,
+                    "bytes": [
+                      97
+                    ]
+                  },
+                  {
+                    "token": " A",
+                    "logprob": -32.859375,
+                    "bytes": [
+                      32,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "\u0410",
+                    "logprob": -34.078125,
+                    "bytes": [
+                      208,
+                      144
+                    ]
+                  },
+                  {
+                    "token": "\uff21",
+                    "logprob": -34.203125,
+                    "bytes": [
+                      239,
+                      188,
+                      161
+                    ]
+                  },
+                  {
+                    "token": "C",
+                    "logprob": -34.671875,
+                    "bytes": [
+                      67
+                    ]
+                  },
+                  {
+                    "token": "Answer",
+                    "logprob": -35.25,
+                    "bytes": [
+                      65,
+                      110,
+                      115,
+                      119,
+                      101,
+                      114
+                    ]
+                  },
+                  {
+                    "token": "_A",
+                    "logprob": -36.578125,
+                    "bytes": [
+                      95,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "\tA",
+                    "logprob": -36.59375,
+                    "bytes": [
+                      9,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "(A",
+                    "logprob": -37.015625,
+                    "bytes": [
+                      40,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "D",
+                    "logprob": -37.046875,
+                    "bytes": [
+                      68
+                    ]
+                  },
+                  {
+                    "token": "The",
+                    "logprob": -38.1875,
+                    "bytes": [
+                      84,
+                      104,
+                      101
+                    ]
+                  },
+                  {
+                    "token": "*A",
+                    "logprob": -38.25,
+                    "bytes": [
+                      42,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "A\u7ea7",
+                    "logprob": -38.640625,
+                    "bytes": [
+                      65,
+                      231,
+                      186,
+                      167
+                    ]
+                  },
+                  {
+                    "token": "\u0391",
+                    "logprob": -38.984375,
+                    "bytes": [
+                      206,
+                      145
+                    ]
+                  },
+                  {
+                    "token": ".A",
+                    "logprob": -39.140625,
+                    "bytes": [
+                      46,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "E",
+                    "logprob": -39.390625,
+                    "bytes": [
+                      69
+                    ]
+                  },
+                  {
+                    "token": ":A",
+                    "logprob": -39.671875,
+                    "bytes": [
+                      58,
+                      65
+                    ]
+                  },
+                  {
+                    "token": "**",
+                    "logprob": -40.109375,
+                    "bytes": [
+                      42,
+                      42
+                    ]
+                  }
+                ]
+              }
+            ],
+            "refusal": null
+          },
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 79,
+        "completion_tokens": 1,
+        "total_tokens": 80,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "audio_tokens": 0,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "service_tier": "default",
+      "system_fingerprint": "fp_0c9ee6fde1"
+    },
+    "headers": {
+      "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:26:43 GMT",
+      "openai-organization": "<filtered>",
+      "openai-processing-ms": "698",
+      "openai-project": "<filtered>",
+      "openai-version": "2020-10-01",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "transfer-encoding": "chunked",
+      "x-content-type-options": "nosniff",
+      "x-openai-proxy-wasm": "v0.1",
+      "x-request-id": "req_821468a7c9494d2191c31a2a236f39aa"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "How cheerful was the crowd's mood that evening?",
+        "is_list": false,
+        "key": "score_crowd",
+        "kind": "score",
+        "labels": [
+          {
+            "description": null,
+            "name": "very_low",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "low",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "middling",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "high",
+            "type": "Label"
+          },
+          {
+            "description": null,
+            "name": "very_high",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

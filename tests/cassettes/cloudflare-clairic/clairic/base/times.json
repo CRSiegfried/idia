@@ -1,0 +1,148 @@
+{
+  "expected": {
+    "kickoff": {
+      "confidence": 0.9979289680002853,
+      "guess": {
+        "type": "time",
+        "value": "15:00:00"
+      },
+      "p_null": 4.452091616258258e-06,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": {
+        "type": "time",
+        "value": "15:00:00"
+      }
+    },
+    "moved_to": {
+      "confidence": 0.9999984502810619,
+      "guess": {
+        "type": "datetime",
+        "value": "2026-10-18T14:30:00"
+      },
+      "p_null": 2.6659691343411396e-08,
+      "span": null,
+      "type": "ExtractionAnswer",
+      "value": {
+        "type": "datetime",
+        "value": "2026-10-18T14:30:00"
+      }
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clairic",
+  "model": "clairic",
+  "request": {
+    "body": {
+      "model": "clairic",
+      "state": "Kick-off was due at 15:00 on 17 October 2026 and was moved to 2026-10-18T14:30.",
+      "fields": {
+        "kickoff": {
+          "type": "time",
+          "instructions": "The kick-off time."
+        },
+        "moved_to": {
+          "type": "datetime",
+          "instructions": "When the match was moved to."
+        }
+      },
+      "reference_date": "2026-10-21"
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "289",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clairic"
+  },
+  "response": {
+    "body": {
+      "result": {
+        "model": "clairic",
+        "answers": {
+          "kickoff": {
+            "type": "time",
+            "p_null": 4.452091616258258e-06,
+            "guess": "15:00:00",
+            "confidence": 0.9979289680002853,
+            "value": "15:00:00"
+          },
+          "moved_to": {
+            "type": "datetime",
+            "p_null": 2.6659691343411396e-08,
+            "guess": "2026-10-18T14:30:00",
+            "confidence": 0.9999984502810619,
+            "value": "2026-10-18T14:30:00"
+          }
+        },
+        "truncated": false,
+        "usage": {
+          "state_tokens": 43,
+          "image_tokens": 0,
+          "schema_tokens": 166,
+          "input_tokens": 209,
+          "output_tokens": 0,
+          "passes": 1
+        }
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-neurons": "1.90",
+      "cf-ai-req-id": "60238c05-8479-4bb0-a246-978c5b0b4b28",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:28:47 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "options": {
+      "reference_date": "2026-10-21"
+    },
+    "questions": [
+      {
+        "instruction": "The kick-off time.",
+        "is_list": false,
+        "key": "kickoff",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "time"
+      },
+      {
+        "instruction": "When the match was moved to.",
+        "is_list": false,
+        "key": "moved_to",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "datetime"
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Kick-off was due at 15:00 on 17 October 2026 and was moved to 2026-10-18T14:30.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "expected": null,
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clairic",
+  "model": "clairic",
+  "request": {
+    "body": {
+      "fields": {
+        "attendance": {
+          "instructions": "The number of spectators at the ground.",
+          "type": "number"
+        },
+        "home_team": {
+          "instructions": "The home team.",
+          "type": "text"
+        },
+        "inspection": {
+          "instructions": "How long the pitch inspection took.",
+          "type": "duration"
+        },
+        "match_date": {
+          "instructions": "The date the match was due to be played.",
+          "type": "date"
+        },
+        "referees": {
+          "instructions": "The referees' names.",
+          "items": {
+            "type": "text"
+          },
+          "type": "list"
+        },
+        "refunds": {
+          "instructions": "The ticket refunds, in pounds, to two decimals.",
+          "type": "number"
+        }
+      },
+      "model": "clairic",
+      "reference_date": "2026-10-21",
+      "state": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes."
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "870",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clairic"
+  },
+  "response": {
+    "body": {
+      "errors": [
+        {
+          "code": 5006,
+          "message": "AiError: Bad input: Error: enum [object Object] not in text,number,date at '/referees/items' (aaac787e-7baf-4316-bcac-9d0dd517a039)"
+        }
+      ],
+      "messages": [],
+      "result": {},
+      "success": false
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-req-id": "aaac787e-7baf-4316-bcac-9d0dd517a039",
+      "connection": "keep-alive",
+      "content-length": "212",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 01:45:56 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>"
+    },
+    "status": 400
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "The home team.",
+        "is_list": false,
+        "key": "home_team",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      },
+      {
+        "instruction": "The ticket refunds, in pounds, to two decimals.",
+        "is_list": false,
+        "key": "refunds",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "number"
+      },
+      {
+        "instruction": "The date the match was due to be played.",
+        "is_list": false,
+        "key": "match_date",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "date"
+      },
+      {
+        "instruction": "The referees' names.",
+        "is_list": true,
+        "key": "referees",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      },
+      {
+        "instruction": "How long the pitch inspection took.",
+        "is_list": false,
+        "key": "inspection",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "duration"
+      },
+      {
+        "instruction": "The number of spectators at the ground.",
+        "is_list": false,
+        "key": "attendance",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "number"
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

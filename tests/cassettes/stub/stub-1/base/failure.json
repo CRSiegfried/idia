@@ -1,0 +1,102 @@
+{
+  "expected": null,
+  "features": [],
+  "format": 1,
+  "leaf": "stub",
+  "model": "stub-1",
+  "request": {
+    "body": {
+      "model": "stub-1",
+      "request": {
+        "type": "WireRequest",
+        "state": {
+          "type": "State",
+          "parts": [
+            {
+              "type": "TextPart",
+              "text": "The state every conformance question is about."
+            }
+          ]
+        },
+        "questions": [
+          {
+            "type": "Question",
+            "key": "noul_a",
+            "kind": "noul",
+            "instruction": "Is it so?",
+            "labels": [],
+            "value_type": null,
+            "is_list": false
+          },
+          {
+            "type": "Question",
+            "key": "noul_b",
+            "kind": "noul",
+            "instruction": "Is it not?",
+            "labels": [],
+            "value_type": null,
+            "is_list": false
+          }
+        ]
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "419",
+      "content-type": "application/json",
+      "host": "stub.invalid"
+    },
+    "method": "POST",
+    "url": "https://stub.invalid/v1/answer"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "message": "the request was malformed",
+        "type": "invalid_request"
+      }
+    },
+    "headers": {
+      "content-length": "74",
+      "content-type": "application/json",
+      "set-cookie": "<filtered>",
+      "x-request-id": "stub-failure"
+    },
+    "status": 400
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Is it so?",
+        "is_list": false,
+        "key": "noul_a",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Is it not?",
+        "is_list": false,
+        "key": "noul_b",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The state every conformance question is about.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

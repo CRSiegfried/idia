@@ -1,0 +1,117 @@
+{
+  "expected": {
+    "venue": {
+      "confidence": 0.9999980926513672,
+      "guess": "Northgate Park",
+      "p_null": 5.386176781030372e-05,
+      "span": {
+        "end": 58,
+        "part": 0,
+        "start": 44,
+        "type": "Span"
+      },
+      "type": "ExtractionAnswer",
+      "value": "Northgate Park"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "cloudflare-clairic",
+  "model": "clairic",
+  "request": {
+    "body": {
+      "model": "clairic",
+      "state": "\ud83c\udf27\ufe0f Storm warning \ud83c\udf27\ufe0f: the final was moved to Northgate Park, \ud83c\udfdf\ufe0f gates at noon.",
+      "fields": {
+        "venue": {
+          "type": "text",
+          "instructions": "The new venue."
+        }
+      },
+      "reference_date": "2026-10-21"
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "219",
+      "content-type": "application/json",
+      "host": "api.cloudflare.com"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/conformance-account/ai/run/@cf/cloudflare/clairic"
+  },
+  "response": {
+    "body": {
+      "result": {
+        "model": "clairic",
+        "answers": {
+          "venue": {
+            "type": "text",
+            "p_null": 5.386176781030372e-05,
+            "span": [
+              44,
+              58
+            ],
+            "guess": "Northgate Park",
+            "confidence": 0.9999980926513672,
+            "value": "Northgate Park"
+          }
+        },
+        "truncated": false,
+        "usage": {
+          "state_tokens": 27,
+          "image_tokens": 0,
+          "schema_tokens": 133,
+          "input_tokens": 160,
+          "output_tokens": 0,
+          "passes": 1
+        }
+      },
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "headers": {
+      "api-version": "2026-10-01.epoch",
+      "cache-control": "no-store",
+      "cf-ai-neurons": "1.45",
+      "cf-ai-req-id": "86c82ebc-0862-44b2-96b9-46fcfaaa0203",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Thu, 22 Oct 2026 16:28:46 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "options": {
+      "reference_date": "2026-10-21"
+    },
+    "questions": [
+      {
+        "instruction": "The new venue.",
+        "is_list": false,
+        "key": "venue",
+        "kind": "extraction",
+        "labels": [],
+        "type": "Question",
+        "value_type": "text"
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "\ud83c\udf27\ufe0f Storm warning \ud83c\udf27\ufe0f: the final was moved to Northgate Park, \ud83c\udfdf\ufe0f gates at noon.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

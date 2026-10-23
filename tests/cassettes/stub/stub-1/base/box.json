@@ -1,0 +1,150 @@
+{
+  "expected": {
+    "box_a": {
+      "confidence": null,
+      "region": {
+        "bottom": 0.5,
+        "left": 0.2,
+        "right": 0.6,
+        "top": 0.1,
+        "type": "Box"
+      },
+      "type": "BoxAnswer"
+    },
+    "box_b": {
+      "confidence": null,
+      "region": {
+        "bottom": 0.9,
+        "left": 0.0,
+        "right": 0.3,
+        "top": 0.4,
+        "type": "Box"
+      },
+      "type": "BoxAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "stub",
+  "model": "stub-1",
+  "request": {
+    "body": {
+      "model": "stub-1",
+      "request": {
+        "type": "WireRequest",
+        "state": {
+          "type": "State",
+          "parts": [
+            {
+              "type": "TextPart",
+              "text": "The state every conformance question is about."
+            }
+          ]
+        },
+        "questions": [
+          {
+            "type": "Question",
+            "key": "box_a",
+            "kind": "box",
+            "instruction": "Where is the cat?",
+            "labels": [],
+            "value_type": null,
+            "is_list": false
+          },
+          {
+            "type": "Question",
+            "key": "box_b",
+            "kind": "box",
+            "instruction": "Where is the dog?",
+            "labels": [],
+            "value_type": null,
+            "is_list": false
+          }
+        ]
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "430",
+      "content-type": "application/json",
+      "host": "stub.invalid"
+    },
+    "method": "POST",
+    "url": "https://stub.invalid/v1/answer"
+  },
+  "response": {
+    "body": {
+      "answers": {
+        "box_a": {
+          "confidence": null,
+          "region": {
+            "bottom": 0.5,
+            "left": 0.2,
+            "right": 0.6,
+            "top": 0.1,
+            "type": "Box"
+          },
+          "type": "BoxAnswer"
+        },
+        "box_b": {
+          "confidence": null,
+          "region": {
+            "bottom": 0.9,
+            "left": 0.0,
+            "right": 0.3,
+            "top": 0.4,
+            "type": "Box"
+          },
+          "type": "BoxAnswer"
+        }
+      },
+      "model": "stub-1-20260101",
+      "usage": {
+        "input_tokens": 40,
+        "output_tokens": 12
+      }
+    },
+    "headers": {
+      "content-length": "320",
+      "content-type": "application/json",
+      "set-cookie": "<filtered>",
+      "x-request-id": "stub-box"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Where is the cat?",
+        "is_list": false,
+        "key": "box_a",
+        "kind": "box",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": "Where is the dog?",
+        "is_list": false,
+        "key": "box_b",
+        "kind": "box",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The state every conformance question is about.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

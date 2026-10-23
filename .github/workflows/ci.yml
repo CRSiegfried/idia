@@ -1,0 +1,108 @@
+# Lint, type-check and test on every push to main and every pull request.
+# Actions are pinned to full commit SHAs; Dependabot keeps them current.
+#
+# Every extra is installed, so the provider tests run rather than skip. Each job checks this
+# repository out at idia/.
+# No job sets IDIA_LIVE, so the tests marked live skip and no job makes a live call.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: idia
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: idia
+          persist-credentials: false
+          # The whole history, so the commit subjects of the event's range can be read.
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.11"
+          working-directory: idia
+      - run: uv sync --locked --all-extras
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run pyright
+      - run: uv run python scripts/check_spec.py
+      - run: uv run python scripts/check_terms.py
+      # The same patterns over the subjects of the commits this event brings: a pull
+      # request's base..head, a push's before..after. A push that creates the branch has no
+      # before, and a manual run has no range, so they check no subjects.
+      - name: New commit subjects use plain library terms
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            range="$BASE..$HEAD"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
+            range="$BEFORE..$AFTER"
+          else
+            echo "no earlier commit to compare with; no subjects checked"
+            exit 0
+          fi
+          uv run python scripts/check_terms.py --subjects "$range"
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: idia
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python }}
+          working-directory: idia
+      - run: uv sync --locked --all-extras
+      # The provider tests importorskip their extras; fail here rather than skip.
+      - name: Every extra imports
+        run: uv run python -c "import openai, httpx2"
+      - run: uv run pytest --cov
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: idia
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          working-directory: idia
+      - run: uv build
+      - run: uvx twine check --strict dist/*
+      # The blocked-import tests run with every extra installed; this installs the wheel alone.
+      - name: The wheel imports with no extras and each extra gives its hint
+        run: |
+          uv venv --python 3.11 ../bare
+          uv pip install --python ../bare dist/*.whl
+          ../bare/bin/python scripts/check_bare_install.py
