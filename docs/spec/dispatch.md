@@ -6,17 +6,21 @@ A leaf answers one wire request in one call and is not a provider until wrapped.
 Given a `Dispatcher`, `Router` or `Fallback`, or anything that is not a `Leaf`, it raises `TypeError` at build, naming the type.
 `idia.provider(name, *, retry, concurrency, rate, **options)` builds the leaf registered as `name` and returns it wrapped the same way, typed as the `Dispatcher` it is: `retry`, `concurrency` and `rate` go to the dispatcher and every other keyword to the leaf.
 Each registered name has its own overload, typed with its leaf's keywords, and a last overload takes any `str` with any keywords; a registered name given a keyword its leaf does not take, a value of the wrong type, or without a keyword its leaf requires, matches a deprecated overload instead, which a type checker reports as deprecated, an error under pyright strict; a keyword the leaf does not take raises `TypeError` naming the call and the name, as `provider('openai-decisions'): ` followed by the leaf's message, with the leaf's error as its cause; for `estimator`, `overflow` or `reask` the message adds that they are the `Dispatcher`'s and the leaf is to be wrapped by hand.
-To set `estimator`, `overflow` or `reask`, build the leaf and wrap it in a `Dispatcher` by hand:
+`idia.leaf(name, **options)` builds the leaf `idia.provider(name, **options)` would wrap, through the same guard, and returns it unwrapped; its overloads are `provider`'s less `retry`, `concurrency` and `rate`, each typed to return `Leaf`, and a keyword the leaf does not take raises `TypeError` named `leaf('<name>'): `, which for `retry`, `concurrency`, `rate`, `estimator`, `overflow` or `reask` adds that they are the `Dispatcher`'s.
+To set `estimator`, `overflow` or `reask`, build the leaf, by name with `idia.leaf` or from its class, and wrap it in a `Dispatcher` by hand:
 
 ```python
+import idia
 from idia import Dispatcher
-from idia.providers.openai_decisions import OpenAIDecisions
 
-leaf = OpenAIDecisions()
-decisions = Dispatcher(leaf, reask=True)
+decisions = Dispatcher(idia.leaf("openai-decisions"), reask=True)
 ```
 
+A caller may wrap a leaf of its own around the one it built, such as one counting every call for a budget: each attempt, retries included, is one `call` on it, since the loop alone retries.
+Such a wrapper forwards `name`, `model`, `capabilities` and `estimator`, which the `Dispatcher` reads when it is built, and an `aclose` to the inner leaf's, which `Leaf` does not require but without which closing the `Dispatcher` leaves the inner leaf open.
+
 An unknown name raises `ProviderNotFound`, whose `name` is the name asked for and whose `registered` holds the registered names, sorted, which its message lists.
+`idia.provider_names()` returns the same tuple, listing a name whether or not its extra is installed.
 
 `Dispatcher`, `Router` and `Fallback` each have `async aclose()` and are async context managers: a dispatcher calls its leaf's `aclose()` when the leaf has one and leaves a leaf without one alone, and a composite closes each distinct member once, in member order, trying every member and re-raising the first error after all were tried.
 Closing is how a leaf built through `idia.provider` releases the HTTP client it created; `Leaf` does not require `aclose`, and a leaf's `aclose` is awaited, so it must be a coroutine function.

@@ -2,6 +2,7 @@
 
 The wire leaves idia ships, the HTTP base they share, and the capabilities record each declares.
 A wire leaf is an optional extra: `idia.provider(name, **options)` imports it behind a guard that names the extra to install, builds it from the options and wraps it in a `Dispatcher`.
+`idia.leaf(name, **options)` builds the same leaf through the same guard and returns it unwrapped, and `idia.provider_names()` lists the names in the table below.
 
 | Name | Leaf | Extra | Dependency |
 |---|---|---|---|

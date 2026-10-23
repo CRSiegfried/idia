@@ -59,14 +59,23 @@ _EXTRAS: Final[dict[str, tuple[str, ...]]] = {
 """Extra name to the top-level modules its dependencies install, for the import guard."""
 
 
-def _load_leaf(name: str, **options: object) -> Leaf:  # pyright: ignore[reportUnusedFunction]
+def _registered() -> tuple[str, ...]:  # pyright: ignore[reportUnusedFunction]
+    """The registered names, sorted: what ``idia.provider_names`` returns and
+    ``ProviderNotFound`` lists."""
+    return tuple(sorted(_REGISTRY))
+
+
+def _load_leaf(  # pyright: ignore[reportUnusedFunction]
+    name: str, caller: str = "provider", /, **options: object
+) -> Leaf:
     """Import the leaf registered under ``name`` and build it from ``options``.
 
-    ``idia.provider`` calls this and wraps what it returns.
+    ``idia.leaf`` returns what this builds and ``idia.provider`` wraps it; ``caller`` names
+    which of the two asked, for the message of a ``TypeError``.
     """
     entry = _REGISTRY.get(name)
     if entry is None:
-        raise ProviderNotFound(name, tuple(sorted(_REGISTRY)))
+        raise ProviderNotFound(name, _registered())
     module_name, _, class_name = entry.target.partition(":")
     try:
         module = importlib.import_module(module_name)
@@ -89,7 +98,8 @@ def _load_leaf(name: str, **options: object) -> Leaf:  # pyright: ignore[reportU
     except TypeError as error:
         if _binds(leaf_class, options):
             raise
-        raise TypeError(f"provider({name!r}): {error}{_hand_built(leaf_class, options)}") from error
+        hint = _hand_built(leaf_class, options, caller)
+        raise TypeError(f"{caller}({name!r}): {error}{hint}") from error
     if not isinstance(leaf, Leaf):
         raise TypeError(f"{entry.target} does not satisfy Leaf")
     return leaf
@@ -108,15 +118,21 @@ def _binds(leaf_class: Callable[..., object], options: dict[str, object]) -> boo
 _DISPATCHER_ONLY: Final = ("estimator", "overflow", "reask")
 """The ``Dispatcher`` keywords ``idia.provider`` does not pass on: a leaf gets them."""
 
+_DISPATCHER_KEYWORDS: Final = ("retry", "concurrency", "rate", *_DISPATCHER_ONLY)
+"""Every ``Dispatcher`` keyword: ``idia.leaf`` passes none of them on."""
 
-def _hand_built(leaf_class: Callable[..., object], options: dict[str, object]) -> str:
-    """For a ``Dispatcher`` keyword the leaf does not take, a pointer to building the
-    ``Dispatcher`` by hand; else nothing."""
+
+def _hand_built(leaf_class: Callable[..., object], options: dict[str, object], caller: str) -> str:
+    """For a ``Dispatcher`` keyword the leaf does not take, a pointer to the ``Dispatcher``
+    built by hand; else nothing."""
     taken = inspect.signature(leaf_class).parameters
-    named = [keyword for keyword in _DISPATCHER_ONLY if keyword in options and keyword not in taken]
+    keywords = _DISPATCHER_KEYWORDS if caller == "leaf" else _DISPATCHER_ONLY
+    named = [keyword for keyword in keywords if keyword in options and keyword not in taken]
     if not named:
         return ""
-    return (
-        f"; {', '.join(named)} {'is' if len(named) == 1 else 'are'} the Dispatcher's: "
-        "build the leaf and wrap it in Dispatcher(leaf, ...) by hand"
+    where = (
+        "wrap the leaf in Dispatcher(leaf, ...)"
+        if caller == "leaf"
+        else "build the leaf and wrap it in Dispatcher(leaf, ...) by hand"
     )
+    return f"; {', '.join(named)} {'is' if len(named) == 1 else 'are'} the Dispatcher's: {where}"

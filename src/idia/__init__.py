@@ -5,7 +5,7 @@ The public API is what ``__all__`` lists. Names and modules that start with an u
 internal.
 """
 
-from idia._provider import provider
+from idia._provider import leaf, provider, provider_names
 from idia.answers import validate, validate_answers
 from idia.core import (
     CANDIDATE_ELICITATIONS,
@@ -152,8 +152,10 @@ __all__ = [
     "WireRequest",
     "WireResponse",
     "check_elicitation",
+    "leaf",
     "noul_complement",
     "provider",
+    "provider_names",
     "unknown_options",
     "validate",
     "validate_answers",

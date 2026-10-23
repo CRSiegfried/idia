@@ -93,13 +93,13 @@ def test_a_type_error_the_leaf_raises_about_a_value_passes_through_unchanged(
 _LIMITS = {"retry", "concurrency", "rate"}
 
 
-def _overloads() -> list[ast.FunctionDef]:
+def _overloads(function_name: str = "provider") -> list[ast.FunctionDef]:
     tree = ast.parse(Path(_provider.__file__).read_text(encoding="utf-8"))
     return [
         node
         for node in ast.walk(tree)
         if isinstance(node, ast.FunctionDef)
-        and node.name == "provider"
+        and node.name == function_name
         and any(ast.unparse(d) == "overload" for d in node.decorator_list)
     ]
 
@@ -115,10 +115,10 @@ def _literal_names(function: ast.FunctionDef) -> set[str] | None:
     return {str(cast(ast.Constant, element).value) for element in elements}
 
 
-def _typed() -> dict[str, ast.FunctionDef]:
+def _typed(function_name: str = "provider") -> dict[str, ast.FunctionDef]:
     """Each registered name's own overload: the one whose Literal admits that name alone."""
     typed: dict[str, ast.FunctionDef] = {}
-    for function in _overloads():
+    for function in _overloads(function_name):
         names = _literal_names(function)
         if names is not None and len(names) == 1:
             typed[names.pop()] = function
@@ -181,7 +181,7 @@ def test_no_overload_annotation_names_a_module_outside_idia_and_typing() -> None
                 sources[(alias.asname or alias.name).split(".")[0]] = alias.name
     allowed = ("idia", "typing", "typing_extensions")
     named: set[str] = set()
-    for function in _overloads():
+    for function in [*_overloads(), *_overloads("leaf")]:
         arguments = function.args
         annotations = [
             arg.annotation
@@ -198,3 +198,15 @@ def test_no_overload_annotation_names_a_module_outside_idia_and_typing() -> None
         module = sources.get(name)
         assert module is not None, f"{name} is not imported"
         assert module.split(".")[0] in allowed, f"{name} comes from {module}"
+
+
+def test_the_leaf_overloads_are_the_provider_overloads_without_the_dispatcher_keywords() -> None:
+    provider_overloads, leaf_overloads = _overloads(), _overloads("leaf")
+    assert len(leaf_overloads) == len(provider_overloads)
+    for given, built in zip(provider_overloads, leaf_overloads, strict=True):
+        assert _literal_names(built) == _literal_names(given)
+        assert built.returns is not None
+        assert ast.unparse(built.returns) == "Leaf"
+        expected = [a for a in given.args.kwonlyargs if a.arg not in _LIMITS]
+        assert [ast.dump(a) for a in built.args.kwonlyargs] == [ast.dump(a) for a in expected]
+        assert (built.args.kwarg is None) == (given.args.kwarg is None)

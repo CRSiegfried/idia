@@ -100,8 +100,9 @@ covers `Scripted` and `Recorded`. The scripted leaf logs each call in `calls`, a
   needs; install it with the matching line above.
 - A kind the provider lacks raises `DoesNotFit`: Clef takes no `extraction`, Clairic only
   `extraction`. `cloudflare()`, in `idia.cloudflare`, routes each kind to the right one.
-- A leaf is not a provider: build one with `idia.provider(name)`, or wrap a leaf in
-  `Dispatcher(leaf)` yourself.
+- A leaf is not a provider: build one with `idia.provider(name)`, or build the leaf with
+  `idia.leaf(name)`, wrap it in one of your own if you like (to count every call, say), and
+  pass it to `Dispatcher(...)`. `idia.provider_names()` lists the names.
 - Only `idia.__all__` and the `__all__` of the modules CONTRIBUTING lists are public; any
   other name may change without notice.
 

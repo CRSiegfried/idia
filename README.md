@@ -175,7 +175,7 @@ before any call; it is never truncated. When no wire request answers, `answer` r
 `RequestFailed`, which carries the response and its outcomes.
 
 Each provider is registered under a name that `idia.provider(name)` builds, from the
-extra that installs it:
+extra that installs it; `idia.provider_names()` lists the names:
 
 | Name | Extra | Kinds | Claims calibrated |
 |---|---|---|---|
