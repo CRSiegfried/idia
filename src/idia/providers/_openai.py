@@ -133,10 +133,9 @@ async def send(deadline: Deadline, make_call: Callable[[], Awaitable[object]]) -
     read by :func:`status_error`, a 429 whose error code is ``insufficient_quota`` made not
     retryable; a connection error or timeout is retryable, but a request the client refuses
     before sending because it is malformed is not (:func:`http.malformed_request`); any
-    other SDK error is not retryable. A
-    bare ``RuntimeError`` the SDK lets through mid-call, the backstop for a connection that
-    died under the client, is :func:`client_failed`'s retryable error, and a subclass
-    propagates.
+    other SDK error is not retryable. A bare ``RuntimeError`` the SDK lets through mid-call,
+    the backstop for a connection that died under the client, is :func:`client_failed`'s
+    retryable error, and a subclass propagates.
     """
     try:
         raw = await within(deadline, make_call())

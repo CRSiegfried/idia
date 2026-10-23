@@ -16,10 +16,10 @@ from idia.core import Deadline, DeadlineExceeded
 class ConcurrencyLimit:
     """At most ``limit`` calls in flight at once, across every dispatcher that shares it.
 
-    A slot is held across one call only: the dispatcher releases it before a retry sleep
-    and takes it again for the next attempt. It wraps an :class:`asyncio.Semaphore` made for
-    the running event loop and made again when the loop changes, so it serves successive
-    ``asyncio.run`` calls; the limit holds within one loop.
+    A slot is held through one attempt, its rate wait and its call: the dispatcher releases
+    it before a retry sleep and takes it again for the next attempt. It wraps an
+    :class:`asyncio.Semaphore` made for the running event loop and made again when the loop
+    changes, so it serves successive ``asyncio.run`` calls; the limit holds within one loop.
     """
 
     def __init__(self, limit: int) -> None:
@@ -57,9 +57,11 @@ class ConcurrencyLimit:
 class RateLimiter:
     """A token bucket of ``rate`` calls per ``per`` seconds; one token per attempt.
 
-    The bucket starts full, so a burst of ``rate`` calls goes through at once. When the
-    bucket is empty the caller waits for the next token, unless that wait would end after
-    the deadline, in which case it raises at once, consuming nothing.
+    The bucket holds at most ``rate`` tokens and starts full, so a burst of ``rate`` calls
+    goes through at once; with a ``rate`` below 1 it never holds a whole token, so even the
+    first call waits for one (``RateLimiter(1, 2.0)`` is one call every two seconds with no
+    first wait). When the bucket is empty the caller waits for the next token, unless that
+    wait would end after the deadline, in which case it raises at once, consuming nothing.
     """
 
     def __init__(self, rate: float, per: float = 1.0) -> None:

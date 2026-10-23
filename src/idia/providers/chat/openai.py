@@ -159,11 +159,12 @@ class OpenAIChat(OpenAILeafBase):
     """A leaf for one chat model on OpenAI's Chat Completions, read by ``logprobs``.
 
     ``model`` is required: there is no default chat model. ``elicitation`` must be
-    ``logprobs``; a candidate elicitation raises ``ElicitationNotInRelease`` and
-    ``passthrough``, a decision model's, ``ValueError``. ``max_off_label_mass`` bounds the
-    mass outside the labels, unbounded by default. ``api_key`` defaults to
-    ``OPENAI_API_KEY``; ``client`` is an injected ``AsyncOpenAI``, used with its retries
-    at zero and never closed by the leaf; ``capabilities`` replaces the record.
+    ``logprobs``; a candidate elicitation, or any other name not admitted, raises
+    ``ElicitationNotInRelease`` and ``passthrough``, a decision model's, ``ValueError``.
+    ``max_off_label_mass`` bounds the mass outside the labels, unbounded by default.
+    ``api_key`` defaults to ``OPENAI_API_KEY``; ``client`` is an injected ``AsyncOpenAI``,
+    used with its retries at zero and never closed by the leaf; ``capabilities`` replaces
+    the record.
     """
 
     def __init__(
@@ -414,7 +415,7 @@ def _surface_forms(letter: str) -> tuple[str, ...]:
 def _off_label_mass(label_masses: Sequence[float]) -> float:
     """The mass of the top logprobs outside the labels: one less their summed masses, at
     least zero. The protocol records it; it is no probability of an answer."""
-    return max(0.0, 1.0 - math.fsum(list(label_masses)))
+    return max(0.0, 1.0 - math.fsum(label_masses))
 
 
 def _fault(

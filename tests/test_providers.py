@@ -13,7 +13,7 @@ from idia import IdiaError, Leaf, providers
 from idia.providers import ProviderNotFound, _Entry, _load_leaf
 
 
-def test_registry_ships_the_wire_leaves_built_so_far() -> None:
+def test_registry_ships_these_leaves() -> None:
     assert set(providers._REGISTRY) == {
         "system-one",
         "openai-decisions",

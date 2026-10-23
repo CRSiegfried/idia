@@ -59,7 +59,7 @@ Each check runs against the leaf's record:
 **Tokens.** The estimator is the leaf's own unless the dispatcher names another.
 An estimate `TokenEstimate(tokens, margin)` counts as `ceil(tokens * (1 + margin))`, with the margin read as the decimal it prints as.
 A wire request counts `estimate(state, questions)`.
-By choice, where the record has `recounts_state_per_question`, a wire request of `n` questions adds `(n - 1)` times the state's own estimate, `estimate(state, ())`.
+Where the record has `recounts_state_per_question`, a wire request of `n` questions adds `(n - 1)` times the state's own estimate, `estimate(state, ())`.
 Each estimate takes its margin before the sum.
 
 **Options.** A wire request's option count is the sum over its questions: a `choice`'s labels, a `score`'s levels, 2 for a `noul`, and 0 for an `extraction` or a `box`.
@@ -67,7 +67,7 @@ Each estimate takes its margin before the sum.
 **Body size.** Fit measures the body itself.
 The state's text and JSON parts count as compact UTF-8 and its images as the length of their base64 encoding.
 Each question adds its key, instruction, label names and descriptions in UTF-8.
-By choice, the wire envelope a leaf adds is not counted, so `max_body_bytes` holds only approximately: a leaf's serialized body can be somewhat larger than Fit's measure.
+The wire envelope a leaf adds is not counted, so `max_body_bytes` holds only approximately: a leaf's serialized body can be somewhat larger than Fit's measure.
 
 ## Packing
 
@@ -88,8 +88,8 @@ A token overflow goes to the overflow policy, `apply(state, limit, estimator)`, 
 The default, `Fail`, raises `DoesNotFit` with `state_overflow` true.
 A named policy returns a new state, which is checked again from the state checks on.
 If it still overflows, `DoesNotFit` is raised; the policy is applied once.
-The response then carries an `overflow-policy` warning whose `field` is the limit the state was over and whose message reads "the state overflowed <field>; policy '<name>' applied".
-By choice, a body overflow of the state always raises, whatever the policy: a named policy applies to token overflow only.
+When the policy's state fits, the response carries an `overflow-policy` warning whose `field` is the limit the state was over and whose message reads "the state overflowed <field>; policy '<name>' applied".
+A body overflow of the state always raises, whatever the policy: a named policy applies to token overflow only.
 Nothing is truncated silently.
 
 ## The plan

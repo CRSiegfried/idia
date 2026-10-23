@@ -1,11 +1,11 @@
 """The recorded leaf: a leaf that records another leaf's calls and replays them.
 
-:class:`Recorded` satisfies :class:`~idia.core.Leaf` structurally, with no base class.
-It files each call under the hash of the canonical wire request, the leaf's name and model,
-the state and the questions in order, and keeps that key's calls in order, each a wire
-response with its raw body or a provider error. A replay returns them in order and never
-calls the wrapped leaf. A leaf's construction options are not in the key, so a test keeps
-one log per leaf configuration and names it.
+:class:`Recorded` satisfies :class:`~idia.core.Leaf` structurally, with no base class. It
+files each call under the hash of the canonical wire request, the leaf's name and model, the
+state, the questions in order and the request's options when there are any, and keeps that
+key's calls in order, each a wire response with its raw body or a provider error. A replay
+returns them in order and never calls the wrapped leaf. A leaf's construction options are
+not in the key, so a test keeps one log per leaf configuration and names it.
 
 The modes:
 

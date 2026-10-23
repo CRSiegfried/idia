@@ -7,6 +7,8 @@ from tests._support import FixedEstimator, capabilities
 
 
 class FakeLeaf:
+    """A leaf that answers every call with no answers."""
+
     def __init__(self, *, model: str = "fake-1") -> None:
         self.name = "fake"
         self.model = model
@@ -27,5 +29,7 @@ class CheckingLeaf(FakeLeaf):
 
 
 class NotALeaf:
+    """An object with a name and nothing else, which fails the ``Leaf`` check."""
+
     def __init__(self) -> None:
         self.name = "not-a-leaf"

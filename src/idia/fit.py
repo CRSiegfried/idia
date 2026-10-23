@@ -17,8 +17,8 @@ Fit's own body measure covers the state and the questions, not the wire envelope
 wraps them in, so a body limit is checked approximately.
 
 The merge turns the plan's outcomes and their answers back into one answers map and the
-outcomes in plan order. Only :class:`OverflowPolicy` and :class:`Fail` are public; the
-dispatcher calls the rest.
+outcomes in plan order. Only :class:`OverflowPolicy`, :class:`Fail` and :class:`FitPlan` are
+public; the dispatcher calls the rest.
 """
 
 from __future__ import annotations

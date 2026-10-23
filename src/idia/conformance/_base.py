@@ -188,7 +188,7 @@ class LeafHarness(Protocol):
     :class:`CheckNotApplicable` for an exchange its transport cannot make.
     ``capabilities_for(features)`` is the record the leaf must declare when built with
     ``features`` on, every field the feature changes included. ``requests_sent`` counts
-    the wire requests the last leaf made has sent. ``wire_request(kind)`` is the request
+    the wire requests the leaf ``make`` built last has sent. ``wire_request(kind)`` is the request
     each recorded exchange for ``kind`` answers, and ``expected(kind)`` its answers as
     mapped. An HTTP harness sends ``Failure.retry_after`` as ``retry-after-ms`` beside a
     conflicting ``retry-after``. ``sdk_retries`` is the retries below the leaf: an SDK's,

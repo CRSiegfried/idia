@@ -17,9 +17,11 @@ closed by :meth:`HttpLeaf.aclose`; an injected client is used as it is and never
 here. A client is bound to the event loop it is first used on: a created one follows the
 running loop and an injected one is refused on another, by :func:`follow_the_loop`; a
 client that reports itself closed is refused before sending.
-:func:`within`, :func:`status_error`, :func:`retry_after`, :func:`follow_the_loop`,
-:func:`malformed_request` and :func:`client_failed` serve a leaf that does not inherit the
-base. A request the client refuses as malformed before sending is not retried.
+:func:`within`, :func:`status_error`, :func:`retry_after`, :func:`created_client`,
+:func:`follow_the_loop`, :func:`on_this_loop`, :func:`malformed_request` and
+:func:`client_failed`, and :func:`read_object` and :func:`unreadable` for a success's body,
+serve a leaf that does not inherit the base. A request the client refuses as malformed
+before sending is not retried.
 """
 
 from __future__ import annotations

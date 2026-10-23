@@ -1,4 +1,4 @@
-"""The review checks, made tests: walks over a module's source.
+"""The source checks of the leaf half: walks over a module's source.
 
 Each function takes a parsed module and its dotted name and returns what it found, one
 string per finding, so a check can name every offending line.

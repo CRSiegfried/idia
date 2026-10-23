@@ -56,7 +56,7 @@ The delay after `n` failures is the error's `retry_after` when it has one and th
 A fault in an answer is not a `ProviderError` and never reaches the policy.
 
 `ConcurrencyLimit(limit)` allows `limit` calls in flight at once.
-`RateLimiter(rate, per=1.0)` is a token bucket of `rate` calls per `per` seconds, starting full, one token per attempt.
+`RateLimiter(rate, per=1.0)` is a token bucket of `rate` calls per `per` seconds, holding at most `rate` tokens and starting full, one token per attempt; with a `rate` below 1 the bucket never holds a whole token, so even the first attempt waits for one, and `RateLimiter(1, 2.0)` is one call every two seconds with no first wait.
 One instance may be shared by two dispatchers whose leaves share one vendor limit.
 A `ConcurrencyLimit` follows the running event loop: its semaphore is made for the loop it is first used on and made again on another, so one `Dispatcher` serves successive `asyncio.run` calls, the limit holding within each loop.
 
@@ -105,7 +105,7 @@ Members run concurrently, so a credential error stops only the plan of the dispa
 The outcomes are concatenated in member order, the answers are the union, and the response warnings are the members' concatenated.
 A member's `RequestFailed` joins the others' responses; when every member fails, `RequestFailed` carries them all.
 
-`Fallback(members: Sequence[Provider])` gives each member in turn the same request and the same deadline.
+`Fallback(members: Sequence[Provider])` gives each member in turn the same request and the same deadline; an empty `members` raises `ValueError`.
 It falls through on `RequestFailed` only; a `DoesNotFit` propagates.
 A member stopped by a credential error before any of its wire requests answered raises `RequestFailed`, so the next member is tried, by design, since it may hold a different credential.
 A member that answered part of its plan before the error returns its `Response`, and no later member is tried.

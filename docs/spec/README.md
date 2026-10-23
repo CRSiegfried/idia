@@ -3,9 +3,6 @@
 The normative description of what idia does: the shapes a request and a response take, what a provider declares and how a request is checked against it, how the questions are packed when they overflow, how one deadline bounds every wait and retry, what each request outcome records, and the rules every answer passes.
 The code follows this document; where they differ, one of them has a bug, and the tests say which.
 
-The spec is written section by section as the library is built.
-Until a section exists, the docstrings of the public names in `idia` are the current statement.
-
 ## Sections
 
 - [Vocabulary](vocabulary.md): state, question, kind, answer, request, response, validation with its rounding tolerances, and the two protocols.

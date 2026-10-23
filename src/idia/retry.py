@@ -36,8 +36,8 @@ class RetryPolicy:
 
     @classmethod
     def without_delay(cls, attempts: int = 3) -> RetryPolicy:
-        """A policy that retries ``attempts`` times with no wait at all: no base delay, no
-        jitter, ``retry_after`` ignored. The form a replay and the conformance suite use,
+        """A policy that makes up to ``attempts`` calls with no wait between them: no base
+        delay, no jitter, ``retry_after`` ignored. The form a replay and the conformance suite use,
         so a recorded retry does not sleep again."""
         return cls(attempts=attempts, base_delay=0.0, jitter=0.0, honour_retry_after=False)
 

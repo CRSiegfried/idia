@@ -224,7 +224,7 @@ def _has_type(value: object, value_type: str) -> bool:
     if value_type == "text":
         return isinstance(value, str)
     if value_type == "number":
-        return isinstance(value, int | float) and not isinstance(value, bool)
+        return _is_number(value)
     if value_type == "date":
         return isinstance(value, datetime.date) and not isinstance(value, datetime.datetime)
     if value_type == "time":

@@ -112,8 +112,7 @@ _BEARER_SHAPE: Final = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/-]{16,}=*")
 It can match prose, such as "bearer responsibilities", and then hides it too."""
 
 _KEY_SHAPES: Final[tuple[re.Pattern[str], ...]] = (_OPENAI_KEY_SHAPE, _BEARER_SHAPE)
-"""The key-shaped substrings no provider error's text carries: the shapes the test
-cassette filter checks for too."""
+"""The key-shaped substrings no provider error's text carries."""
 
 _FILTERED: Final = "<filtered>"
 """What replaces a key-shaped substring; it matches no shape, so filtering again changes
@@ -186,7 +185,11 @@ class KindNotInRelease(IdiaError):
     candidate: bool
 
     def __init__(self, kind: str, candidate: bool) -> None:
-        what = "a candidate kind not admitted in this release" if candidate else "not a kind"
+        what = (
+            "a candidate kind or value type not admitted in this release"
+            if candidate
+            else "not a kind"
+        )
         super().__init__(f"{kind!r} is {what}")
         self.kind = kind
         self.candidate = candidate

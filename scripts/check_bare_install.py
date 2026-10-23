@@ -9,7 +9,7 @@ install passes and 1 with one line per problem otherwise. Standard library and i
 - Every registered provider with an extra raises ``ModuleNotFoundError`` with the
   ``pip install "idia[<extra>]"`` hint.
 
-The dependencies are the registry's extras'.
+DEPENDENCIES is built from the registry's extras.
 
 The blocked-import tests prove the guard's logic in the dev environment, which has every
 extra; this proves the package as a user installs it.

@@ -18,6 +18,7 @@ The suite imports only idia and the standard library: no test runner, no HTTP cl
   P19 runs for a wrapped leaf only: in a temporary directory it records the leaf under the recorded leaf in mode `once`, behind a `Dispatcher` with `RetryPolicy.without_delay()`, for an answer, a 503 then an answer (whose recording must show a failed attempt), and a failure; then replays each log in mode `none` over a fresh leaf, and asserts that no wire request was sent and that the `Response` or `RequestFailed` is the recorded one, latency and start times aside, errors compared by their fields.
 
 Each half takes a zero-argument factory, and each check builds a fresh harness from it, so checks share no state and run in any order.
+Each `Check` carries its `id` and a one-line `description`, so the checks `leaf_checks` and `provider_checks` return are the full table of IDs.
 
 ## The harness
 

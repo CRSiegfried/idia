@@ -5,7 +5,7 @@ Every wire response names one.
 A decision model reports `passthrough`: its probabilities are the wire's own.
 This release admits one other, `logprobs`, which a chat leaf reports.
 `structured_output`, `verbalised` and `sampled_n` are candidates: a chat leaf built with one raises `ElicitationNotInRelease(elicitation, candidate=True)`, and any other unknown name raises it with `candidate=False`.
-Changing the `logprobs` protocol changes recorded answers, so it is a breaking change; reading an absent letter as zero mass, rather than as a fault, is such a change, made before the first release.
+Changing the `logprobs` protocol changes recorded answers, so it is a breaking change; reading an absent letter as zero mass rather than as a fault is part of the protocol.
 
 ## The `logprobs` protocol
 

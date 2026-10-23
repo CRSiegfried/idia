@@ -57,8 +57,9 @@ _SECONDS: Final = 30.0
 """The deadline every call but the stall gets."""
 
 _STALL: Final = 0.2
-"""The deadline a stalled call gets, and the grace past it before the check gives up."""
+"""The deadline a stalled call gets."""
 _GRACE: Final = 2.0
+"""How long past the stalled call's deadline the check waits before it gives up."""
 
 _SHAPES: Final[dict[Kind, type]] = {
     "noul": NoulAnswer,

@@ -28,7 +28,7 @@ Inheriting it is a convenience: satisfying `Leaf` is structural.
   The call runs under `within(deadline, awaitable)`: a deadline already passed, as `Deadline.passed()` reads it, raises a retryable `ProviderError` before anything is sent, and one reached while waiting raises the same.
   Nothing is retried below the leaf.
 - **The status table** is `status_error(status, headers, content, request_id) -> ProviderError`, behind `map_status(response)`, which a leaf may override.
-  `within`, `status_error`, `retry_after`, `created_client`, `follow_the_loop`, `on_this_loop` and `client_failed`, and `read_object` and `unreadable` for a success's body, serve a leaf that does not inherit the base.
+  `within`, `status_error`, `retry_after`, `created_client`, `follow_the_loop`, `on_this_loop`, `malformed_request` and `client_failed`, and `read_object` and `unreadable` for a success's body, serve a leaf that does not inherit the base.
 
 | What came back | `is_retryable` |
 |---|---|
@@ -118,7 +118,7 @@ Any model name is sent; the record is `gpt-6-luna`'s.
 
 - **The body**: `model`; `input`, one user message whose `content` holds a part per state part in order: text as `input_text`, JSON as `input_text` holding compact JSON, an image as `input_image` with a base64 data URL whose media type is the one Fit judged: its declared type, lower-cased with `image/jpg` read as `image/jpeg`, when PNG or JPEG, else PNG or JPEG read from its bytes (a leaf called directly with another image sends its declared type, else `application/octet-stream`, and the wire refuses it); `questions`, each named `q<i>` in the order asked.
   A `noul` is `{type: "predicate", name, instructions}`, its instruction sent as it is; a `choice` adds `choices`, `{value: <label name>, description?}` per label, string values only; a `score` adds `levels`, `{label: <level name>, description?}` per level.
-- **Reading**: the body needs an `answers` list, a string `model` and an object `usage`, or the call raises a non-retryable `ProviderError`.
+- **Reading**: the body needs an `answers` list, a non-empty string `model` and an object `usage`, or the call raises a non-retryable `ProviderError`.
   Each answer is keyed back by its echoed name; one whose name was not assigned, or that has none, is dropped with an `extra-answer-key` warning, so its question faults as missing, and a second answer repeating a name is dropped with the same warning, the first standing.
   A `refusal` is a `Refusal`.
   A `predicate` is `NoulAnswer(probability)`.
@@ -140,11 +140,11 @@ Any model name is sent; the record is `gpt-6-luna`'s.
 **The chat leaf**, `OpenAIChat(*, model, api_key=None, client=None, elicitation="logprobs", max_off_label_mass=None, capabilities=None)`, named `openai-chat`, reads label probabilities from a chat model on Chat Completions by the `logprobs` protocol in [Elicitation](elicitation.md).
 `model` is required.
 The name is checked by `check_elicitation`: a candidate elicitation raises `ElicitationNotInRelease`; `passthrough` raises `ValueError`, as does a bound outside [0, 1].
-A `capabilities` record is refused with `ValueError` when it contradicts the protocol: `calibrated` true, a confidence map, rounding other than none, `max_questions` other than 1, or a label or level cap that is not a whole number of at most 20, so `None` and `UNBOUNDED` are refused too.
+A `capabilities` record is refused with `ValueError` when it contradicts the protocol: `calibrated` true, a confidence map, rounding other than none, `max_questions` other than 1, a label or level cap that is not a whole number of at most 20, so `None` and `UNBOUNDED` are refused too, the image modality, or image fields other than 0, 0, 0 and no media types.
 
 - **The call** is one `POST /v1/chat/completions` per wire request, which holds one question (more raise a non-retryable `ProviderError` before sending): `model`, the messages, `logprobs: true`, `top_logprobs: 20`, `temperature: 0.0`, `max_completion_tokens: 1`, no `logit_bias`.
   A state's text parts are sent in order, JSON as compact JSON; an image, or more labels than 20, is refused before sending.
-- **Reading**: the body needs a non-empty `choices` list, a string `model` and an object `usage`, or the call raises a non-retryable `ProviderError`.
+- **Reading**: the body needs a non-empty `choices` list, a non-empty string `model` and an object `usage`, or the call raises a non-retryable `ProviderError`.
   The first choice's `logprobs.content[0].top_logprobs` is read; a wrong shape there is a `kind_shape` fault.
 - **Provenance**: `logprobs`; `calibrated` false; `model_reported` the body's `model`, the `snapshot` when it ends in a date `-YYYY-MM-DD`, otherwise none and a `no-snapshot` warning; `prompt_sent` holds the messages, the model, the temperature, `max_completion_tokens`, the top-k requested and returned, the letter map and the bound; usage `prompt_tokens` and `completion_tokens`.
 - **The record**: kinds `noul`, `choice`, `score`; text and JSON; `max_questions` 1, so Fit packs one question per wire request; `max_labels`, `max_levels` and `max_total_options` 20; `min_levels` 1; no images: `max_images`, `max_images_per_question`, `max_image_bytes`, `max_total_image_bytes` and `min_image_side` 0, `image_media_types` empty; `max_input_tokens`, `max_question_tokens`, `max_body_bytes` and `truncates_silently` unknown; `returns_refusal`, `calibrated` and `recounts_state_per_question` false; `snapshot_pinnable` true; no confidence; rounding none.
