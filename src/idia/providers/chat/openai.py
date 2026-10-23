@@ -183,11 +183,11 @@ class OpenAIChat(OpenAILeafBase):
             raise ValueError("the chat leaf needs a model")
         if max_off_label_mass is not None and not 0.0 <= max_off_label_mass <= 1.0:
             raise ValueError("max_off_label_mass is a fraction in [0, 1]")
+        if capabilities is not None:
+            _check_record(capabilities)
         super().__init__(api_key=api_key, client=client, who="the chat leaf")
         self._model = model
         self._bound = max_off_label_mass
-        if capabilities is not None:
-            _check_record(capabilities)
         self._capabilities = capabilities if capabilities is not None else _record()
         self._estimator = OpenAIEstimator(
             overhead=_OVERHEAD_TOKENS,
@@ -255,11 +255,11 @@ class OpenAIChat(OpenAILeafBase):
         if not isinstance(raw_usage, Mapping):
             raise unreadable(response, "the body fails the top-level schema")
         top = _top_logprobs(choices[0])
-        mapped, absent = _read(question, letters, top, self._bound)
+        mapped, absent_warnings = _read(question, letters, top, self._bound)
         answers, warnings = validate_answers(
             wire_request.questions, {question.key: mapped}, self._capabilities.rounding
         )
-        warnings = (*absent, *warnings)
+        warnings = (*absent_warnings, *warnings)
         snapshot = model_reported if _SNAPSHOT.search(model_reported) else None
         if snapshot is None:
             warnings += (
