@@ -68,6 +68,7 @@ from tests._system_one_cases import (
     TEXT,
     TEXT_QUESTIONS,
     WITH_IMAGES,
+    WORDING,
     Configuration,
     check_red_square,
     decode,
@@ -76,6 +77,7 @@ from tests._system_one_cases import (
     record,
     side_probe,
     side_probe_path,
+    wording_request,
 )
 
 Handler = Callable[[httpx2.Request], httpx2.Response]
@@ -832,6 +834,32 @@ def test_each_cassette_is_the_body_sent_and_its_answers_as_recorded(
     assert not any(isinstance(answer, Fault) for answer in response.answers.values())
     assert response.snapshot == configuration.model
     assert cassette["request"]["headers"].get("authorization", FILTERED) == FILTERED
+
+
+@pytest.mark.parametrize("configuration", CONFIGURATIONS, ids=lambda c: c.model)
+def test_the_wording_cassette_sends_criteria_and_the_structured_instruction(
+    configuration: Configuration,
+) -> None:
+    cassette = load(configuration, WORDING)
+    wire, leaf, decoded = _replay(configuration, WORDING)
+    # The cassette's wire request is stored with sorted keys, as every canonical form is,
+    # so the call is the request as asked, its instruction's keys in the order sent.
+    wire_request = wording_request()
+    assert decoded == wire_request
+    response = _call(leaf, wire_request)
+    assert body_key(wire.body_sent) == body_key(cassette["request"]["body"])
+    assert response.answers == decode(cassette["expected"])
+    assert all(isinstance(answer, NoulAnswer) for answer in response.answers.values())
+    described, structured = wire_request.questions
+    sent = wire.body_sent["questions"]
+    assert sent["described"]["criteria"] == {
+        "true": described.labels[0].description,
+        "false": described.labels[1].description,
+    }
+    assert sent["structured"]["instructions"] == structured.instruction
+    estimate = leaf.estimator.estimate(wire_request.state, wire_request.questions)
+    used = cassette["response"]["body"]["usage"]["input_tokens"]
+    assert used <= estimate.tokens * (1 + estimate.margin)
 
 
 def test_a_request_over_the_token_limit_is_refused_by_the_wire() -> None:

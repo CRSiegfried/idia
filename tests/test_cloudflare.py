@@ -83,12 +83,14 @@ from tests._cloudflare_cases import (
     TEXT,
     TOKEN,
     TOKEN_ENV,
+    WORDING,
     clairic_record,
     clef_dir,
     clef_record,
     clef_request,
     order_requests,
     router_record,
+    wording_request,
 )
 from tests._cloudflare_harness import ClairicHarness, ClefFlashHarness, ClefHarness
 from tests._http import (
@@ -1446,6 +1448,34 @@ def test_an_alias_cassette_replays_under_the_callers_keys(
     assert all(key.startswith("q:match/") for key in keys)
     assert list(result.answers) == keys
     assert result.answers == cassette.expected
+
+
+@pytest.mark.parametrize("harness", [ClefHarness(), ClefFlashHarness()], ids=["clef", "clef-flash"])
+def test_the_clef_wording_cassette_sends_criteria_and_the_structured_instruction(
+    harness: ClefHarness,
+) -> None:
+    """The recorded described ``noul`` and structured instruction, through the harness's
+    replay, which asserts the body sent against the cassette."""
+    cassette = load_cassette(harness.cassette_dir / f"{WORDING}.json")
+    # The cassette's wire request is stored with sorted keys, as every canonical form is,
+    # so the call is the request as asked, its instruction's keys in the order sent.
+    wire_request = wording_request()
+    assert cassette.wire_request == wire_request
+    leaf = harness.make([Success()])
+    result = asyncio.run(leaf.call(wire_request, Deadline.after(5.0)))
+    assert harness.requests_sent() == 1
+    assert result.answers == cassette.expected
+    assert all(isinstance(answer, NoulAnswer) for answer in result.answers.values())
+    described, structured = wire_request.questions
+    sent = cassette.request["body"]["questions"]
+    assert sent["described"]["criteria"] == {
+        "true": described.labels[0].description,
+        "false": described.labels[1].description,
+    }
+    assert sent["structured"]["instructions"] == structured.instruction
+    estimate = leaf.estimator.estimate(wire_request.state, wire_request.questions)
+    used = cassette.response["body"]["result"]["usage"]["input_tokens"]
+    assert used <= estimate.tokens * (1 + estimate.margin)
 
 
 # ----------------------------------------------------------------------------------------

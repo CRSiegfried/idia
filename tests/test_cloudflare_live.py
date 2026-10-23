@@ -104,11 +104,13 @@ from tests._cloudflare_cases import (
     TEXT,
     TIMES,
     TOKEN_ENV,
+    WORDING,
     aliased,
     clef_dir,
     clef_request,
     order_requests,
     singles,
+    wording_request,
 )
 from tests._http import (
     NoExchange,
@@ -233,6 +235,17 @@ def test_live_clef_flash() -> None:
 def test_live_clef_alias(model: str) -> None:
     path = clef_dir(model) / f"{ALIAS}.json"
     result = asyncio.run(_record(path, _clef_factory(model), aliased(clef_request("choice"))))
+    assert isinstance(result, WireResponse), result
+
+
+@pytest.mark.parametrize("model", ["clef", "clef-flash"])
+def test_live_clef_wording(model: str) -> None:
+    """A described ``noul`` and a structured instruction in one call, recorded once per
+    model; skipped when its cassette exists."""
+    path = clef_dir(model) / f"{WORDING}.json"
+    if path.exists():
+        pytest.skip("the wording cassette is recorded once; it exists")
+    result = asyncio.run(_record(path, _clef_factory(model), wording_request()))
     assert isinstance(result, WireResponse), result
 
 

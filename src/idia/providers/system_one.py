@@ -147,6 +147,8 @@ def _record(model: str, *, long_context: bool, images: bool) -> Capabilities:
         returns_refusal=False,
         calibrated=True,
         snapshot_pinnable=True,
+        carries_noul_descriptions=True,
+        carries_structured_instructions=True,
         truncates_silently=False,
         confidence=confidence,
         rounding=Rounding(probability_decimals=2, score_decimals=2),
@@ -256,7 +258,9 @@ class SystemOne(HttpLeaf):
                 body, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=_plain
             ).encode()
         except (ValueError, TypeError, RecursionError) as error:
-            raise ProviderError(f"the state cannot be sent as JSON: {error}") from None
+            raise ProviderError(
+                f"the state or an instruction cannot be sent as JSON: {error}"
+            ) from None
         response, read = await self._post(_PATH, content, deadline, headers=self._headers)
         answers_json, model_reported, usage = self._top_level(response, read)
         mapped = _map_answers(wire_request.questions, answers_json)
@@ -348,7 +352,9 @@ def _part(part: Part, assets: dict[str, ImagePart]) -> JsonValue:
 
 def _question(question: Question) -> dict[str, JsonValue]:
     wire: dict[str, JsonValue] = {"type": question.kind, "instructions": question.instruction}
-    if question.kind == "choice":
+    if question.kind == "noul" and question.labels:
+        wire["criteria"] = _noul_criteria(question)
+    elif question.kind == "choice":
         wire["criteria"] = {label.name: label.description for label in question.labels}
     elif question.kind == "score":
         wire["criteria"] = tuple(
@@ -356,6 +362,18 @@ def _question(question: Question) -> dict[str, JsonValue]:
             for label in question.labels
         )
     return wire
+
+
+def _noul_criteria(question: Question) -> dict[str, JsonValue]:
+    """A described ``noul``'s ``criteria``: ``true`` for its ``yes``, ``false`` for its
+    ``no``, an undescribed side left out."""
+    yes, no = question.labels
+    criteria: dict[str, JsonValue] = {}
+    if yes.description is not None:
+        criteria["true"] = yes.description
+    if no.description is not None:
+        criteria["false"] = no.description
+    return criteria
 
 
 def _questions(questions: Sequence[Question]) -> dict[str, JsonValue]:

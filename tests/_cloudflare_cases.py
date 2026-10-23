@@ -418,6 +418,8 @@ def clef_record(model: str) -> Capabilities:
         returns_refusal=False,
         calibrated=False,
         snapshot_pinnable=False,
+        carries_noul_descriptions=True,
+        carries_structured_instructions=True,
         truncates_silently=True,
         confidence={"choice": "undocumented", "score": "undocumented"},
         rounding=CLEF_ROUNDING,
@@ -452,6 +454,8 @@ def clairic_record() -> Capabilities:
         returns_refusal=False,
         calibrated=False,
         snapshot_pinnable=False,
+        carries_noul_descriptions=False,
+        carries_structured_instructions=False,
         truncates_silently=False,
         confidence={"extraction": "undocumented"},
         rounding=Rounding(probability_decimals=None, score_decimals=None),
@@ -489,6 +493,8 @@ def router_record(model: str) -> Capabilities:
         returns_refusal=False,
         calibrated=False,
         snapshot_pinnable=False,
+        carries_noul_descriptions=True,
+        carries_structured_instructions=False,
         truncates_silently=True,
         confidence={
             "choice": "undocumented",
@@ -501,4 +507,36 @@ def router_record(model: str) -> Capabilities:
         feature_kinds={},
         feature_modalities={},
         composite=True,
+    )
+
+
+WORDING: Final = "wording"
+"""The cassette, per model, of a question's wording as the wire takes it: a ``noul`` with
+``yes`` and ``no`` descriptions, sent as ``criteria``, and a ``noul`` whose instruction is
+a JSON object, sent as it is, in one request."""
+
+
+def wording_request() -> WireRequest:
+    """The request :data:`WORDING` records, over the text state."""
+    return WireRequest(
+        state=TEXT,
+        questions=(
+            Question(
+                key="described",
+                kind="noul",
+                instruction="Was the match played to the end?",
+                labels=(
+                    Label(name="yes", description="The match ran its full time."),
+                    Label(name="no", description="The match was stopped or called off early."),
+                ),
+            ),
+            Question(
+                key="structured",
+                kind="noul",
+                instruction={
+                    "question": "Did the weather change what happened at the `event`?",
+                    "event": "the match",
+                },
+            ),
+        ),
     )

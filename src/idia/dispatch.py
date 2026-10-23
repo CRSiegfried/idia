@@ -691,6 +691,7 @@ def _derived(
     labels_from: Sequence[Capabilities],
     levels_from: Sequence[Capabilities],
     options_from: Sequence[Capabilities],
+    nouls_from: Sequence[Capabilities],
     confidence: Mapping[Kind, str],
 ) -> Capabilities:
     """The record every field of which takes the most restrictive value over ``records``,
@@ -729,6 +730,12 @@ def _derived(
         returns_refusal=any(record.returns_refusal for record in records),
         calibrated=all(record.calibrated for record in records),
         snapshot_pinnable=all(record.snapshot_pinnable for record in records),
+        # Asks more of the caller when false; false too when no member answers a noul.
+        carries_noul_descriptions=bool(nouls_from)
+        and all(record.carries_noul_descriptions for record in nouls_from),
+        carries_structured_instructions=all(
+            record.carries_structured_instructions for record in records
+        ),
         truncates_silently=_truncates([record.truncates_silently for record in records]),
         confidence=confidence,
         rounding=Rounding(
@@ -766,6 +773,7 @@ def _derive_router(members: Mapping[Kind, _Member]) -> Capabilities:
         labels_from=routing(("choice",)),
         levels_from=routing(("score",)),
         options_from=routing(_OPTION_KINDS),
+        nouls_from=routing(("noul",)),
         confidence=_confidence(kinds, {kind: [members[kind].capabilities] for kind in kinds}),
     )
 
@@ -783,5 +791,6 @@ def _derive_fallback(members: Sequence[_Member]) -> Capabilities:
         labels_from=records,
         levels_from=records,
         options_from=records,
+        nouls_from=records,
         confidence=_confidence(kinds, dict.fromkeys(kinds, records)),
     )

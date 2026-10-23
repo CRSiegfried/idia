@@ -109,6 +109,8 @@ def _record() -> Capabilities:
         returns_refusal=False,
         calibrated=False,
         snapshot_pinnable=True,
+        carries_noul_descriptions=True,
+        carries_structured_instructions=False,
         truncates_silently=None,
         confidence={},
         rounding=Rounding(probability_decimals=None, score_decimals=None),
@@ -125,6 +127,10 @@ def _check_record(record: Capabilities) -> None:
         what
         for what, holds in (
             ("calibrated must be false", not record.calibrated),
+            (
+                "carries_structured_instructions must be false",
+                not record.carries_structured_instructions,
+            ),
             ("the confidence map must be empty", not record.confidence),
             (
                 "rounding must be none",
@@ -330,13 +336,20 @@ def _messages(
     state: State, question: Question, letters: Sequence[tuple[str, str]]
 ) -> tuple[dict[str, JsonValue], ...]:
     """The system message and the user message: the state, the question and one line per
-    letter, ``A. <name>`` or ``A. <name>: <description>``."""
-    descriptions = {label.name: label.description for label in question.labels}
+    letter, ``A. <name>`` or ``A. <name>: <description>``; a described ``noul``'s ``yes``
+    and ``no`` descriptions go on its ``Yes`` and ``No`` lines. A structured instruction is
+    refused before sending, since the prompt is text."""
+    if not isinstance(question.instruction, str):
+        raise ProviderError(
+            f"the chat leaf sends an instruction as text only: question {question.key!r} has "
+            "a structured instruction"
+        )
+    descriptions: list[str | None] = [label.description for label in question.labels]
+    if not descriptions:
+        descriptions = [None] * len(letters)
     lines = [
-        f"{letter}. {name}"
-        if descriptions.get(name) is None
-        else f"{letter}. {name}: {descriptions[name]}"
-        for letter, name in letters
+        f"{letter}. {name}" if description is None else f"{letter}. {name}: {description}"
+        for (letter, name), description in zip(letters, descriptions, strict=True)
     ]
     user = "\n\n".join((_state_text(state), question.instruction, "\n".join(lines)))
     return (

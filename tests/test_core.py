@@ -468,7 +468,7 @@ REFUSED = [
     (
         _refused(of=Question, **{**_QUESTION, "instruction": None}),
         TypeError,
-        "Question.instruction must be a str, got NoneType",
+        "Question.instruction must be a str, a JSON object or a JSON array (a tuple), not NoneType",
     ),
     (
         _refused(of=Question, **{**_QUESTION, "instruction": ""}),

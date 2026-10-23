@@ -48,10 +48,12 @@ from tests._system_one_cases import (
     IMAGE_SIDE_PROBES,
     TEXT_ONLY,
     WITH_IMAGES,
+    WORDING,
     Configuration,
     check_red_square,
     side_probe,
     side_probe_path,
+    wording_request,
 )
 
 pytestmark = pytest.mark.live
@@ -155,6 +157,15 @@ def test_live_jev_1_14_0() -> None:
     )
     plain = Configuration(WITH_IMAGES.model, frozenset())
     asyncio.run(_record(plain, "probe-noul-text", text_only))
+
+
+@pytest.mark.parametrize("configuration", [TEXT_ONLY, WITH_IMAGES], ids=lambda c: c.model)
+def test_live_wording(configuration: Configuration) -> None:
+    """A described ``noul`` and a structured instruction in one call, recorded once per
+    model; skipped when its cassette exists."""
+    if (configuration.directory / f"{WORDING}.json").exists():
+        pytest.skip("the wording cassette is recorded once; it exists")
+    asyncio.run(_record(configuration, WORDING, wording_request()))
 
 
 @pytest.mark.parametrize(("width", "height"), IMAGE_SIDE_PROBES)

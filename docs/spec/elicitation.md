@@ -15,7 +15,7 @@ A request of k questions is k wire requests, each repeating the state.
 1. **Letters.** The labels asked are coded as single letters in the order asked, A for the first.
    A `noul` is coded A for yes and B for no.
    At most 20 letters, the top-k the wire allows.
-2. **The prompt** asks for the letter alone: a system message, then the state, the instruction and one line per letter, `A. <name>` or `A. <name>: <description>`.
+2. **The prompt** asks for the letter alone: a system message, then the state, the instruction and one line per letter, `A. <name>` or `A. <name>: <description>`, a described `noul`'s `yes` and `no` descriptions on its `Yes` and `No` lines.
    The temperature is 0, `max_completion_tokens` is 1, and no `logit_bias` and no reasoning parameter is sent.
    Thinking is off because the leaf reads only models that answer without it: OpenAI's reasoning models refuse `logprobs`.
 3. **The read.** Only the first answer token's top logprobs are read, with the top-k the wire allows requested.

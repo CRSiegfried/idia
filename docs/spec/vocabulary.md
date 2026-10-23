@@ -10,12 +10,15 @@ The public names are those in `idia.__all__` and in the `__all__` of each module
 
 - A **state** is the input one request is about: a tuple of parts, each a `TextPart(text)`, a `JsonPart(value)` or an `ImagePart(data, media_type=None)` holding the image's bytes.
 - A **JSON value**, `JsonValue`, is `bool | int | float | str | tuple[JsonValue, ...] | Mapping[str, JsonValue] | None`, arrays as tuples so a value can be hashed and logged.
-  It types a structured part, raw usage, the prompt sent and the raw body.
+  It types a structured part, a structured instruction, raw usage, the prompt sent and the raw body.
 - A **question** is `Question(key, kind, instruction, labels=(), value_type=None, is_list=False)`.
   `labels` holds `Label(name, description=None)` entries in the order asked; for a `score` a level's position from 0 is its value.
-  A `choice` needs two or more labels and a `score` one or more; a `noul`, an `extraction` and a `box` take none.
+  `instruction` is a non-empty string, or a non-empty JSON object (a mapping with string keys) or array (a tuple) for a wire API that takes structure; it is held as given, its inner values unchecked, and left out of the question's `hash()`.
+  A `choice` needs two or more labels and a `score` one or more; an `extraction` and a `box` take none.
+  A `noul` takes none, or exactly `Label(name="yes", ...)` then `Label(name="no", ...)` with at least one described: the wording of what counts as each; its answer is still one probability of yes.
+  A leaf sends a question's wording or refuses it, and never drops it: its record's `carries_noul_descriptions` and `carries_structured_instructions` say which it sends, Fit refuses the rest before any call, and the leaf itself refuses a call made past Fit with a non-retryable `ProviderError`; [Providers](providers.md) says which leaf does which.
   An `extraction` declares its `value_type` and may ask for a list; no other kind does.
-  A malformed question raises `ValueError`.
+  A malformed question raises `ValueError`, and an instruction of the wrong type, such as a list or a number, `TypeError`.
 - A **request** is `Request(state, questions, deadline, options={})`; it asks at least one question, and keys are unique within it.
   `options` maps a name to a JSON value, settings a leaf may read per request (Clairic's `reference_date`); they are held read-only, left out of the object's `hash()`, and part of the canonical wire request when non-empty.
   A **wire request** is `WireRequest(state, questions, options={})`, one entry of a fit plan, carrying its request's options unchanged.
@@ -47,6 +50,7 @@ A limit is a non-negative `int`, `UNBOUNDED` (the wire API documents no cap) or 
 Four fields bear only on a state with an image: `max_image_bytes`, each image's raw bytes, and `max_total_image_bytes`, the sum over the state's images, are limits; `min_image_side`, the fewest pixels on each side of an image, is a non-negative `int` or `None`, refused as `min_levels` is, 0 meaning no minimum; and `image_media_types` is a set of media types or `None` (unknown), held frozen.
 The constructor refuses a media type that is not lower-case and canonical, `image/jpg` among them, naming the form to write; on a leaf's record it refuses an empty `image_media_types`, or a `max_images`, `max_images_per_question`, `max_image_bytes` or `max_total_image_bytes` of 0, beside the image modality, any of which would refuse every image.
 `Rounding(probability_decimals, score_decimals)` gives the decimals the provider rounds to, `None` for unrounded.
+`carries_noul_descriptions` says whether the leaf sends a `noul`'s `yes` and `no` descriptions, and `carries_structured_instructions` whether it sends an instruction that is a JSON object or array; each is a plain `bool`, and false means Fit refuses a request that uses it before any call.
 The constructor refuses `truncates_silently=True` with `max_input_tokens=None` on a leaf's record; a record built with `composite=True` is a derived one and skips that refusal.
 `feature_kinds: Mapping[str, frozenset[Kind]]` and `feature_modalities: Mapping[str, frozenset[Modality]]` are required, read-only maps from an opt-in feature to the kinds, or the modalities, it adds on this model, whether or not it is on, so they are the same for a model whatever is enabled.
 A feature absent from a map adds none; a record with no opt-in feature has both empty.

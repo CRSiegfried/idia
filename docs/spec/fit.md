@@ -51,6 +51,8 @@ Each check runs against the leaf's record:
   A failure on any of the four names every off feature.
 - Every key matches every pattern in `key_patterns` in full (`re.fullmatch`).
   Every failing key is named, in question order, each with the first pattern it fails; `observed` is the tuple of failing keys and `limit` the record's `key_patterns`.
+- A `noul` with labels needs `carries_noul_descriptions`, and an instruction that is not a string needs `carries_structured_instructions` (`check` the field's name).
+  Every failing key is named, in question order, as `questions 'a', 'b' have a structured instruction: carries_structured_instructions is False`; `observed` is the tuple of failing keys and `limit` is `False`.
 - A `choice` has at most `max_labels` labels.
   A `score` has at most `max_levels` levels and at least `min_levels`.
 - With the state, each question is at most `max_question_tokens` by the estimate.
@@ -62,11 +64,12 @@ A wire request counts `estimate(state, questions)`.
 Where the record has `recounts_state_per_question`, a wire request of `n` questions adds `(n - 1)` times the state's own estimate, `estimate(state, ())`.
 Each estimate takes its margin before the sum.
 
-**Options.** A wire request's option count is the sum over its questions: a `choice`'s labels, a `score`'s levels, 2 for a `noul`, and 0 for an `extraction` or a `box`.
+**Options.** A wire request's option count is the sum over its questions: a `choice`'s labels, a `score`'s levels, 2 for a `noul`, described or not, and 0 for an `extraction` or a `box`.
+A `noul`'s `yes` and `no` labels are not held to `max_labels`, which bears on a `choice` alone.
 
 **Body size.** Fit measures the body itself.
 The state's text and JSON parts count as compact UTF-8 and its images as the length of their base64 encoding.
-Each question adds its key, instruction, label names and descriptions in UTF-8.
+Each question adds its key, instruction, label names and descriptions in UTF-8, a structured instruction as its compact JSON.
 The wire envelope a leaf adds is not counted, so `max_body_bytes` holds only approximately: a leaf's serialized body can be somewhat larger than Fit's measure.
 
 ## Packing

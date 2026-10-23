@@ -105,6 +105,8 @@ def _record() -> Capabilities:
         returns_refusal=True,
         calibrated=False,
         snapshot_pinnable=False,
+        carries_noul_descriptions=False,
+        carries_structured_instructions=False,
         truncates_silently=None,
         confidence={"choice": "undocumented", "score": "undocumented"},
         rounding=Rounding(probability_decimals=2, score_decimals=2),
@@ -266,6 +268,16 @@ def _parts(
 def _question(index: int, question: Question) -> dict[str, JsonValue]:
     if question.kind not in _WIRE_TYPE:
         raise ProviderError(f"the decisions leaf does not answer {question.kind!r} questions")
+    if not isinstance(question.instruction, str):
+        raise ProviderError(
+            f"the decisions leaf sends an instruction as text only: question {question.key!r} "
+            "has a structured instruction"
+        )
+    if question.kind == "noul" and question.labels:
+        raise ProviderError(
+            f"the decisions leaf cannot send a noul's yes and no descriptions, which a "
+            f"predicate has no field for: question {question.key!r}"
+        )
     wire: dict[str, JsonValue] = {
         "type": _WIRE_TYPE[question.kind],
         "name": _name(index),

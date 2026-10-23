@@ -70,7 +70,9 @@ RECORD = Capabilities(
     max_image_bytes=UNBOUNDED, max_total_image_bytes=UNBOUNDED, max_labels=20,
     max_levels=UNBOUNDED, max_total_options=UNBOUNDED, min_levels=None, min_image_side=None,
     image_media_types=None, key_patterns=(), recounts_state_per_question=False,
-    returns_refusal=False, calibrated=True, snapshot_pinnable=True, truncates_silently=False,
+    returns_refusal=False, calibrated=True, snapshot_pinnable=True,
+    carries_noul_descriptions=True, carries_structured_instructions=True,
+    truncates_silently=False,
     confidence={}, rounding=Rounding(probability_decimals=2, score_decimals=None),
     opt_in_features=frozenset(), enabled_features=frozenset(), feature_kinds={},
     feature_modalities={},
@@ -160,7 +162,7 @@ A question asks for one of five kinds of answer:
 
 | Kind | Answer | What it asks |
 |---|---|---|
-| `noul` | `NoulAnswer` | Yes or no, answered with one probability, that of yes |
+| `noul` | `NoulAnswer` | Yes or no, answered with one probability, that of yes; it may describe what counts as yes and as no |
 | `choice` | `LabelAnswer` | One label of a set: a probability for each label |
 | `score` | `LabelAnswer` | A level on an ordered scale: a probability for each level, with the expected level where the provider gives it |
 | `extraction` | `ExtractionAnswer` | A value, or a list of values, of a declared type found in the input, or none, with its span (one per item) where the provider gives it |

@@ -63,6 +63,12 @@ async def main(messages: list[str]) -> None:
 - Use `async with`, which closes the HTTP client the provider created; a `client=` you pass
   in stays yours to close.
 - Read `outcome.calibrated` before treating a probability as calibrated.
+- To reproduce a wording measured elsewhere, a `noul` may carry `Label(name="yes", ...)`
+  then `Label(name="no", ...)` descriptions, and an instruction may be a JSON object or a
+  tuple. A provider whose `capabilities.carries_noul_descriptions` or
+  `carries_structured_instructions` is false raises `DoesNotFit` before any call, so check
+  those fields first to leave such a question out (see the
+  [providers spec](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/providers.md)).
 
 ## Handling results
 

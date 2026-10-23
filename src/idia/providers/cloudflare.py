@@ -166,6 +166,8 @@ def _clef_record(model: str) -> Capabilities:
         returns_refusal=False,
         calibrated=False,
         snapshot_pinnable=False,
+        carries_noul_descriptions=True,
+        carries_structured_instructions=True,
         truncates_silently=True,
         confidence={"choice": "undocumented", "score": "undocumented"},
         rounding=Rounding(probability_decimals=4, score_decimals=4),
@@ -201,6 +203,8 @@ def _clairic_record() -> Capabilities:
         returns_refusal=False,
         calibrated=False,
         snapshot_pinnable=False,
+        carries_noul_descriptions=False,
+        carries_structured_instructions=False,
         truncates_silently=False,
         confidence={"extraction": "undocumented"},
         rounding=Rounding(probability_decimals=None, score_decimals=None),
@@ -224,7 +228,9 @@ class _ClefEstimator:
             len(json.dumps(wire_state, default=_plain)) / _CLEF_STATE_CHARS
         )
         if questions:
-            tokens += math.ceil(len(json.dumps(_clef_questions(questions))) / _CLEF_QUESTION_CHARS)
+            tokens += math.ceil(
+                len(json.dumps(_clef_questions(questions), default=_plain)) / _CLEF_QUESTION_CHARS
+            )
         tokens += len(images) * _IMAGE_TOKENS
         return TokenEstimate(tokens=tokens, margin=self.margin)
 
@@ -317,7 +323,9 @@ class _CloudflareLeaf(HttpLeaf):
                 body, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=_plain
             ).encode()
         except (ValueError, TypeError, RecursionError) as error:
-            raise ProviderError(f"the state cannot be sent as JSON: {error}") from None
+            raise ProviderError(
+                f"the state or an instruction cannot be sent as JSON: {error}"
+            ) from None
         response, envelope = await self._post(path, content, deadline, headers=self._headers)
         if envelope.get("success") is not True:
             raise self._unreadable(response, "the envelope does not report success")
@@ -614,7 +622,9 @@ def _clef_question(question: Question) -> dict[str, JsonValue]:
     if question.kind not in ("noul", "choice", "score"):
         raise ProviderError(f"Clef does not answer {question.kind!r} questions")
     wire: dict[str, JsonValue] = {"type": question.kind, "instructions": question.instruction}
-    if question.kind == "choice":
+    if question.kind == "noul" and question.labels:
+        wire["criteria"] = _noul_criteria(question)
+    elif question.kind == "choice":
         wire["criteria"] = {label.name: label.description for label in question.labels}
     elif question.kind == "score":
         wire["criteria"] = tuple(
@@ -622,6 +632,18 @@ def _clef_question(question: Question) -> dict[str, JsonValue]:
             for label in question.labels
         )
     return wire
+
+
+def _noul_criteria(question: Question) -> dict[str, JsonValue]:
+    """A described ``noul``'s ``criteria``: ``true`` for its ``yes``, ``false`` for its
+    ``no``, in that order, an undescribed side left out."""
+    yes, no = question.labels
+    criteria: dict[str, JsonValue] = {}
+    if yes.description is not None:
+        criteria["true"] = yes.description
+    if no.description is not None:
+        criteria["false"] = no.description
+    return criteria
 
 
 def _wire_ids(questions: Sequence[Question], pattern: re.Pattern[str], prefix: str) -> list[str]:
@@ -667,6 +689,11 @@ def _clairic_field(question: Question) -> dict[str, JsonValue]:
     whatever the instruction says."""
     if question.kind != "extraction" or question.value_type is None:
         raise ProviderError(f"Clairic answers only extraction questions, not {question.kind!r}")
+    if not isinstance(question.instruction, str):
+        raise ProviderError(
+            f"Clairic sends an instruction as text only: question {question.key!r} has a "
+            "structured instruction"
+        )
     if question.is_list:
         if question.value_type not in _LIST_ITEMS:
             raise ProviderError(

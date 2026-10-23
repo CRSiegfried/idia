@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import math
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from fractions import Fraction
 from types import MappingProxyType
@@ -173,6 +173,7 @@ def _preflight(  # pyright: ignore[reportUnusedFunction]
     checker.state(request.state)
     checker.keys(questions)
     checker.options(questions)
+    checker.wording(questions)
 
     state = request.state
     response_warnings: tuple[Warning, ...] = ()
@@ -398,6 +399,41 @@ class _Checker:
                 "key_patterns",
                 tuple(key for key, _ in failures),
                 self.capabilities.key_patterns,
+            )
+
+    def wording(self, questions: Sequence[Question]) -> None:
+        """A ``noul`` with labels needs ``carries_noul_descriptions``, and an instruction
+        that is not a string ``carries_structured_instructions``; every failing key is
+        named."""
+        record = self.capabilities
+        if not record.carries_noul_descriptions:
+            self._wording(
+                questions,
+                _describes_a_noul,
+                "carries_noul_descriptions",
+                "a noul's yes and no descriptions",
+            )
+        if not record.carries_structured_instructions:
+            self._wording(
+                questions,
+                _is_structured,
+                "carries_structured_instructions",
+                "a structured instruction",
+            )
+
+    def _wording(
+        self,
+        questions: Sequence[Question],
+        uses: Callable[[Question], bool],
+        field: str,
+        what: str,
+    ) -> None:
+        failing = tuple(question.key for question in questions if uses(question))
+        if failing:
+            named = ", ".join(repr(key) for key in failing)
+            which, verb = ("question", "has") if len(failing) == 1 else ("questions", "have")
+            raise self.fail(
+                f"{which} {named} {verb} {what}: {field} is False", field, failing, False
             )
 
     def options(self, questions: Sequence[Question]) -> None:
@@ -668,10 +704,23 @@ def _state_bytes(state: State) -> int:
     return sum(_part_bytes(part) for part in state.parts)
 
 
+def _describes_a_noul(question: Question) -> bool:
+    return question.kind == "noul" and bool(question.labels)
+
+
+def _is_structured(question: Question) -> bool:
+    return not isinstance(question.instruction, str)
+
+
 def _question_bytes(question: Question) -> int:
     """A question's size in Fit's measure: its key, instruction, label names and
-    descriptions, in UTF-8."""
-    texts = [question.key, question.instruction]
+    descriptions, in UTF-8; a structured instruction as its compact JSON."""
+    instruction = question.instruction
+    if not isinstance(instruction, str):
+        instruction = json.dumps(
+            instruction, separators=(",", ":"), ensure_ascii=False, default=_json_default
+        )
+    texts = [question.key, instruction]
     for label in question.labels:
         texts.append(label.name)
         if label.description is not None:

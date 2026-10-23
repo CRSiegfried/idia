@@ -1,0 +1,135 @@
+{
+  "expected": {
+    "described": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.02,
+      "type": "NoulAnswer"
+    },
+    "structured": {
+      "confidence": null,
+      "derived": [],
+      "off_label_mass": null,
+      "probability": 0.97,
+      "type": "NoulAnswer"
+    }
+  },
+  "features": [],
+  "format": 1,
+  "leaf": "system-one",
+  "model": "jev-1.13.0",
+  "request": {
+    "body": {
+      "model": "jev-1.13.0",
+      "state": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+      "questions": {
+        "described": {
+          "type": "noul",
+          "instructions": "Was the match played to the end?",
+          "criteria": {
+            "true": "The match ran its full time.",
+            "false": "The match was stopped or called off early."
+          }
+        },
+        "structured": {
+          "type": "noul",
+          "instructions": {
+            "question": "Did the weather change what happened at the `event`?",
+            "event": "the match"
+          }
+        }
+      }
+    },
+    "headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "authorization": "<filtered>",
+      "connection": "keep-alive",
+      "content-length": "480",
+      "content-type": "application/json",
+      "host": "api.typesafe.ai"
+    },
+    "method": "POST",
+    "url": "https://api.typesafe.ai/v1/systemone"
+  },
+  "response": {
+    "body": {
+      "model": "jev-1.13.0",
+      "answers": {
+        "described": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "structured": {
+          "type": "noul",
+          "noul": 0.97
+        }
+      },
+      "usage": {
+        "input_tokens": 367,
+        "output_tokens": 38
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 23 Oct 2026 23:01:39 GMT",
+      "server": "cloudflare",
+      "set-cookie": "<filtered>",
+      "transfer-encoding": "chunked",
+      "x-envoy-upstream-service-time": "52",
+      "x-typesafe-request-id": "req_01a16aff9d2c745f8cd069c88d02048c"
+    },
+    "status": 200
+  },
+  "wire_request": {
+    "questions": [
+      {
+        "instruction": "Was the match played to the end?",
+        "is_list": false,
+        "key": "described",
+        "kind": "noul",
+        "labels": [
+          {
+            "description": "The match ran its full time.",
+            "name": "yes",
+            "type": "Label"
+          },
+          {
+            "description": "The match was stopped or called off early.",
+            "name": "no",
+            "type": "Label"
+          }
+        ],
+        "type": "Question",
+        "value_type": null
+      },
+      {
+        "instruction": {
+          "event": "the match",
+          "question": "Did the weather change what happened at the `event`?"
+        },
+        "is_list": false,
+        "key": "structured",
+        "kind": "noul",
+        "labels": [],
+        "type": "Question",
+        "value_type": null
+      }
+    ],
+    "state": {
+      "parts": [
+        {
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
+          "type": "TextPart"
+        }
+      ],
+      "type": "State"
+    },
+    "type": "WireRequest"
+  }
+}

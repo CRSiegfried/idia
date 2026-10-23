@@ -137,6 +137,8 @@ CAPABILITIES: Final = Capabilities(
     returns_refusal=False,
     calibrated=True,
     snapshot_pinnable=True,
+    carries_noul_descriptions=True,
+    carries_structured_instructions=True,
     truncates_silently=False,
     confidence={"choice": "top-probability"},
     rounding=Rounding(probability_decimals=2, score_decimals=2),

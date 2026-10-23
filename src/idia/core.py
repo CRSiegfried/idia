@@ -504,7 +504,8 @@ class State:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Label:
-    """One allowed answer of a ``choice`` question, or one level of a ``score``.
+    """One allowed answer of a ``choice`` question, one level of a ``score``, or the ``yes``
+    or ``no`` of a ``noul`` that describes them.
 
     A level's position in the question's labels, from 0, is its value.
     """
@@ -522,15 +523,22 @@ class Label:
 class Question:
     """One question put to a provider: a key, a kind, its instruction and its labels in order.
 
+    The instruction is a non-empty string, or a non-empty JSON object or array for a wire API
+    that takes structure; an object is held read-only, as a request's options are, its
+    values as given, and the instruction is left out of the question's hash. A leaf
+    sends it as it is or refuses it before sending, and never drops it.
+
     A ``choice`` takes two or more labels and a ``score`` one or more levels, both in
-    ``labels``. An ``extraction`` declares its ``value_type`` and whether it asks for a list.
-    A ``noul`` and a ``box`` take neither. A question of a candidate kind or candidate value
-    type cannot be built: :class:`KindNotInRelease` is raised before any request exists.
+    ``labels``. A ``noul`` takes none, or exactly ``yes`` then ``no`` with at least one
+    described, the wording of what counts as each. An ``extraction`` declares its
+    ``value_type`` and whether it asks for a list. A ``box`` takes neither. A question of a
+    candidate kind or candidate value type cannot be built: :class:`KindNotInRelease` is
+    raised before any request exists.
     """
 
     key: str
     kind: Kind
-    instruction: str
+    instruction: str | JsonValue = field(hash=False)
     labels: tuple[Label, ...] = ()
     value_type: ValueType | None = None
     is_list: bool = False
@@ -538,7 +546,10 @@ class Question:
     def __post_init__(self) -> None:
         _check_text("Question", "key", self.key)
         _check_type("Question", "kind", self.kind, str, "a str")
-        _check_text("Question", "instruction", self.instruction)
+        _check_instruction(self.instruction)
+        if isinstance(self.instruction, Mapping):
+            frozen = MappingProxyType(dict(cast(Mapping[str, JsonValue], self.instruction)))
+            object.__setattr__(self, "instruction", frozen)
         _check_items("Question", "labels", self.labels, Label, "a Label")
         _check_type("Question", "is_list", self.is_list, bool, "a bool")
         if self.value_type is not None:
@@ -561,6 +572,17 @@ class Question:
             names = [label.name for label in self.labels]
             if len(set(names)) != len(names):
                 raise ValueError("label names must be unique within a question")
+        elif kind == "noul" and self.labels:
+            names = tuple(label.name for label in self.labels)
+            if names != _NOUL_LABELS:
+                raise ValueError(
+                    f"a noul question's labels are none, or yes then no, not {list(names)}"
+                )
+            if all(label.description is None for label in self.labels):
+                raise ValueError(
+                    "a noul question's yes and no labels need at least one description; "
+                    "use no labels for none"
+                )
         elif self.labels:
             raise ValueError(f"a {kind} question takes no labels")
         if kind == "extraction":
@@ -571,6 +593,29 @@ class Question:
                 raise ValueError(f"a {kind} question declares no value type")
             if self.is_list:
                 raise ValueError(f"a {kind} question cannot ask for a list")
+
+
+_NOUL_LABELS: Final = ("yes", "no")
+"""The names a ``noul``'s labels take, in order, when it describes them."""
+
+
+def _check_instruction(instruction: object) -> None:
+    """A non-empty string, or a non-empty JSON object (a mapping with string keys) or array
+    (a tuple); the values inside are not checked, as a ``JsonPart``'s are not."""
+    if isinstance(instruction, str):
+        _check_text("Question", "instruction", instruction)
+        return
+    if isinstance(instruction, Mapping):
+        keys = cast(Mapping[object, object], instruction)
+        if any(not isinstance(key, str) for key in keys):
+            raise TypeError("Question.instruction must have str keys")
+    elif not isinstance(instruction, tuple):
+        raise TypeError(
+            "Question.instruction must be a str, a JSON object or a JSON array (a tuple), "
+            f"not {type(instruction).__name__}"
+        )
+    if not instruction:
+        raise ValueError("Question.instruction must not be empty")
 
 
 def _no_options() -> Mapping[str, JsonValue]:
@@ -690,6 +735,11 @@ class Capabilities:
     ``image_media_types`` bear only on a state with an image. The media types are written
     lower-case and canonical, and a leaf's record may not leave them empty beside the image
     modality.
+
+    ``carries_noul_descriptions`` says whether the leaf sends a ``noul``'s ``yes`` and ``no``
+    label descriptions, and ``carries_structured_instructions`` whether it sends an
+    instruction that is a JSON object or array rather than a string. False means the leaf
+    refuses that part, so Fit refuses a request that uses it before any call.
     """
 
     kinds: frozenset[Kind]
@@ -714,6 +764,8 @@ class Capabilities:
     returns_refusal: bool
     calibrated: bool
     snapshot_pinnable: bool
+    carries_noul_descriptions: bool
+    carries_structured_instructions: bool
     truncates_silently: bool | None
     confidence: Mapping[Kind, str]
     rounding: Rounding
