@@ -2,9 +2,10 @@
 
 Run it as ``uv run python scripts/check_terms.py``. It scans ``src/``, ``docs/``,
 ``tests/`` (its recorded cassettes aside), ``scripts/`` (this script aside), the workflows
-in ``.github/`` and the top-level README, CHANGELOG, CONTRIBUTING and SECURITY files for
-the vocabulary of a build process (offices, charters, ADRs, rulings, build steps and the
-like) and exits 1 with one line per hit, or 0 when none is found. Standard library only.
+in ``.github/``, the top-level README, CHANGELOG, CONTRIBUTING and SECURITY files and
+``pyproject.toml`` for the vocabulary of a build process (offices, charters, ADRs, rulings,
+build steps and the like) and exits 1 with one line per hit, or 0 when none is found.
+Standard library only.
 
 Each pattern is a whole word or a phrase, matched with word boundaries, so the ordinary
 words beside it pass: ``registered`` and ``registry`` are not ``the register``, ``LeafHarness``
@@ -34,7 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TREES = ("src", "docs", "tests", "scripts", ".github")
 SKIPPED = ("tests/cassettes/", "scripts/check_terms.py")
-TOP_LEVEL = ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md")
+TOP_LEVEL = ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "pyproject.toml")
 SUFFIXES = frozenset({".py", ".md", ".pyi", ".txt", ".toml", ".json", ".yml", ".yaml"})
 ALLOW_MARK = "check-terms: ok"
 
