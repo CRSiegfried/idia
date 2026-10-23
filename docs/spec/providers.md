@@ -6,8 +6,8 @@ A wire leaf is an optional extra: `idia.provider(name, **options)` imports it be
 | Name | Leaf | Extra | Dependency |
 |---|---|---|---|
 | `system-one` | `SystemOne` in `idia.providers.system_one` | `system-one` | `httpx2` |
-| `openai-decisions` | `OpenAIDecisions` in `idia.providers.openai_decisions` | `openai` | `openai` |
-| `openai-chat` | `OpenAIChat` in `idia.providers.chat` | `openai` | `openai` |
+| `openai-decisions` | `OpenAIDecisions` in `idia.providers.openai_decisions` | `openai` | `openai`, `httpx2` |
+| `openai-chat` | `OpenAIChat` in `idia.providers.chat` | `openai` | `openai`, `httpx2` |
 | `cloudflare-clef` | `Clef` in `idia.providers.cloudflare` | `cloudflare` | `httpx2` |
 | `cloudflare-clairic` | `Clairic` in `idia.providers.cloudflare` | `cloudflare` | `httpx2` |
 
