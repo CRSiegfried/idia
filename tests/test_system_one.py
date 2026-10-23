@@ -857,7 +857,7 @@ def test_the_registry_names_the_leaf_and_its_extra() -> None:
     entry = providers._REGISTRY["system-one"]
     assert entry.target == "idia.providers.system_one:SystemOne"
     assert entry.extra == "system-one"
-    assert providers._EXTRAS["system-one"] == "httpx2"
+    assert providers._EXTRAS["system-one"] == ("httpx2",)
 
 
 def test_provider_builds_and_wraps_it() -> None:
@@ -895,8 +895,7 @@ def test_without_httpx2_idia_imports_and_the_leaf_asks_for_its_extra() -> None:
     assert 'pip install "idia[system-one]"' in done.stdout
 
 
-def test_a_label_sent_unlisted_is_kept_for_the_fault() -> None:
-    # A question built with an unusual label still maps; the wire's probabilities decide.
+def test_a_missing_label_that_also_breaks_the_sum_faults_both_rules() -> None:
     question = Question(
         key="c", kind="choice", instruction="?", labels=(Label(name="a"), Label(name="b"))
     )
@@ -908,7 +907,7 @@ def test_a_label_sent_unlisted_is_kept_for_the_fault() -> None:
 
 
 # ----------------------------------------------------------------------------------------
-# The review's refusals before sending, and readings that must not raise
+# Refusals before sending, and readings that must not raise
 # ----------------------------------------------------------------------------------------
 
 

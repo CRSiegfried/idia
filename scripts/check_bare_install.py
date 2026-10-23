@@ -26,8 +26,8 @@ from pathlib import Path
 import idia
 from idia.providers import _EXTRAS, _REGISTRY  # pyright: ignore[reportPrivateUsage]
 
-DEPENDENCIES = tuple(sorted(set(_EXTRAS.values())))
-"""The top-level module every extra installs."""
+DEPENDENCIES = tuple(sorted({module for modules in _EXTRAS.values() for module in modules}))
+"""The top-level modules the extras install."""
 
 CORE_MODULES = (
     "idia.providers.scripted",

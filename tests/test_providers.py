@@ -59,12 +59,26 @@ def test_missing_extra_dependency_is_reraised_with_the_install_hint(
         "guarded",
         _Entry(target="tests._fake_leaf_missing_dependency:Guarded", extra="guarded"),
     )
-    monkeypatch.setitem(providers._EXTRAS, "guarded", "idia_test_missing_sdk")
+    monkeypatch.setitem(providers._EXTRAS, "guarded", ("idia_test_missing_sdk",))
     with pytest.raises(ModuleNotFoundError) as raised:
         _load_leaf("guarded")
     assert 'pip install "idia[guarded]"' in str(raised.value)
     assert raised.value.name == "idia_test_missing_sdk"
     assert isinstance(raised.value.__cause__, ModuleNotFoundError)
+
+
+def test_any_module_an_extra_installs_gets_the_install_hint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(
+        providers._REGISTRY,
+        "guarded",
+        _Entry(target="tests._fake_leaf_missing_dependency:Guarded", extra="guarded"),
+    )
+    monkeypatch.setitem(providers._EXTRAS, "guarded", ("some_sdk", "idia_test_missing_sdk"))
+    with pytest.raises(ModuleNotFoundError) as raised:
+        _load_leaf("guarded")
+    assert 'pip install "idia[guarded]"' in str(raised.value)
 
 
 def test_an_unrelated_import_failure_is_not_disguised(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -73,7 +87,7 @@ def test_an_unrelated_import_failure_is_not_disguised(monkeypatch: pytest.Monkey
         "other",
         _Entry(target="tests._fake_leaf_missing_dependency:Guarded", extra="other"),
     )
-    monkeypatch.setitem(providers._EXTRAS, "other", "some_other_sdk")
+    monkeypatch.setitem(providers._EXTRAS, "other", ("some_other_sdk",))
     with pytest.raises(ModuleNotFoundError) as raised:
         _load_leaf("other")
     assert "pip install" not in str(raised.value)

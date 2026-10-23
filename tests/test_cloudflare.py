@@ -729,7 +729,7 @@ def test_the_estimators() -> None:
 
 
 def test_the_registry_builds_each_leaf_under_its_name() -> None:
-    assert registry._EXTRAS["cloudflare"] == "httpx2"
+    assert registry._EXTRAS["cloudflare"] == ("httpx2",)
     for name, record in (
         ("cloudflare-clef", clef_record("clef")),
         ("cloudflare-clairic", clairic_record()),

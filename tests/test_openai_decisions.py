@@ -745,7 +745,7 @@ def test_the_registry_names_the_leaf_and_its_extra() -> None:
     entry = providers._REGISTRY["openai-decisions"]
     assert entry.target == "idia.providers.openai_decisions:OpenAIDecisions"
     assert entry.extra == "openai"
-    assert providers._EXTRAS["openai"] == "openai"
+    assert providers._EXTRAS["openai"] == ("openai", "httpx2")
 
 
 def test_provider_builds_and_wraps_it() -> None:

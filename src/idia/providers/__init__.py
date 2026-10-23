@@ -51,12 +51,12 @@ _REGISTRY: Final[dict[str, _Entry]] = {
 }
 """Provider name to its leaf. Each wire leaf registers here."""
 
-_EXTRAS: Final[dict[str, str]] = {
-    "system-one": "httpx2",
-    "openai": "openai",
-    "cloudflare": "httpx2",
+_EXTRAS: Final[dict[str, tuple[str, ...]]] = {
+    "system-one": ("httpx2",),
+    "openai": ("openai", "httpx2"),
+    "cloudflare": ("httpx2",),
 }
-"""Extra name to the top-level module its dependency installs, for the import guard."""
+"""Extra name to the top-level modules its dependencies install, for the import guard."""
 
 
 def _load_leaf(name: str, **options: object) -> Leaf:  # pyright: ignore[reportUnusedFunction]
@@ -71,10 +71,11 @@ def _load_leaf(name: str, **options: object) -> Leaf:  # pyright: ignore[reportU
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError as error:
-        dependency = _EXTRAS.get(entry.extra) if entry.extra is not None else None
+        dependencies = _EXTRAS.get(entry.extra, ()) if entry.extra is not None else ()
         missing = error.name or ""
-        if dependency is not None and (
+        if any(
             missing == dependency or missing.startswith(dependency + ".")
+            for dependency in dependencies
         ):
             raise ModuleNotFoundError(
                 f"provider {name!r} needs the {entry.extra!r} extra: "

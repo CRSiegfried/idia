@@ -102,7 +102,7 @@ if TYPE_CHECKING:
     @overload
     @deprecated(
         "a registered provider takes its leaf's keywords, each of its type and every required "
-        "one given, and retry, concurrency and rate; any other call raises TypeError"
+        "one given, and retry, concurrency and rate; an unknown or missing keyword raises TypeError"
     )
     def provider(
         name: Literal[
