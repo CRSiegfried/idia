@@ -24,7 +24,7 @@ The public names are those `idia.__all__` lists.
   A key it knows but does not read, such as an option meant for another member of the same router, it takes with no effect and no warning, and records nothing for it.
   The keys it does not know it ignores, with one `unknown-option` warning naming every such key on its wire response, built by `unknown_options(options, known)`; nothing else changes, and an unknown option never reaches the wire.
 - A **deadline** is an instant on the monotonic clock; build it with `Deadline.after(seconds)`, the seconds from now, and `remaining()` gives the seconds left, negative once passed, while `passed()` says whether it has passed, counting it as passed when it is within one tick of the monotonic clock, the most by which the event loop fires a timer early, so a call cut at the deadline never reads as having time left.
-  `Deadline(at)` takes a `time.monotonic()` instant and refuses one that is not finite or is more than 30 days (2,592,000 seconds) ahead, which is what a wall-clock time such as `time.time() + 30` would be; `Deadline.after` takes a finite number of seconds of at most 30 days, a past instant allowed, so zero or negative seconds give a deadline already passed, and refuses any other value with its own message.
+  `Deadline(at=...)` takes a `time.monotonic()` instant and refuses one that is not finite or is more than 30 days (2,592,000 seconds) ahead, which is what a wall-clock time such as `time.time() + 30` would be; `Deadline.after` takes a finite number of seconds of at most 30 days, a past instant allowed, so zero or negative seconds give a deadline already passed, and refuses any other value with its own message.
 
 ## The closed sets
 
@@ -120,13 +120,13 @@ A 0 does not mean an answer is missing: a question with no answer gets a `Fault`
 ## Errors
 
 `IdiaError` is the base.
-`ProviderError(message, is_retryable=False, retry_after=None, status_code=None, request_id=None)` is the one error a leaf raises; `DeadlineExceeded` is a non-retryable one that Dispatch, never a leaf, puts on the outcome of a wire request the deadline ended: one never sent because the deadline passed, or one whose next retry the deadline could not fit, its failed attempts listed with their own errors; the dispatcher builds it when the deadline has passed or a retry's delay would end past it, and a limiter raises it when its wait would end past the deadline.
+`ProviderError(message, *, is_retryable=False, retry_after=None, status_code=None, request_id=None)` is the one error a leaf raises; `DeadlineExceeded` is a non-retryable one that Dispatch, never a leaf, puts on the outcome of a wire request the deadline ended: one never sent because the deadline passed, or one whose next retry the deadline could not fit, its failed attempts listed with their own errors; the dispatcher builds it when the deadline has passed or a retry's delay would end past it, and a limiter raises it when its wait would end past the deadline.
 A `ProviderError`'s message, and so its `str()`, has every key-shaped substring, an `sk-` API key (`sk-` and twenty or more key characters) or a bearer token written out (the word `Bearer`, in any case, then white space and sixteen or more token characters), replaced by `<filtered>` when the error is built; its other fields, the request id among them, are kept as given, and a `RequestFailed`, which quotes the first failed outcome's error, therefore carries no such key either.
 Only keys of these shapes are caught: a credential of another shape passes as written.
 `RequestFailed(response)` carries the full response when no wire request answered.
 Its message names the first failed outcome in `response.outcomes`: `no wire request answered: <provider> <model_requested>: <error> (1 outcome failed)`, or with `(<n> outcomes failed; the first shown)` when several failed, `<error>` being the error's text, or its type name when the text is empty.
 A hand-built response with no failed outcome gives `no wire request answered (1 outcome)`, or `no wire request answered (<n> outcomes)` for any other count.
-`DoesNotFit(message, check, observed, limit, state_overflow=False, off_features=frozenset())` is raised before any call when a request does not fit; [Fit](fit.md) gives its fields.
+`DoesNotFit(message, *, check, observed, limit, state_overflow=False, off_features=frozenset())` is raised before any call when a request does not fit; [Fit](fit.md) gives its fields.
 `KindNotInRelease` and `ElicitationNotInRelease` are above.
 
 ## The two protocols

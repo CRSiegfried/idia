@@ -379,10 +379,6 @@ ESTIMATE_BODY: Final[dict[str, object]] = {
 }
 """The raw request, sent outside the leaf, whose reply is the candidate-shape cassette."""
 CANDIDATE: Final = "candidate-estimate"
-LIST_ITEMS_OBJECT: Final = "list-items-object"
-"""A failure probe kept on purpose: the first extraction recording sent a list's ``items``
-as an object, which the wire refused with 400 and code 5006; the leaf now sends the type
-string, so no replay matches it, and it stands as the record of that refusal."""
 CANDIDATE_TARGET: Final = "refunds"
 """The answer of Clairic's kind cassette, the provider half's request, that the
 candidate shape replaces."""

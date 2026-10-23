@@ -61,7 +61,8 @@ Its `name` is `system-one` and its `model` the one it was built for.
 - **An image below 280 pixels on a side** does not fit: the record declares `min_image_side` 280, and Fit refuses it before any call.
   An image whose size cannot be read is sent with an `unchecked-limit` warning, and the wire judges it.
   The minimum was measured on `jev-1.14.0` with PNGs: 280 by 280 and 280 by 320 either way were answered, 279 by 279 and 279 by 320 either way refused with 400 and "Invalid image dimensions.", so the rule is per side, not by area.
-  JPEG was not measured; the same minimum is applied to it. The 16 MiB per image and 32 MiB for all images are declared and checked on the raw bytes; the documented maximum side, 1,568, is checked by no one, so the wire refuses or resizes a larger image.
+  JPEG was not measured; the same minimum is applied to it.
+  The 16 MiB per image and 32 MiB for all images are declared and checked on the raw bytes; the documented maximum side, 1,568, is checked by no one, so the wire refuses or resizes a larger image.
 - **The questions**, keyed as asked and in request order: a `noul` and a `box` send `{type, instructions}`; a `choice` adds `criteria`, each label's name to its description or `null`, in label order; a `score` adds `criteria`, the list of each level's description or, lacking one, its name.
 
 **Reading the response.** The body must hold a non-empty string `model`, an object `usage` and an object `answers`, or the call raises a non-retryable `ProviderError`.
@@ -111,7 +112,8 @@ An injected `AsyncOpenAI` is used through `with_options(max_retries=0)` and neve
 The client follows the event loop as `HttpLeaf`'s does: a created client is made afresh on another running loop and the old one dropped unclosed, an injected one on another loop raises the same non-retryable `ProviderError` before any SDK call, an injected or created client whose `is_closed()` is true raises a non-retryable `ProviderError`, `the client is closed`, before any SDK call, and a call after `aclose()` raises `the leaf is closed`.
 Each call goes through the SDK's `with_raw_response` under `within(deadline, ...)` and the raw body is read as a whole, as above.
 The SDK's errors map to `ProviderError`: a status error through the status table, except that a 429 whose error `code` is `insufficient_quota` is not retryable; a connection error or timeout is retryable, but one whose cause is a request the client refuses as malformed before sending, as in the status table above, is not, and nor is a value the SDK cannot encode, a key among them; any other SDK error is not; a bare `RuntimeError` the SDK lets through during the call is retryable, the backstop for a connection that died under the client, and such a call may have reached the wire; a subclass propagates.
-The request id is `x-request-id`. The key a 401 echoes, which the wire masks itself (`sk-apost********alid`, its first characters, stars and its last four), is not key-shaped and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
+The request id is `x-request-id`.
+The key a 401 echoes, which the wire masks itself (`sk-apost********alid`, its first characters, stars and its last four), is not key-shaped and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
 
 **The decisions leaf**, `OpenAIDecisions(*, model="gpt-6-luna", api_key=None, client=None, max_questions=200, capabilities=None)`, named `openai-decisions`, sends one `POST /v1/decisions`.
 Any model name is sent; the record is `gpt-6-luna`'s.
@@ -203,7 +205,7 @@ Nothing else is sent: a unit, a precision or a null threshold is whatever the in
 | Field | Clef (`clef`; `clef-flash`) | Clairic |
 |---|---|---|
 | `kinds`; `modalities`; `image_carriers` | `noul`, `choice`, `score`; text, JSON, image; `array` | `extraction`; text, image; `array` |
-| `max_input_tokens`, `max_question_tokens` | 65,536; 24,000 | 65,536 |
+| `max_input_tokens`, `max_question_tokens` | 65,536 for both on `clef`, 24,000 for both on `clef-flash` | 65,536 |
 | `max_body_bytes`; `max_questions` | 13,631,488; 64 | 16,777,216; `UNBOUNDED` |
 | `max_images`, `max_images_per_question` | 4 | 4 |
 | `max_image_bytes`; `max_total_image_bytes` | 4 MiB; 8 MiB | 4 MiB; 8 MiB |

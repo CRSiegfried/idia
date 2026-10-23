@@ -483,7 +483,9 @@ def test_live_clairic_order() -> None:
 
 
 def test_live_clairic_extraction() -> None:
-    """The extraction over every value type and a list; its first recording sent a list's
-    ``items`` as an object, which the wire refused (kept as ``list-items-object``)."""
+    """The extraction over every value type and a list. Its first recording sent a list's
+    ``items`` as an object, which the wire refused with 400 and code 5006; the leaf now sends
+    the type string, so no replay matches that cassette, ``list-items-object``, and it is
+    kept as the record of the refusal."""
     result = asyncio.run(_clairic_call("extraction", EXTRACTION, spans=True))
     assert isinstance(result, WireResponse), result

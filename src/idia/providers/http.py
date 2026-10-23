@@ -340,7 +340,9 @@ def json_loads(content: bytes) -> JsonValue:
 
 def retry_after(headers: Mapping[str, str]) -> float | None:
     """Seconds to wait: ``retry-after-ms`` first, then ``retry-after`` as seconds or an
-    HTTP-date; ``None`` when neither header is present or readable."""
+    HTTP-date; ``None`` when neither header is present or readable. The names are looked up
+    lower-case, as ``httpx2.Headers`` matches any case; a plain mapping must use lower-case
+    keys."""
     milliseconds = _seconds(headers.get("retry-after-ms"))
     if milliseconds is not None:
         return milliseconds / 1000
