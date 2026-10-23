@@ -202,6 +202,17 @@ Clairic. What each provider takes, its limits and its models are in
   `ommat[idia]` extra, taking one leaf's dispatcher per oracle. See ommat's tutorial,
   [Decide with idia](https://github.com/CRSiegfried/ommat/blob/main/docs/tutorials/decide-with-idia.md).
 
+## Using with an AI coding agent
+
+[`skills/idia/SKILL.md`](skills/idia/SKILL.md) is an agent skill: it tells an AI coding
+agent, such as Claude Code, when to reach for idia, the core pattern and the pitfalls, and
+links into these docs for the rest. From a clone, copy it into your skills folder, or into a
+project's `.claude/skills/`:
+
+```sh
+cp -r skills/idia ~/.claude/skills/
+```
+
 **The name.** Idia and Ommat come from *ommatidia*, the thousands of small hexagonal eyes
 that make up a compound eye and combine into one picture: *ommat-* is the Greek stem for
 "eye", *-idia* "little ones". Many small, cheap questions add up to one full picture.

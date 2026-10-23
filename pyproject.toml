@@ -96,4 +96,4 @@ typeCheckingMode = "strict"
 
 [tool.hatch.build.targets.sdist]
 # scripts/ is left out: its spec check is a repository check, not part of the package.
-include = ["/src", "/tests", "/docs", "/*.md", "/LICENSE"]
+include = ["/src", "/tests", "/docs", "/skills", "/*.md", "/LICENSE"]
