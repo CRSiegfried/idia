@@ -306,6 +306,8 @@ def read_object(response: httpx2.Response, request_id: str | None) -> Mapping[st
         body = json_loads(response.content)
     except ValueError:
         raise unreadable(response, "the body is not JSON", request_id) from None
+    except RecursionError:
+        raise unreadable(response, "the body is nested too deeply to read", request_id) from None
     if not isinstance(body, Mapping):
         raise unreadable(response, "the body is not a JSON object", request_id)
     return cast(Mapping[str, JsonValue], body)
@@ -377,7 +379,7 @@ def _detail(content: bytes) -> str:
     text is filtered before the cut, so no piece of a key survives it."""
     try:
         body: object = json.loads(content)
-    except ValueError:
+    except (ValueError, RecursionError):
         return _without_keys(content.decode(errors="replace"))[:_MESSAGE_CHARS].strip()
     if not isinstance(body, dict):
         return ""

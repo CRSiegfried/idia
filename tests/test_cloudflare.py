@@ -580,6 +580,23 @@ def test_the_status_mapper_reads_the_envelopes_error(
     assert error.retry_after == 2.0
 
 
+def test_an_error_body_nested_too_deeply_still_maps_to_a_provider_error() -> None:
+    wire = _Wire(_failing(500, b"[" * 100_000))
+    error = _raises(_clef(wire), clef_request("noul"))
+    assert error.message.startswith("HTTP 500")
+    assert error.is_retryable
+
+
+def test_a_legend_key_too_long_to_be_an_index_sorts_last() -> None:
+    long = {**_SCORE["score_mood"], "legend": {"9" * 5000: "low", "0": "mid"}, "probabilities": {}}
+    wire = _Wire(_ok(_clef_result({"score_mood": long})))
+    request = WireRequest(state=TEXT, questions=CLEF_QUESTIONS["score"][1:])
+    answer = _call(_clef(wire), request).answers["score_mood"]
+    assert isinstance(answer, Fault)
+    assert isinstance(answer.mapped, LabelAnswer)
+    assert answer.mapped.echo == ("mid", "low")
+
+
 def test_an_envelope_error_quoting_a_bearer_is_filtered_before_it_is_cut() -> None:
     token = "Bearer " + "a" * 40
     # Cut first, only six of the token's characters would remain, which no shape matches.

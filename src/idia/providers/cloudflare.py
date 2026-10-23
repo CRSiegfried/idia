@@ -767,7 +767,7 @@ def _envelope_error(content: bytes) -> tuple[int | None, str | None]:
     """The first error's code and message from a Cloudflare envelope, where there is one."""
     try:
         body: object = json.loads(content)
-    except ValueError:
+    except (ValueError, RecursionError):
         return None, None
     if not isinstance(body, dict):
         return None, None
@@ -853,8 +853,9 @@ def _clef_answer(question: Question, answer: Mapping[str, JsonValue]) -> MappedA
 
 
 def _level_order(index: str) -> tuple[int, str]:
-    """A legend's levels by index; a key that is no index sorts last, by its text."""
-    return (int(index), "") if index.isdecimal() else (1 << 30, index)
+    """A legend's levels by index; a key that is no index, or too long to be one, sorts
+    last, by its text."""
+    return (int(index), "") if index.isdecimal() and len(index) <= 9 else (1 << 30, index)
 
 
 def _in_label_order(

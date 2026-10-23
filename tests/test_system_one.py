@@ -684,7 +684,9 @@ def test_a_pinned_model_is_the_snapshot() -> None:
     assert response.warnings == ()
 
 
-@pytest.mark.parametrize("reported", ["jev-latest", "jev-1.13", "jev-1.13.0-rc1"])
+@pytest.mark.parametrize(
+    "reported", ["jev-latest", "jev-1.13", "jev-1.13.0-rc1", "jev-1.13.0\n", "jev-\u0661.13.0"]
+)
 def test_an_alias_reported_is_no_snapshot_and_a_warning(reported: str) -> None:
     wire = _answering({"q": {"type": "noul", "noul": 0.5}}, reported)
     response = _call(wire.leaf(), _one(_NOUL))
@@ -961,6 +963,21 @@ def test_a_legend_key_of_other_digits_sorts_last_and_faults_the_echo() -> None:
         "score": 0.5,
         "confidence": 0.4,
         "legend": {"0": "low", "\u00b2": "odd", "1": "mid", "2": "high"},
+        "probabilities": {"0": 0.6, "1": 0.3, "2": 0.1},
+    }
+    response = _call(_answering({"score_mood": answer}).leaf(), _one(_NAMED_SCORE))
+    fault = response.answers["score_mood"]
+    assert isinstance(fault, Fault)
+    assert fault.failures[0].observed == "low,mid,high,odd"
+
+
+def test_a_legend_key_too_long_to_be_an_index_sorts_last() -> None:
+    long_key = "9" * 5000
+    answer = {
+        "type": "score",
+        "score": 0.5,
+        "confidence": 0.4,
+        "legend": {"0": "low", long_key: "odd", "1": "mid", "2": "high"},
         "probabilities": {"0": 0.6, "1": 0.3, "2": 0.1},
     }
     response = _call(_answering({"score_mood": answer}).leaf(), _one(_NAMED_SCORE))

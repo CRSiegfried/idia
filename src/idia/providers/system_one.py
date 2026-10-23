@@ -64,7 +64,7 @@ _REQUEST_ID_HEADER: Final = "x-typesafe-request-id"
 _IMAGES_HEADER: Final = "TypeSafe-Danger-Zone-Images"
 _LONG_CONTEXT_HEADER: Final = "TypeSafe-Danger-Zone-Long-Context"
 _API_KEY_ENV: Final = "TYPESAFE_API_KEY"
-_SNAPSHOT: Final = re.compile(r"^jev-\d+\.\d+\.\d+$")
+_SNAPSHOT: Final = re.compile(r"jev-[0-9]+\.[0-9]+\.[0-9]+")
 
 _BASE_KINDS: Final[frozenset[Kind]] = frozenset({"noul", "choice", "score"})
 
@@ -258,7 +258,7 @@ class SystemOne(HttpLeaf):
         answers, warnings = validate_answers(
             wire_request.questions, mapped, self._capabilities.rounding
         )
-        snapshot = model_reported if _SNAPSHOT.match(model_reported) else None
+        snapshot = model_reported if _SNAPSHOT.fullmatch(model_reported) else None
         if snapshot is None:
             warnings += (
                 Warning(
@@ -512,8 +512,9 @@ def _map(question: Question, answer: Mapping[str, JsonValue]) -> MappedAnswer:
 
 
 def _level_order(index: str) -> tuple[int, str]:
-    """A legend's levels by index; a key that is no index sorts last, by its text."""
-    return (int(index), "") if index.isdecimal() else (1 << 30, index)
+    """A legend's levels by index; a key that is no index, or too long to be one, sorts
+    last, by its text."""
+    return (int(index), "") if index.isdecimal() and len(index) <= 9 else (1 << 30, index)
 
 
 def _in_label_order(

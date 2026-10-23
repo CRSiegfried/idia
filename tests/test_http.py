@@ -122,6 +122,15 @@ def test_a_bad_retry_after_ms_falls_back_to_retry_after() -> None:
     assert error.retry_after == 2.0
 
 
+def test_a_body_nested_too_deeply_is_unreadable_not_a_recursion_error() -> None:
+    deep = b"[" * 100_000
+    error = http.status_error(500, {}, deep, None)
+    assert error.is_retryable
+    with pytest.raises(ProviderError, match="nested too deeply") as raised:
+        http.read_object(httpx2.Response(200, content=deep), "req-1")
+    assert not raised.value.is_retryable
+
+
 def test_the_message_names_the_wire_error_but_the_error_keeps_no_body() -> None:
     error = _error(_respond(400, {"error": {"code": "max_tokens_exceeded"}}))
     assert "max_tokens_exceeded" in error.message
