@@ -197,7 +197,7 @@ def scan(root: Path) -> list[str]:
 def subjects(revisions: str, root: Path = ROOT) -> list[tuple[str, str]]:
     """Each commit's short hash and subject in ``revisions``, oldest first, by ``git log``."""
     listed = subprocess.run(
-        ["git", "log", "--reverse", "--format=%h %s", revisions],
+        ["git", "log", "--reverse", "--format=%h %s", "--end-of-options", revisions, "--"],
         cwd=root,
         capture_output=True,
         text=True,
