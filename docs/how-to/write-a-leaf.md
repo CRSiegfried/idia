@@ -12,18 +12,27 @@ steps, with an HTTP client where `SpanLeaf` has a worker thread; the section
 [A model in your own process](#a-model-in-your-own-process) is the part only an in-process
 leaf needs.
 
-The example is four files in one directory, each code block headed by the file it belongs
-to: `spanleaf.py`, the leaf; `main.py`, which uses it; `test_spanleaf.py`, its tests; and
-`conftest.py` with `test_real_model.py`, the gate for a run against the real model. You need
+The example is six files in one directory, each code block headed by the file it belongs
+to: `spanleaf.py`, the leaf; `main.py`, which uses it; `stored.py`, the model's stored
+outputs; `test_spanleaf.py`, its tests; and `conftest.py` with `test_real_model.py`, the gate
+for a run against the real model. You need
 Python 3.11 or later, idia, and pytest for the tests.
 
 ## Use public names only
 
-Import only what `idia.__all__` lists and what the `__all__` of the modules the
-[contributing notes](../../CONTRIBUTING.md#ground-rules-for-changes) list: among them
-`idia.conformance`, `idia.providers.scripted` and `idia.providers.recorded`. Every other name
-may change without notice: a name starting with an underscore, a module starting with one,
-and `idia.providers` itself.
+Import only what `idia.__all__` lists, and what the `__all__` of these modules lists:
+`idia.conformance`, `idia.providers.scripted`, `idia.providers.recorded`,
+`idia.providers.http`, `idia.cloudflare`, `idia.providers.system_one`,
+`idia.providers.openai_decisions`, `idia.providers.chat` and `idia.providers.cloudflare`.
+Every other name may change without notice: a name starting with an underscore, a module
+starting with one, a name a listed module leaves out of its `__all__`, and `idia.providers`
+itself. The list is kept in the
+[contributing notes](https://github.com/CRSiegfried/idia/blob/main/CONTRIBUTING.md#ground-rules-for-changes).
+
+`idia.provider(name)` builds a leaf idia ships and wraps it in a `Dispatcher`;
+`idia.leaf(name)` builds the same leaf unwrapped, so you can wrap a leaf of your own around
+it, and `idia.provider_names()` lists the names. A leaf of your own is never registered:
+you build it and wrap it yourself.
 
 ## What a leaf is
 
@@ -40,7 +49,7 @@ part of `Leaf`, but a leaf that holds anything to release has one: the dispatche
 when it is closed, so it is `async`, and it may be called again, so closing twice must be
 harmless.
 
-Four rules hold for every leaf:
+Five rules hold for every leaf:
 
 - **One call sends one wire request**, or runs the model once. A leaf never retries: retries,
   waits and attempt counts are the dispatcher's. A leaf built on an SDK sets the SDK's own
@@ -75,8 +84,9 @@ from __future__ import annotations
 import asyncio
 import importlib.metadata
 import platform
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from typing import Protocol, cast
 
 from idia import (
     UNBOUNDED,
@@ -84,12 +94,15 @@ from idia import (
     Capabilities,
     Deadline,
     ExtractionAnswer,
+    Fault,
     JsonValue,
     MappedAnswer,
     Notice,
     ProviderError,
     Question,
     Rounding,
+    Rule,
+    RuleFailure,
     Span,
     State,
     TextPart,
@@ -104,33 +117,47 @@ from idia import (
 Found = tuple[str, int, int, float]
 """One span the model found: its text, its start and end offsets, and its score."""
 
-Extractor = Callable[[str, Sequence[str]], Mapping[str, Sequence[Found]]]
-"""The model: a text and the labels to look for, to the spans found under each label."""
+
+class SpanModel(Protocol):
+    """What the leaf needs of a loaded model: one pass over a text, and the model's own
+    count of the tokens that pass encodes."""
+
+    def extract(self, text: str, labels: Sequence[str]) -> Mapping[str, Sequence[Found]]: ...
+
+    def count_tokens(self, text: str, labels: Sequence[str]) -> int: ...
 
 
-def toy_model(text: str, labels: Sequence[str]) -> dict[str, list[Found]]:
+class ToyModel:
     """A stand-in for a real span model: it finds the words it knows, scored by length."""
+
     known = {"a city": ("Paris", "Lyon", "Oslo"), "a person": ("Ada", "Grace")}
-    found: dict[str, list[Found]] = {}
-    for label in labels:
-        spans: list[Found] = []
-        for word in known.get(label, ()):
-            start = text.find(word)
-            if start >= 0:
-                spans.append((word, start, start + len(word), round(0.5 + len(word) / 20, 2)))
-        found[label] = sorted(spans, key=lambda span: -span[3])
-    return found
+
+    def extract(self, text: str, labels: Sequence[str]) -> dict[str, list[Found]]:
+        found: dict[str, list[Found]] = {}
+        for label in labels:
+            spans: list[Found] = []
+            for word in self.known.get(label, ()):
+                start = text.find(word)
+                if start >= 0:
+                    spans.append((word, start, start + len(word), round(0.5 + len(word) / 20, 2)))
+            found[label] = spans
+        return found
+
+    def count_tokens(self, text: str, labels: Sequence[str]) -> int:
+        return len(text.split()) + sum(len(label.split()) for label in labels)
 
 
-def toy_tokens(text: str, labels: Sequence[str]) -> int:
-    """The model's own tokenizer, counting what one pass reads: the text and the labels."""
-    return len(text.split()) + sum(len(label.split()) for label in labels)
+def load_toy_model(revision: str | None) -> tuple[SpanModel, str | None]:
+    """Load the model at the revision given, and return it with the commit that revision
+    resolved to. A real loader resolves the revision first, then loads everything, the
+    weights, the tokenizer and the configuration, from that commit's own files. The toy has
+    no files, so its commit is the revision as given."""
+    return ToyModel(), revision
 
 
-def load_toy_model(revision: str | None) -> Extractor:
-    """Load the model. A real loader fetches or reads the weights at the revision given,
-    and resolves that revision to the commit it names."""
-    return toy_model
+def _run(model: SpanModel, text: str, labels: Sequence[str]) -> tuple[object, int]:
+    """One pass on the worker: what the model returned, and its count of what it encoded."""
+    return model.extract(text, labels), model.count_tokens(text, labels)
 ```
 
 ## State every field of the record
@@ -183,16 +210,19 @@ What Fit does with each field:
 - `returns_refusal`, `calibrated` and `snapshot_pinnable`: whether the model can decline a
   question, whether its probabilities are calibrated, and whether a response can name the
   exact model that answered. The conformance suite checks each against the responses.
-- `confidence`: for each kind whose answers carry a confidence, what that confidence is,
-  `"undocumented"` where the model publishes no formula. A kind not listed carries none.
+- `confidence`: for each kind whose answers carry a confidence, what that confidence is.
+  The string is free-form and idia never reads it: name what the number is, as the model's
+  documentation names it, such as `"top-span score"`, or `"undocumented"` where the model
+  publishes no formula. A kind not listed carries none, and a fallback over leaves whose
+  strings differ reports `"mixed"`.
 - `rounding`: the decimals the model rounds its probabilities and scores to, `None` for
   unrounded. Validation takes its tolerances from it.
 - `opt_in_features`, `enabled_features`, `feature_kinds` and `feature_modalities`: the
   features a caller may turn on, those on, and the kinds or modalities each adds. A leaf
   with none has empty sets and empty maps.
 
-`SpanLeaf`'s record. Its window of 512 tokens stands in for the measured window of a real
-model:
+`SpanLeaf`'s record. Its window of 512 tokens and its cap of 16 questions to a call stand in
+for what a run against a real model measures ([below](#measure-the-record)):
 
 ```python
 # spanleaf.py
@@ -254,11 +284,13 @@ count may fall short of the model's own.
 ```python
 # spanleaf.py
 class WordEstimator:
-    """Counts a word as a token, labels included: they share the model's window."""
+    """Counts a word as a token, each label once: the labels share the model's window, and
+    two questions with one instruction share one label."""
 
     def estimate(self, state: State, questions: Sequence[Question]) -> TokenEstimate:
         words = sum(len(part.text.split()) for part in state.parts if isinstance(part, TextPart))
-        words += sum(len(str(question.instruction).split()) for question in questions)
+        labels = dict.fromkeys(str(question.instruction) for question in questions)
+        words += sum(len(label.split()) for label in labels)
         return TokenEstimate(tokens=words, margin=0.2)
 ```
 
@@ -276,7 +308,8 @@ When one question's answer cannot be mapped, build a `Fault` for it yourself:
 as>, bound=None),), mapped=None)`, or `Rule.candidate_shape` for an answer in the shape of a
 kind idia has not admitted yet. Its siblings stand, and a `Fault` or `Refusal` you build
 passes through `validate_answers` unchanged. Only an output that cannot be read at all fails
-the whole call, with a non-retryable `ProviderError`. Parse a `date`, `time`, `datetime` or
+the whole call, with a non-retryable `ProviderError`. `SpanLeaf` does both, in `call` and
+`_mapped` below. Parse a `date`, `time`, `datetime` or
 `duration` value to its standard-library type before validating, and leave one you cannot
 parse as given, for validation to fault. A list answer has one span per item.
 
@@ -388,10 +421,13 @@ practices, those idia sets for a leaf that runs its model in process.
   after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`, and runs
   nothing. Drop a model the leaf loaded, never one it was given, and shut the worker down
   without waiting for a pass still running. Closing twice is harmless.
-- **The snapshot is the pinned revision.** Report as `snapshot` the commit the pinned
-  revision resolved to when `load()` ran, so a branch or tag is reported as its commit, and
-  `None` with `WARNING_NO_SNAPSHOT` when none was pinned. `SpanLeaf` echoes the string it
-  was given, where a real leaf resolves it.
+- **The snapshot is the pinned revision.** In `load()`, resolve the pinned revision to the
+  commit it names, then load everything, the weights, the tokenizer and the configuration,
+  from that commit's own files: some runtimes pin the weights but read the tokenizer from a
+  path that ignores the revision. Report that commit as `snapshot`, so a branch or tag is
+  reported as its commit, and `None` with `WARNING_NO_SNAPSHOT` when none was pinned. A leaf
+  given a loaded model resolves nothing: it reports the revision its caller says the model
+  was loaded at, and `None` with the warning when the caller says none.
 - **The runtime's versions go in the raw body**, so a recording keeps what answered: for a
   torch model, its runtime package and torch.
 
@@ -413,10 +449,17 @@ Several of the record's values are the model's, and only a run against it tells 
 - **Silent truncation.** Put a known entity just past the window and see whether it is lost
   with no warning. That is `truncates_silently`, which, true, needs the window known.
 - **The labels' share.** Count the same text with 1, 4 and 16 labels and fit what each label
-  adds; the estimator counts it. Measure the estimator's margin against the real tokenizer:
-  a word count falls short of subword tokens.
+  adds; the estimator counts it.
+- **The estimator.** Fit calls the estimator on the event loop's thread while the worker may
+  be running the model, and a fast tokenizer is not safe to use from two threads at once;
+  a fake model in the tests has no tokenizer at all. So an estimator usually counts by a
+  rule of its own, such as words, with a margin that covers its worst undercount measured
+  against the real tokenizer over texts like yours: if it falls short by 9% at worst, a
+  margin of at least 0.09. Use the real tokenizer only if it is safe across threads and
+  your tests can supply one.
 - **The question cap.** How many labels one pass carries before the window or the answers
-  give out. That is `max_questions`.
+  give out. That is `max_questions`. Where you cannot measure it, declare `None`: Fit then
+  warns on each request and never splits one on that account.
 - **The wording.** Send each question's instruction as it is, as the label; never reword it.
   Two questions with the same instruction share one label in the model's call, and each
   still gets its own answer by key.
@@ -430,7 +473,10 @@ The leaf:
 ```python
 # spanleaf.py
 class SpanLeaf:
-    """Finds spans of text in this process, one call at a time on a worker of its own."""
+    """Finds spans of text in this process, one call at a time on a worker of its own.
+
+    Give it ``revision`` to pin the model; give it ``runtime``, a model already loaded, and
+    ``revision`` then names the revision that model was loaded at."""
 
     name = "span-leaf"
 
@@ -439,14 +485,15 @@ class SpanLeaf:
         *,
         model: str = "toy-spans-1",
         revision: str | None = None,
-        extractor: Extractor | None = None,
+        runtime: SpanModel | None = None,
     ) -> None:
         self.model = model
         self.capabilities = CAPABILITIES
         self.estimator = WordEstimator()
         self._revision = revision
-        self._extractor = extractor
-        self._injected = extractor is not None
+        self._snapshot = revision if runtime is not None else None
+        self._runtime = runtime
+        self._injected = runtime is not None
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="span-leaf")
         self._closed = False
 
@@ -454,26 +501,26 @@ class SpanLeaf:
         """Load the model on the worker: the one step that may fetch or read weights."""
         if self._closed:
             raise ProviderError("the leaf is closed")
-        if self._extractor is None:
+        if self._runtime is None:
             loop = asyncio.get_running_loop()
-            self._extractor = await loop.run_in_executor(
-                self._worker, load_toy_model, self._revision
-            )
+            loaded = await loop.run_in_executor(self._worker, load_toy_model, self._revision)
+            self._runtime, self._snapshot = loaded
 
     async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
         if self._closed:
             raise ProviderError("the leaf is closed")
-        extractor = self._extractor
-        if extractor is None:
+        runtime = self._runtime
+        if runtime is None:
             raise ProviderError("the model is not loaded: await leaf.load() first")
         text = _one_text(wire_request)
         labels = {question.key: _label(question) for question in wire_request.questions}
+        sent = tuple(dict.fromkeys(labels.values()))
         if deadline.passed():
             raise ProviderError("the deadline passed before the call", is_retryable=True)
         loop = asyncio.get_running_loop()
-        work = loop.run_in_executor(self._worker, extractor, text, tuple(labels.values()))
+        work = loop.run_in_executor(self._worker, _run, runtime, text, sent)
         try:
-            found = await asyncio.wait_for(work, max(deadline.remaining(), 0.0))
+            output, tokens = await asyncio.wait_for(work, max(deadline.remaining(), 0.0))
         except TimeoutError:
             raise ProviderError(
                 "the deadline cut the call; the worker finishes the pass before the next",
@@ -481,17 +528,14 @@ class SpanLeaf:
             ) from None
         except Exception as error:
             raise ProviderError(f"the model failed: {type(error).__name__}: {error}") from error
-        try:
-            mapped = {
-                question.key: _answer(question, found.get(labels[question.key], ()))
-                for question in wire_request.questions
-            }
-        except (AttributeError, TypeError, ValueError) as error:
-            raise ProviderError(f"the model's output cannot be read: {error}") from error
+        if not isinstance(output, Mapping):
+            raise ProviderError(f"the model's output cannot be read: {type(output).__name__}")
+        found = cast(Mapping[str, Sequence[Found]], output)
+        mapped = _mapped(wire_request.questions, labels, found)
         answers, warnings = validate_answers(
             wire_request.questions, mapped, self.capabilities.rounding
         )
-        if self._revision is None:
+        if self._snapshot is None:
             warnings += (
                 Notice(
                     code=WARNING_NO_SNAPSHOT,
@@ -500,7 +544,6 @@ class SpanLeaf:
                 ),
             )
         warnings += unknown_options(wire_request.options, frozenset())
-        tokens = toy_tokens(text, tuple(labels.values()))
         spans: dict[str, JsonValue] = {label: tuple(found[label]) for label in found}
         versions: dict[str, JsonValue] = {
             "python": platform.python_version(),
@@ -511,7 +554,7 @@ class SpanLeaf:
             elicitation="passthrough",
             calibrated=self.capabilities.calibrated,
             model_reported=self.model,
-            snapshot=self._revision,
+            snapshot=self._snapshot,
             prompt_sent={"text_chars": len(text), "labels": labels},
             usage=Usage(
                 input_tokens=tokens,
@@ -526,14 +569,16 @@ class SpanLeaf:
         """Refuse every later call; drop a model this leaf loaded, never one it was given."""
         self._closed = True
         if not self._injected:
-            self._extractor = None
+            self._runtime = None
         self._worker.shutdown(wait=False)
 ```
 
 And the helpers it calls. `_one_text` refuses, before anything runs, what the record cannot
 say it refuses: an extraction of another value type, and a state that is not one text part.
-`_answer` reads a single value as the top-scoring span, with that span's score as its
-confidence, and a list as every span, with no confidence:
+`_mapped` maps each question's spans, and builds a `Fault` for a question whose spans it
+cannot read, its siblings standing. `_answer` reads a single value as the highest-scoring
+span, with that span's score as its confidence, whatever order the model returned them in,
+and a list as every span, with no confidence:
 
 ```python
 # spanleaf.py
@@ -553,6 +598,20 @@ def _label(question: Question) -> str:
     return question.instruction
 
 
+def _mapped(
+    questions: Sequence[Question], labels: Mapping[str, str], found: Mapping[str, Sequence[Found]]
+) -> dict[str, MappedAnswer]:
+    mapped: dict[str, MappedAnswer] = {}
+    for question in questions:
+        spans = found.get(labels[question.key], ())
+        try:
+            mapped[question.key] = _answer(question, spans)
+        except (IndexError, TypeError, ValueError):
+            failure = RuleFailure(rule=Rule.kind_shape, observed=repr(spans)[:80], bound=None)
+            mapped[question.key] = Fault(key=question.key, failures=(failure,), mapped=None)
+    return mapped
+
+
 def _answer(question: Question, spans: Sequence[Found]) -> MappedAnswer:
     if question.is_list:
         return ExtractionAnswer(
@@ -561,7 +620,7 @@ def _answer(question: Question, spans: Sequence[Found]) -> MappedAnswer:
         )
     if not spans:
         return ExtractionAnswer(value=None)
-    text, start, end, score = spans[0]
+    text, start, end, score = max(spans, key=lambda span: span[3])
     return ExtractionAnswer(value=text, confidence=score, span=Span(part=0, start=start, end=end))
 
 
@@ -631,7 +690,9 @@ to it in exchanges, what the wire or the model does on one call: `Success(kind)`
 [conformance spec](../spec/conformance.md#the-harness) gives each.
 
 Your harness turns each exchange into what your transport does. For an in-process leaf
-that is a model you inject in place of the real one, playing stored outputs:
+that is a model you inject in place of the real one, through the interface the leaf calls, here
+`SpanModel`, playing stored outputs. A real runtime's token count comes from the loaded
+model, so the fake supplies it too, stored beside each output:
 
 - **`Success(kind)`** plays the output the real model gave for `wire_request(kind)`,
   recorded by a run against it, and only for that request: a call whose inputs differ from
@@ -659,16 +720,26 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
-from spanleaf import Extractor, Found
+from spanleaf import Found, SpanModel
 
-Outputs = dict[tuple[str, tuple[str, ...]], Mapping[str, Sequence[Found]]]
-"""The model's output for each text and set of labels."""
+
+@dataclass(frozen=True)
+class Pass:
+    """What one pass of the model returned, and its count of the tokens it encoded."""
+
+    spans: Mapping[str, Sequence[Found]]
+    input_tokens: int
+
+
+Outputs = dict[tuple[str, tuple[str, ...]], Pass]
+"""The model's pass for each text and set of labels."""
 
 
 def record_outputs(
-    extractor: Extractor,
+    model: SpanModel,
     asked: Iterable[tuple[str, tuple[str, ...]]],
     path: Path,
     recorded_with: Mapping[str, str | None],
@@ -676,7 +747,12 @@ def record_outputs(
     """Run the model on each text and set of labels, and write what it returned to path,
     with the versions and the revision it ran under."""
     cases = [
-        {"text": text, "labels": list(labels), "output": extractor(text, labels)}
+        {
+            "text": text,
+            "labels": list(labels),
+            "spans": model.extract(text, labels),
+            "input_tokens": model.count_tokens(text, labels),
+        }
         for text, labels in asked
     ]
     document = {"recorded_with": dict(recorded_with), "cases": cases}
@@ -684,15 +760,15 @@ def record_outputs(
 
 
 def load_outputs(path: Path) -> Outputs:
-    """The outputs record_outputs wrote, each span a tuple again."""
+    """The passes record_outputs wrote, each span a tuple again."""
     document = json.loads(path.read_text(encoding="utf-8"))
     outputs: Outputs = {}
     for case in document["cases"]:
-        output = {
-            label: tuple((s[0], s[1], s[2], s[3]) for s in spans)
-            for label, spans in case["output"].items()
+        spans = {
+            label: tuple((s[0], s[1], s[2], s[3]) for s in found)
+            for label, found in case["spans"].items()
         }
-        outputs[(case["text"], tuple(case["labels"]))] = output
+        outputs[(case["text"], tuple(case["labels"]))] = Pass(spans, case["input_tokens"])
     return outputs
 ```
 
@@ -709,7 +785,7 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import pytest
 
@@ -719,9 +795,11 @@ from idia import (
     Deadline,
     Dispatcher,
     ExtractionAnswer,
+    Fault,
     Kind,
     Leaf,
     Provider,
+    ProviderError,
     Question,
     Request,
     RetryPolicy,
@@ -744,8 +822,8 @@ from idia.conformance import (
 )
 from idia.providers.recorded import Recorded
 from idia.providers.scripted import Scripted
-from spanleaf import CAPABILITIES, Found, SpanLeaf, toy_model
-from stored import Outputs, load_outputs, record_outputs
+from spanleaf import CAPABILITIES, Found, SpanLeaf, ToyModel
+from stored import Outputs, Pass, load_outputs, record_outputs
 
 TEXT = "Ada flew from Paris to Oslo."
 STATE = State(parts=(TextPart(text=TEXT),))
@@ -754,13 +832,12 @@ CITIES = Question(
     key="cities", kind="extraction", instruction="a city", value_type="text", is_list=True
 )
 
+ADA = ("Ada", 0, 3, 0.65)
+CITIES_FOUND = (("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7))
 STORED: Outputs = {
-    (TEXT, ("a person", "a city")): {
-        "a person": (("Ada", 0, 3, 0.65),),
-        "a city": (("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7)),
-    },
-    (TEXT, ("a person",)): {"a person": (("Ada", 0, 3, 0.65),)},
-    (TEXT, ("a city",)): {"a city": (("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7))},
+    (TEXT, ("a person", "a city")): Pass({"a person": (ADA,), "a city": CITIES_FOUND}, 10),
+    (TEXT, ("a person",)): Pass({"a person": (ADA,)}, 8),
+    (TEXT, ("a city",)): Pass({"a city": CITIES_FOUND}, 8),
 }
 """What the model returned for each text and set of labels: the request the leaf half sends,
 and each one-question split of it, which the provider half sends. A real leaf keeps these
@@ -780,7 +857,8 @@ EXPECTED: Mapping[str, Answer] = {
 
 
 class Playback:
-    """The model the harness injects: it plays the exchanges, one per call."""
+    """The model the harness injects in place of the real one: it plays the exchanges, one per
+    pass, and counts tokens as the stored pass says."""
 
     def __init__(self, exchanges: Sequence[Exchange]) -> None:
         for exchange in exchanges:
@@ -791,7 +869,7 @@ class Playback:
         self._exchanges = list(exchanges)
         self.calls = 0
 
-    def __call__(self, text: str, labels: Sequence[str]) -> Mapping[str, Sequence[Found]]:
+    def extract(self, text: str, labels: Sequence[str]) -> Mapping[str, Sequence[Found]]:
         self.calls += 1
         if not self._exchanges:
             raise RuntimeError(f"the exchanges ran out at call {self.calls}")
@@ -801,14 +879,17 @@ class Playback:
         if not isinstance(exchange, Success):
             time.sleep(1.0)
             raise RuntimeError("stalled: no answer")
-        asked = (text, tuple(labels))
-        recorded = exchange.kind is None or asked == (TEXT, REQUESTED)
-        stored = STORED.get(asked)
-        if not recorded or stored is None:
-            raise RuntimeError(
-                "harness: no stored output for these inputs; "
-                "the leaf sent something other than the recorded request"
-            )
+        if exchange.kind is not None and (text, tuple(labels)) != (TEXT, REQUESTED):
+            raise RuntimeError("harness: the leaf sent something other than the recorded request")
+        return self._stored(text, labels).spans
+
+    def count_tokens(self, text: str, labels: Sequence[str]) -> int:
+        return self._stored(text, labels).input_tokens
+
+    def _stored(self, text: str, labels: Sequence[str]) -> Pass:
+        stored = STORED.get((text, tuple(labels)))
+        if stored is None:
+            raise RuntimeError("harness: no stored output for these inputs")
         return stored
 ```
 
@@ -828,7 +909,7 @@ class SpanLeafHarness:
 
     def make(self, exchanges: Sequence[Exchange], features: frozenset[str] | None = None) -> Leaf:
         self._model = Playback(exchanges)
-        return SpanLeaf(revision="rev-1", extractor=self._model)
+        return SpanLeaf(revision="rev-1", runtime=self._model)
 
     def capabilities_for(self, features: frozenset[str]) -> Capabilities:
         return CAPABILITIES
@@ -857,8 +938,8 @@ each wire request the leaf received with its deadline:
 class LoggedSpanLeaf(SpanLeaf):
     """SpanLeaf keeping each wire request it receives, with its deadline."""
 
-    def __init__(self, *, revision: str | None, extractor: Playback) -> None:
-        super().__init__(revision=revision, extractor=extractor)
+    def __init__(self, *, revision: str | None, runtime: Playback) -> None:
+        super().__init__(revision=revision, runtime=runtime)
         self.log: list[tuple[WireRequest, Deadline | None]] = []
 
     async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
@@ -875,11 +956,11 @@ class SpanProviderHarness:
 
     def __init__(self) -> None:
         self._model = Playback([])
-        self._leaf = LoggedSpanLeaf(revision="rev-1", extractor=self._model)
+        self._leaf = LoggedSpanLeaf(revision="rev-1", runtime=self._model)
 
     def leaf(self, exchanges: Sequence[Exchange]) -> Leaf:
         self._model = Playback(exchanges)
-        self._leaf = LoggedSpanLeaf(revision="rev-1", extractor=self._model)
+        self._leaf = LoggedSpanLeaf(revision="rev-1", runtime=self._model)
         return self._leaf
 
     def make(
@@ -932,8 +1013,8 @@ def test_provider_half(check: Check) -> None:
     run(check)
 ```
 
-Then assert which checks did not apply, and why that is right for your leaf, and the
-notes of the checks that pass without running everything. For
+Then assert which checks did not apply, and why that is right for your leaf, and every note
+a passing check gives, so a check that stops running part of itself is noticed too. For
 `SpanLeaf`: no SDK (L9), no status (L12, P9, P20, P21), no body to read (L13, P12), no HTTP
 client (L15), outputs that cannot be bent into broken ones (L19, L24), no kind whose
 probabilities sum (L18), no `noul` (L20), no opt-in feature (P6), no image (P23), and not
@@ -956,30 +1037,86 @@ def test_the_provider_half_skips_exactly_what_a_wrapped_leaf_cannot_reach() -> N
     assert not_applicable(provider_checks(SpanProviderHarness)) == expected
 
 
-def test_the_leaf_half_notes_what_a_model_in_process_does_not_have() -> None:
-    notes = {
-        verdict.id: verdict.reason
-        for verdict in asyncio.run(run_checks(leaf_checks(SpanLeafHarness)))
-        if verdict.result == "pass" and verdict.id in ("L8", "L26")
-    }
-    assert notes == {
+def notes(checks: Sequence[Check]) -> dict[str, str]:
+    verdicts = asyncio.run(run_checks(checks))
+    return {v.id: v.reason for v in verdicts if v.result == "pass" and v.reason is not None}
+
+
+READ = (
+    "read spanleaf, the module that defines SpanLeaf; "
+    "code the leaf keeps in other modules was not read"
+)
+CANNOT = "a model in process cannot make"
+
+
+def test_the_leaf_half_notes_what_it_did_not_run() -> None:
+    assert notes(leaf_checks(SpanLeafHarness)) == {
+        "L4": READ,
         "L8": "the retryable half ran over a stall, not a 429: the model has no statuses",
+        "L10": READ,
+        "L11": "not driven: Failure(status=429, retry_after=None, request_id=None): the model "
+        f"has no statuses; Error(which='connection'): {CANNOT} Error(which='connection'); "
+        f"Error(which='timeout'): {CANNOT} Error(which='timeout'); "
+        f"Unreadable(which='not_json'): {CANNOT} Unreadable(which='not_json'); "
+        f"Unreadable(which='schema'): {CANNOT} Unreadable(which='schema'); "
+        f"Unreadable(which='no_answers'): {CANNOT} Unreadable(which='no_answers')",
+        "L21": READ,
+        "L25": "no expected extraction has a null value and a guess, so only that the leaf "
+        "fills no guess was checked, not that a guess is kept and never moved into value",
         "L26": "the wire responses carry no output token count and no request id, right only "
         "for a leaf whose wire or runtime gives none",
     }
 
 
-def test_the_provider_half_notes_what_a_model_in_process_does_not_have() -> None:
-    notes = {
-        verdict.id: verdict.reason
-        for verdict in asyncio.run(run_checks(provider_checks(SpanProviderHarness)))
-        if verdict.result == "pass" and verdict.reason
-    }
-    assert notes == {
+def test_the_provider_half_notes_what_it_did_not_run() -> None:
+    assert notes(provider_checks(SpanProviderHarness)) == {
         "P8": "an outcome carries no request id, right only for a leaf whose wire or runtime "
         "gives none",
         "P19": "a 503 then an answer was not recorded: the model has no statuses",
     }
+```
+
+L11's note says the suite never gives the leaf an output it cannot read: a model in
+process returns Python objects, not a body. So test that path yourself, with a model that
+returns one:
+
+```python
+# test_spanleaf.py
+class Garbled:
+    """A model whose spans for one label are not spans, or whose output is not a mapping."""
+
+    def __init__(self, output: object) -> None:
+        self._output = output
+
+    def extract(self, text: str, labels: Sequence[str]) -> Mapping[str, Sequence[Found]]:
+        return cast(Mapping[str, Sequence[Found]], self._output)
+
+    def count_tokens(self, text: str, labels: Sequence[str]) -> int:
+        return 10
+
+
+def ask_garbled(output: object) -> Mapping[str, Answer]:
+    async def ask() -> Mapping[str, Answer]:
+        leaf = SpanLeaf(revision="rev-1", runtime=Garbled(output))
+        try:
+            wire_request = WireRequest(state=STATE, questions=(WHO, CITIES))
+            return (await leaf.call(wire_request, Deadline.after(5))).answers
+        finally:
+            await leaf.aclose()
+
+    return asyncio.run(ask())
+
+
+def test_spans_the_leaf_cannot_read_are_a_fault_and_their_sibling_stands() -> None:
+    answers = ask_garbled({"a person": [("Ada", 0)], "a city": CITIES_FOUND})
+    assert isinstance(answers["who"], Fault)
+    assert answers["cities"] == EXPECTED["cities"]
+
+
+def test_an_output_that_is_not_a_mapping_fails_the_call_for_good() -> None:
+    with pytest.raises(ProviderError, match="cannot be read") as raised:
+        ask_garbled(["Ada"])
+    assert not raised.value.is_retryable
 ```
 
 ## Let code that uses the leaf test without it
@@ -1014,7 +1151,7 @@ calls it:
 # test_spanleaf.py
 def test_the_stored_outputs_round_trip_through_their_file(tmp_path: Path) -> None:
     path = tmp_path / "outputs.json"
-    record_outputs(toy_model, STORED, path, {"revision": "rev-1"})
+    record_outputs(ToyModel(), STORED, path, {"revision": "rev-1"})
     assert load_outputs(path) == STORED
 
 
@@ -1026,7 +1163,7 @@ def test_a_recording_replays_with_no_model(tmp_path: Path) -> None:
         async with Dispatcher(leaf, retry=RetryPolicy.without_delay()) as provider:
             return (await provider.answer(request)).answers
 
-    live = SpanLeaf(revision="rev-1", extractor=toy_model)
+    live = SpanLeaf(revision="rev-1", runtime=ToyModel())
     recorded = asyncio.run(ask(Recorded(live, log, "once")))
     replayed = asyncio.run(ask(Recorded(None, log, "none", capabilities=CAPABILITIES)))
     assert replayed == recorded == EXPECTED
@@ -1036,8 +1173,8 @@ def test_a_recording_replays_with_no_model(tmp_path: Path) -> None:
 
 The tests above never load the real model. A test that does, to check the stored outputs
 against it or to record them again, runs only when asked: behind a marker, and an
-environment variable set by hand. Run it with the model's files already cached and any hub
-set offline, so the run reads nothing from the network.
+environment variable set by hand, which also sets the model hub offline before any test
+module is imported, so the run reads only the files already cached and never downloads.
 
 Inject the fake at the runtime's own call, as `Playback` replaces the model function, so
 that the leaf's reading of the runtime's output stays under test. Key each stored output on
@@ -1056,6 +1193,8 @@ import pytest
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "real_model: loads the real model")
+    if os.environ.get("SPANLEAF_REAL_MODEL") == "1":
+        os.environ["HF_HUB_OFFLINE"] = "1"
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
@@ -1078,15 +1217,17 @@ from test_spanleaf import STORED
 @pytest.mark.real_model
 def test_the_real_model_still_gives_the_stored_outputs(tmp_path: Path) -> None:
     path = tmp_path / "outputs.json"
-    versions = {"revision": "rev-1", "python": platform.python_version()}
-    record_outputs(load_toy_model("rev-1"), STORED, path, versions)
-    for asked, output in load_outputs(path).items():
-        assert output.keys() == STORED[asked].keys()
-        for label, spans in output.items():
-            stored = STORED[asked][label]
-            assert [span[:3] for span in spans] == [span[:3] for span in stored]
-            for (*_, score), (*_, then) in zip(spans, stored, strict=True):
-                assert abs(score - then) <= 0.01
+    model, commit = load_toy_model("rev-1")
+    versions = {"revision": commit, "python": platform.python_version()}
+    record_outputs(model, STORED, path, versions)
+    for asked, now in load_outputs(path).items():
+        then = STORED[asked]
+        assert now.input_tokens == then.input_tokens
+        assert now.spans.keys() == then.spans.keys()
+        for label, spans in now.spans.items():
+            assert [span[:3] for span in spans] == [span[:3] for span in then.spans[label]]
+            for (*_, score), (*_, was) in zip(spans, then.spans[label], strict=True):
+                assert abs(score - was) <= 0.01
 ```
 
 Run the tests with `pytest`; the real-model test runs with `SPANLEAF_REAL_MODEL=1 pytest -m
