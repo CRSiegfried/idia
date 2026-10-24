@@ -221,15 +221,42 @@ async def _l7(harness: LeafHarness) -> str | None:
 
 async def _l8(harness: LeafHarness) -> str | None:
     kind = _claimed(harness)[0]
-    leaf = harness.make([Failure(status=429), Success(kind)])
     wire_request = harness.wire_request(kind)
-    await _outcome(leaf.call(wire_request, Deadline.after(_SECONDS)))
-    sent = harness.requests_sent()
-    expect(sent == 1, f"one call over a retryable failure sent {sent} wire requests")
-    await leaf.call(wire_request, Deadline.after(_SECONDS))
-    sent = harness.requests_sent()
-    expect(sent == 2, f"one call over a success sent {sent - 1} wire requests")
-    return None
+    skipped: list[str] = []
+    notes: list[str] = []
+    try:
+        leaf = harness.make([Failure(status=429), Success(kind)])
+    except CheckNotApplicable as no_status:
+        try:
+            leaf = harness.make([Stall(), Success(kind)])
+        except CheckNotApplicable as no_stall:
+            skipped.append(
+                f"the retryable half was not run: a 429: {no_status.reason}; "
+                f"a stall: {no_stall.reason}"
+            )
+        else:
+            call = leaf.call(wire_request, Deadline.after(_STALL))
+            cut = await _outcome(asyncio.wait_for(call, _STALL + _GRACE))
+            sent = harness.requests_sent()
+            expect(sent == 1, f"one call cut by its deadline sent {sent} wire requests")
+            notes.append(f"the retryable half ran over a stall, not a 429: {no_status.reason}")
+            if not (isinstance(cut, ProviderError) and cut.is_retryable):
+                notes.append(f"the stall ended in {cut!r}, not a retryable ProviderError")
+    else:
+        await _outcome(leaf.call(wire_request, Deadline.after(_SECONDS)))
+        sent = harness.requests_sent()
+        expect(sent == 1, f"one call over a retryable failure sent {sent} wire requests")
+    try:
+        leaf = harness.make([Success(kind), Success(kind)])
+    except CheckNotApplicable as no_success:
+        skipped.append(f"the success half was not run: {no_success.reason}")
+    else:
+        await _outcome(leaf.call(wire_request, Deadline.after(_SECONDS)))
+        sent = harness.requests_sent()
+        expect(sent == 1, f"one call over a success sent {sent} wire requests")
+    if len(skipped) == 2:
+        raise CheckNotApplicable("; ".join(skipped))
+    return "; ".join(skipped + notes) or None
 
 
 async def _l9(harness: LeafHarness) -> str | None:

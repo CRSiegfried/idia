@@ -38,6 +38,7 @@ from idia import (
     Rule,
     RuleFailure,
     WireRequest,
+    WireResponse,
 )
 from idia.conformance import (
     CandidateShape,
@@ -49,6 +50,7 @@ from idia.conformance import (
     Perturbed,
     ProviderHarness,
     RefusalOnWire,
+    Stall,
     Success,
     Unreadable,
     Verdict,
@@ -1384,3 +1386,141 @@ def test_l7_fails_a_leaf_whose_feature_maps_follow_what_is_enabled() -> None:
     [l7] = [check for check in leaf_checks(Following) if check.id == "L7"]
     with pytest.raises(AssertionError, match="feature_kinds changes"):
         asyncio.run(l7.run())
+
+
+# ----------------------------------------------------------------------------------------
+# A leaf whose runtime has no statuses: L8 and P19 run the drivers it can make
+# ----------------------------------------------------------------------------------------
+
+
+class StatuslessHarness(ScriptedHarness):
+    """The scripted leaf standing in for a runtime with no statuses, as a model run in
+    process has: a failure with a status cannot be made, and the recorded failure carries
+    none."""
+
+    def _refuse(self, exchange: Exchange) -> None:
+        if isinstance(exchange, Failure) and exchange.status is not None:
+            raise CheckNotApplicable("the runtime has no statuses")
+        super()._refuse(exchange)
+
+    def _item(self, exchange: Exchange, wire_request: WireRequest) -> Item:
+        if isinstance(exchange, Failure):
+            return ProviderError("the runtime failed", is_retryable=False)
+        return super()._item(exchange, wire_request)
+
+
+class RetriesItsCut:
+    """Wraps a leaf and, when its deadline cuts a call, calls again under a fresh one."""
+
+    def __init__(self, inner: Leaf) -> None:
+        self._inner = inner
+        self.name, self.model = inner.name, inner.model
+        self.capabilities, self.estimator = inner.capabilities, inner.estimator
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        try:
+            return await self._inner.call(wire_request, deadline)
+        except ProviderError as cut:
+            if not cut.is_retryable:
+                raise
+            return await self._inner.call(wire_request, Deadline.after(5.0))
+
+
+class RetryingStatuslessHarness(StatuslessHarness):
+    """A statusless leaf that calls again when its deadline cuts the first call."""
+
+    def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Leaf:
+        return RetriesItsCut(super()._build(capabilities, script))
+
+
+class SendsTwice:
+    """Wraps a leaf and sends every wire request a second time after an answer."""
+
+    def __init__(self, inner: Leaf) -> None:
+        self._inner = inner
+        self.name, self.model = inner.name, inner.model
+        self.capabilities, self.estimator = inner.capabilities, inner.estimator
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        await self._inner.call(wire_request, deadline)
+        return await self._inner.call(wire_request, deadline)
+
+
+class SendsTwiceHarness(ScriptedHarness):
+    def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Leaf:
+        return SendsTwice(super()._build(capabilities, script))
+
+
+class NothingHarness(StatuslessHarness):
+    """Can make neither a success nor a stall, so neither half of L8 runs."""
+
+    def _refuse(self, exchange: Exchange) -> None:
+        if isinstance(exchange, Success | Stall):
+            raise CheckNotApplicable(f"cannot make {exchange}")
+        super()._refuse(exchange)
+
+
+def _check(checks: Sequence[Check], id: str) -> Verdict:
+    [verdict] = asyncio.run(run_checks([check for check in checks if check.id == id]))
+    return verdict
+
+
+def test_l8_runs_its_retryable_half_over_a_stall_where_no_429_can_be_made() -> None:
+    l8 = _check(leaf_checks(StatuslessHarness), "L8")
+    assert l8.result == "pass"
+    assert l8.reason == (
+        "the retryable half ran over a stall, not a 429: the runtime has no statuses"
+    )
+
+
+def test_statusless_leaf_not_applicable_set_is_exact() -> None:
+    verdicts = _verdicts(leaf_checks(StatuslessHarness))
+    assert _ids(verdicts, "fail") == set()
+    assert _ids(verdicts, "not_applicable") == SCRIPTED_NOT_APPLICABLE
+
+
+def test_l8_fails_a_leaf_that_calls_again_after_its_deadline_cut() -> None:
+    l8 = _check(leaf_checks(RetryingStatuslessHarness), "L8")
+    assert l8.result == "fail"
+    assert l8.reason is not None
+    assert "one call cut by its deadline sent 2 wire requests" in l8.reason
+
+
+def test_l8_fails_a_leaf_that_sends_twice_over_a_success() -> None:
+    l8 = _check(leaf_checks(SendsTwiceHarness), "L8")
+    assert l8.result == "fail"
+    assert l8.reason is not None
+    assert "one call over a success sent 2 wire requests" in l8.reason
+
+
+def test_l8_is_not_applicable_only_when_neither_half_runs() -> None:
+    l8 = _check(leaf_checks(NothingHarness), "L8")
+    assert l8.result == "not_applicable"
+    assert l8.reason is not None
+    assert "the retryable half was not run" in l8.reason
+    assert "the success half was not run" in l8.reason
+
+
+def test_p19_records_each_log_a_statusless_leaf_can_make_and_notes_the_one_it_skips() -> None:
+    p19 = _check(provider_checks(lambda: _wrapped(StatuslessHarness)), "P19")
+    assert p19 == Verdict(
+        "P19", "pass", "a 503 then an answer was not recorded: the runtime has no statuses"
+    )
+
+
+def test_p19_fails_a_statusless_replay_that_does_not_reproduce_the_recording() -> None:
+    class Renamed(ScriptedProviders):
+        def leaf(self, exchanges: Sequence[Exchange]) -> Leaf:
+            built = super().leaf(exchanges)
+            assert isinstance(built, Scripted)
+            if not exchanges:
+                built.name = "someone-else"
+            return built
+
+    p19 = _check(
+        provider_checks(lambda: Renamed("leaf", [CAPABILITIES], CAPABILITIES, StatuslessHarness)),
+        "P19",
+    )
+    assert p19.result == "fail"
+    assert p19.reason is not None
+    assert "not someone-else/model-0" in p19.reason

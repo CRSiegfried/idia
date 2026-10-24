@@ -599,10 +599,16 @@ async def _p19(harness: ProviderHarness) -> str | None:
         "a failure": [Failure()] * plenty,
     }
     retry = RetryPolicy.without_delay()
+    skipped: dict[str, str] = {}
     with tempfile.TemporaryDirectory() as directory:
         for n, (label, exchanges) in enumerate(runs.items()):
             log = Path(directory) / f"p19-{n}.json"
-            recorder = Recorded(harness.leaf(exchanges), log, "once")
+            try:
+                inner = harness.leaf(exchanges)
+            except CheckNotApplicable as not_applicable:
+                skipped[label] = not_applicable.reason
+                continue
+            recorder = Recorded(inner, log, "once")
             recorded = await _outcome(Dispatcher(recorder, retry=retry).answer(request))
             expect(
                 isinstance(recorded, Response | RequestFailed),
@@ -623,7 +629,9 @@ async def _p19(harness: ProviderHarness) -> str | None:
                 _replayable(replayed) == _replayable(recorded),
                 f"the replay of {label} gave {replayed!r}, not what was recorded",
             )
-    return None
+    if len(skipped) == len(runs):
+        raise CheckNotApplicable("; ".join(sorted(set(skipped.values()))))
+    return "; ".join(f"{label} was not recorded: {why}" for label, why in skipped.items()) or None
 
 
 async def _credential_stop(harness: ProviderHarness, status: int) -> str | None:

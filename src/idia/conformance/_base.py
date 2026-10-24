@@ -119,9 +119,11 @@ class Success:
 
 @dataclass(frozen=True, slots=True)
 class Failure:
-    """A failure response. With no status, the recorded failure the harness serves,
-    which carries a status, is not retryable and is not a credential error (401 or 403);
-    with one, a response of that status carrying the request id given.
+    """A failure the wire or the runtime reports. With no status, the recorded failure the
+    harness serves, which is not retryable and is not a credential error (401 or 403); a
+    wire API's carries a status, and a runtime with no statuses gives none. With a status,
+    a response of that status carrying the request id given; a harness whose transport has
+    no statuses raises :class:`CheckNotApplicable` for it.
 
     An HTTP harness sends ``retry_after`` as ``retry-after-ms`` and a different,
     conflicting value as ``retry-after``, so L12's equality also checks that the
@@ -159,7 +161,7 @@ class Error:
 
 @dataclass(frozen=True, slots=True)
 class Stall:
-    """A transport that never answers, so the call must end by its deadline."""
+    """A wire or a runtime that never answers, so the call must end by its deadline."""
 
 
 @dataclass(frozen=True, slots=True)
