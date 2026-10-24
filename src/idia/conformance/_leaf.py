@@ -241,11 +241,17 @@ async def _l8(harness: LeafHarness) -> str | None:
             expect(sent == 1, f"one call cut by its deadline sent {sent} wire requests")
             notes.append(f"the retryable half ran over a stall, not a 429: {no_status.reason}")
             if not (isinstance(cut, ProviderError) and cut.is_retryable):
-                notes.append(f"the stall ended in {cut!r}, not a retryable ProviderError")
+                notes.append(
+                    f"the stall ended in {cut!r}, not a retryable ProviderError, so the "
+                    "retryable half was not exercised"
+                )
     else:
         await _outcome(leaf.call(wire_request, Deadline.after(_SECONDS)))
         sent = harness.requests_sent()
         expect(sent == 1, f"one call over a retryable failure sent {sent} wire requests")
+        await _outcome(leaf.call(wire_request, Deadline.after(_SECONDS)))
+        sent = harness.requests_sent()
+        expect(sent == 2, f"the call after a retryable failure sent {sent - 1} wire requests")
     try:
         leaf = harness.make([Success(kind), Success(kind)])
     except CheckNotApplicable as no_success:

@@ -1451,6 +1451,11 @@ class SendsTwiceHarness(ScriptedHarness):
         return SendsTwice(super()._build(capabilities, script))
 
 
+class StatuslessSendsTwiceHarness(StatuslessHarness):
+    def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Leaf:
+        return SendsTwice(super()._build(capabilities, script))
+
+
 class NothingHarness(StatuslessHarness):
     """Can make neither a success nor a stall, so neither half of L8 runs."""
 
@@ -1487,10 +1492,17 @@ def test_l8_fails_a_leaf_that_calls_again_after_its_deadline_cut() -> None:
 
 
 def test_l8_fails_a_leaf_that_sends_twice_over_a_success() -> None:
-    l8 = _check(leaf_checks(SendsTwiceHarness), "L8")
+    l8 = _check(leaf_checks(StatuslessSendsTwiceHarness), "L8")
     assert l8.result == "fail"
     assert l8.reason is not None
     assert "one call over a success sent 2 wire requests" in l8.reason
+
+
+def test_l8_fails_a_leaf_whose_call_after_a_429_sends_twice() -> None:
+    l8 = _check(leaf_checks(SendsTwiceHarness), "L8")
+    assert l8.result == "fail"
+    assert l8.reason is not None
+    assert "the call after a retryable failure sent 2 wire requests" in l8.reason
 
 
 def test_l8_is_not_applicable_only_when_neither_half_runs() -> None:
