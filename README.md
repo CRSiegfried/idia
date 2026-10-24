@@ -17,8 +17,9 @@ sends the whole input again; idia packs them, in order, into calls as full as th
 limits allow, so the input is sent once per call rather than once per question: fewer calls,
 less input sent, fewer round trips. (A provider that takes one question per call, such as
 `openai-chat`, gains nothing.) Providers also differ in their APIs, their limits on what one
-call may hold and their errors. idia talks to any of them through one interface: it checks they fit the provider before any call, retries under one deadline, and
-says which leaf and model took each call. idia puts the questions to the models;
+call may hold and their errors. idia talks to any of them through one interface: it checks,
+before any call, that the request fits the provider, retries under one deadline, and says
+which leaf and model took each call. idia puts the questions to the models;
 [ommat](https://github.com/CRSiegfried/ommat) decides.
 
 ```mermaid
@@ -173,8 +174,9 @@ Any question may instead come back as a `Refusal`, where the provider declined i
 when the wire request carrying it failed, its outcome saying why. A fault is scoped to its
 question, and its siblings stand. A request idia cannot split to fit (a kind the provider
 lacks, too many labels on one question, an input too long for one call, a wording form its
-record does not carry) raises `DoesNotFit` before any call; it is never truncated. When no wire request answers, `answer` raises
-`RequestFailed`, which carries the response and its outcomes.
+record does not carry) raises `DoesNotFit` before any call; it is never truncated. When no
+wire request answers, `answer` raises `RequestFailed`, which carries the response and its
+outcomes.
 
 Each provider is registered under a name that `idia.provider(name)` builds, from the
 extra that installs it; `idia.provider_names()` lists the names:

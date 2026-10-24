@@ -389,3 +389,20 @@ def test_clairic_refuses_a_structured_instruction_before_sending() -> None:
         asyncio.run(leaf.call(wire_request, Deadline.after(5)))
     assert not raised.value.is_retryable
     assert harness.requests_sent() == 0
+
+
+def test_a_router_sends_a_structured_instruction_to_a_member_that_carries_it() -> None:
+    """The router's derived flag is false, as one member's is, but its own check reads only
+    kinds and modalities, so the member that answers decides."""
+    nouls = Scripted(capabilities=capabilities(kinds=frozenset({"noul"})), script=[{}])
+    extracts = Scripted(
+        capabilities=capabilities(
+            kinds=frozenset({"extraction"}), carries_structured_instructions=False
+        ),
+        script=[],
+    )
+    router = Router({"noul": Dispatcher(nouls), "extraction": Dispatcher(extracts)})
+    assert router.capabilities.carries_structured_instructions is False
+    response = asyncio.run(router.answer(request(structured())))
+    assert len(nouls.calls) == 1
+    assert [outcome.keys for outcome in response.outcomes] == [("q",)]

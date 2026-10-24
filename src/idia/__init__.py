@@ -1,5 +1,5 @@
-"""Put type-1 questions to decision-model providers and get the provider's probabilities
-back, with whether it claims them calibrated.
+"""Ask decision models many closed questions about one input, packed into calls within each
+provider's limits, and get their probabilities back, with whether they are claimed calibrated.
 
 The public API is what ``__all__`` lists. Names and modules that start with an underscore are
 internal.

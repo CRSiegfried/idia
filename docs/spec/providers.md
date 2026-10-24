@@ -191,6 +191,7 @@ A request's options reach every member, so a mixed request carrying `reference_d
 The state is built as System One builds it with the images taken out, and is the empty string when only images remain; the questions and the reading per kind are System One's (a `choice`'s probabilities in label order with `chosen` and `confidence`; a `score`'s by index with `expected_level` and the legend echoed as descriptions; a `noul`'s probability).
 Clef sends the questions, as Clairic sends its fields, in the wire request's order and never reorders them.
 A described `noul`'s `criteria` and a structured instruction are sent as System One sends them.
+Through `cloudflare()`, a structured instruction on a label kind reaches Clef and is sent; the router's derived `carries_structured_instructions` is false, since Clairic's is, and a composite's own check does not read it, so each member's record decides.
 The wire has no refusal.
 No record field holds Clef's 16 MP per image; the wire refuses a larger image.
 
