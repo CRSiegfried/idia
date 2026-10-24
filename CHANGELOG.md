@@ -6,7 +6,7 @@ All notable changes to idia are recorded here. The format follows [Keep a Change
 
 ### Added
 
-- `gliner` (extra `gliner`): the GLiNER2 span extractor `fastino/gliner2.5-small-v1`, run in this process, for `extraction` of text from one text part, a value as the top-scoring span with its score as `confidence`, or a list. Its weights are pinned to a revision by default and loaded by an explicit `await leaf.load()`; its usage counts input tokens with the model's own tokenizer. The leaf, `Gliner`, is in `idia.providers.gliner`, which is not yet part of the public API.
+- `gliner` (extra `gliner`): the GLiNER2 span extractor `fastino/gliner2.5-small-v1`, run in this process, for `extraction` of text from one text part, a value as the top-scoring span with its score as `confidence`, or a list. Its weights are pinned to a revision by default and loaded by an explicit `await leaf.load()`; a model passed in as `runtime` is reported at the `revision` the caller passes, and with none at no snapshot, with the `no-snapshot` warning; its usage counts input tokens with the model's own tokenizer. The leaf, `Gliner`, is in `idia.providers.gliner`, which is not yet part of the public API.
 
 ## [0.1.0] - 2026-10-23
 

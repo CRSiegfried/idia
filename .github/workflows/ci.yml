@@ -97,9 +97,10 @@ jobs:
       # torch comes from the CPU-only index that pyproject.toml names; no weights are fetched.
       - run: uv sync --locked --extra gliner
       - name: Every extra imports
-        run: uv run python -c "import gliner2, torch"
-      # The tests that import the registered module, which the other jobs skip, run here.
-      - run: uv run pytest
+        run: uv run python -c "import gliner2, torch, transformers, huggingface_hub, google.protobuf, sentencepiece"
+      # The tests that import the registered module, which the other jobs skip, run here, with
+      # the coverage floor the test jobs hold.
+      - run: uv run pytest --cov
 
   build:
     runs-on: ubuntu-latest
