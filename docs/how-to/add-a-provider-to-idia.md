@@ -24,11 +24,14 @@ extra fails with `ModuleNotFoundError`, which the import guard turns into the in
 Nothing under `idia.providers` imports the call loop, and `idia.core` imports nothing from
 `idia.providers`.
 
-A model run in your own process is the exception. Its tests run in CI against stored
-outputs, with no runtime installed, so the plan is that its module imports the runtime
-inside `load()` rather than at its top, and that `load()` raises the install hint itself.
-This is not settled yet, and it changes how the registry's guard and the bare-install check
-treat that extra.
+A model run in your own process needs its tests to run against stored outputs with no
+runtime installed, and a leaf whose dependency cannot be imported at its module's top is not
+supported yet. One layout keeps the
+guard as it is: the leaf's logic in an unlisted module that does not import the runtime,
+such as `idia/providers/_<name>.py`, which the tests import with an injected model, and the
+registered module importing the runtime at its top and re-exporting the class. The other
+moves the runtime's import into `load()`, which would let `idia.leaf(name)` succeed with no
+extra installed and so needs the guard and the bare-install check to change.
 
 ## The registry and the import guard
 
@@ -82,8 +85,9 @@ Add the name, too, to the `Literal` of each deprecated overload, the one that ca
 registered name given a keyword its leaf does not take. `tests/test_provider.py` reads the
 overloads from the source and checks each against the leaf's constructor.
 
-A leaf with a `load()` step is not ready after `idia.provider(name)`, since a `Dispatcher`
-has no load step: a caller builds it with `idia.leaf(name)`, awaits `load()`, then wraps it
+A leaf with a `load()` step is not ready after `idia.provider(name)` unless it was given a
+loaded model: a `Dispatcher` has no load step, and every call through it fails with a
+non-retryable `ProviderError`. A caller builds it with `idia.leaf(name)`, awaits `load()`, then wraps it
 in a `Dispatcher`. Whether `idia.provider` should load such a leaf, refuse it, or take one
 already loaded is still open.
 
@@ -107,18 +111,19 @@ step in `.github/workflows/ci.yml`. The build job installs the wheel alone and r
 `scripts/check_bare_install.py`, which checks that idia imports with no extra and that each
 registered provider names its extra in the install hint.
 
-A local runtime such as torch is large, and CI downloads no model weights. The plan for such
-an extra is that CI syncs every extra but it, and that its leaf's tests replay stored outputs
-through an injected model, needing neither the runtime nor the weights.
+A local runtime such as torch is large, and CI downloads no model weights: such a leaf's
+tests replay stored outputs through an injected model, needing neither. Whether CI's sync
+leaves such an extra out, rather than installing every extra as it does now, is not settled.
 
 ## The public API
 
 A module's names are public only once the module is listed: in the ground rules of
 [CONTRIBUTING](../../CONTRIBUTING.md#ground-rules-for-changes), and in `LISTED` in
 `tests/test_package.py`, which checks that each listed module's `__all__` names what it
-holds. Listing a module promises its names under the deprecation rule, so it is a release
-decision, made by the maintainer, not part of the change that adds the leaf. Until then, the
-leaf is reached through `idia.provider` and `idia.leaf`, and its module stays unlisted.
+holds. Listing a module promises its names under the deprecation rule, so the maintainer
+lists it: the change that adds the leaf writes the module's `__all__` and leaves the module
+unlisted unless asked. Until it is listed, the leaf is reached through `idia.provider` and
+`idia.leaf`.
 
 ## The spec
 
@@ -131,7 +136,8 @@ its own covering:
 - how it reads the answers, kind by kind, including what it leaves `None`;
 - what it refuses before sending, and each error it raises, retryable or not;
 - its provenance: `elicitation`, `calibrated`, `model_reported`, `snapshot`, `prompt_sent`,
-  `usage`, `request_id` and `raw_body`;
+  `usage`, `request_id` and `raw_body`, and for a model in your own process the runtime's
+  versions the raw body records;
 - its capabilities record, field by field, each value as measured or documented, `None`
   where unknown;
 - its estimator, and what it counts.
@@ -149,8 +155,10 @@ A wire leaf's tests replay **cassettes**: one JSON file per recorded exchange, u
 `tests/cassettes/<leaf>/<model>/<features>/<name>.json`, replayed through
 `HttpLeafHarness` in `tests/_http.py`, which a leaf's harness subclasses. The
 [test-doubles spec](../spec/test-doubles.md#the-http-harness-in-idias-tests) describes the
-harness and the cassette format. A cassette is recorded once by a live run and stores no
-secret: the recording removes any file that holds one.
+harness and the cassette format. A cassette is recorded once by a live run and must store no
+secret: the recording filters secret headers and replaces the values it is told are secret,
+a run's recording removes any file still holding a known secret, and the tests fail any
+committed cassette that holds a key's shape.
 
 A model run in your own process has no exchanges to record. Its tests replay **stored
 outputs**: what the runtime returned for each input, recorded once by a gated run against
@@ -169,10 +177,12 @@ the cassettes it leaves behind:
 IDIA_LIVE=1 uv run pytest -m live -s
 ```
 
-A test that loads a model in your process is planned to carry a marker of its own,
-`local_model`, and to run only with `IDIA_LOCAL_MODEL=1`, with the runtime installed, the
-weights already cached, and `HF_HUB_OFFLINE=1` set so the run reads nothing from the network.
-Until that marker is added, gate such a test the way `live` is gated in `tests/conftest.py`:
+idia has no gate of its own yet for a test that loads a model in your process. The
+proposal, not yet added, is a marker of its own, `local_model`, run only with
+`IDIA_LOCAL_MODEL=1`, the runtime installed, the weights already cached, and
+`HF_HUB_OFFLINE=1` set so the run reads nothing from the network. Until it is added, skip
+such a test in its own module unless `IDIA_LOCAL_MODEL=1` is set, with `pytest.mark.skipif`,
+and add no marker to `pyproject.toml`. `live` is gated in `tests/conftest.py`:
 
 ```python
 # tests/conftest.py
@@ -188,7 +198,7 @@ tests run with `--strict-markers`.
 ## The changelog
 
 Record the new provider under `Unreleased` in `CHANGELOG.md`, under **Added**: its name, its
-extra, and what it answers. A new provider is a minor release.
+extra, and what it answers.
 
 ## The checks
 

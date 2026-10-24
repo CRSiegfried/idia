@@ -36,17 +36,22 @@ and `idia.providers` itself.
 - `async call(wire_request, deadline) -> WireResponse`, which answers one wire request.
 
 A data member may be a plain attribute, a property or a dataclass field. `aclose()` is not
-part of `Leaf`, but a leaf that holds anything to release has one, and the dispatcher calls
-it when it is closed.
+part of `Leaf`, but a leaf that holds anything to release has one: the dispatcher awaits it
+when it is closed, so it is `async`, and it may be called again, so closing twice must be
+harmless.
 
 Four rules hold for every leaf:
 
 - **One call sends one wire request**, or runs the model once. A leaf never retries: retries,
-  waits and attempt counts are the dispatcher's.
+  waits and attempt counts are the dispatcher's. A leaf built on an SDK sets the SDK's own
+  retries to zero.
 - **It raises `ProviderError` and nothing else.**
 - **It returns what the model gave.** Nothing is renormalized, rounded, corrected or
-  computed: no confidence, no probability of no value, no `1 - p`.
+  computed: no confidence the model did not give, no `p_null` it did not give, no second
+  probability for a `noul`, no `1 - p`.
 - **It is not a provider until wrapped.** `Dispatcher(leaf)` makes it one.
+- **It may be called concurrently.** One dispatcher may run several requests at once, each
+  calling the leaf.
 
 The conformance suite reads the module that defines your leaf's class, so keep that module
 to the leaf. It must import nothing of the call loop: not `idia.dispatch`, `idia.retry` or
@@ -117,9 +122,14 @@ def toy_model(text: str, labels: Sequence[str]) -> dict[str, list[Found]]:
     return found
 
 
+def toy_tokens(text: str, labels: Sequence[str]) -> int:
+    """The model's own tokenizer, counting what one pass reads: the text and the labels."""
+    return len(text.split()) + sum(len(label.split()) for label in labels)
+
+
 def load_toy_model(revision: str | None) -> Extractor:
-    """Load the model from local files only. A real loader reads its cached weights here,
-    at the revision given."""
+    """Load the model. A real loader fetches or reads the weights at the revision given,
+    and resolves that revision to the commit it names."""
     return toy_model
 ```
 
@@ -132,8 +142,10 @@ stated; none has a default.
 
 A limit is a non-negative `int`, `UNBOUNDED` when nothing caps it, or `None` when you do not
 know it. Fit checks a number, skips `UNBOUNDED` silently, and skips `None` with an
-`unchecked-limit` warning on each wire request it bears on. Do not guess a limit: measure it
-against the real model, or leave it `None`.
+`unchecked-limit` warning on each wire request it bears on. Take each limit from the model's
+documentation or measure it against the real model: `UNBOUNDED` when the documentation
+states that there is no cap, `None` when neither tells you. Do not guess. `min_levels` and
+`min_image_side` are an `int` or `None`, never `UNBOUNDED`, and 0 there means no minimum.
 
 What Fit does with each field:
 
@@ -141,22 +153,28 @@ What Fit does with each field:
   image) of a modality not listed, does not fit.
 - `image_carriers`, `max_images`, `max_images_per_question`, `max_image_bytes`,
   `max_total_image_bytes`, `min_image_side` and `image_media_types`: the images of a state.
-  A leaf without the image modality has no carrier and 0 for each of the others, and an
-  empty set of media types.
+  A leaf without the image modality usually has no carrier, 0 for each limit and an empty
+  set of media types; it may state `None` where it does not know one, or the values a
+  feature that adds images brings. Fit reads none of them without an image in the state.
 - `max_input_tokens`: each wire request's token estimate. `max_question_tokens`: the state
-  with each one question. `max_body_bytes`: Fit's measure of the body, the state's text and
-  JSON as UTF-8 and each question's key, instruction and labels. A model with no body to
-  cap has `UNBOUNDED`.
+  with each one question.
+- `max_body_bytes`: Fit's own measure of the body: the state's text and JSON as compact
+  UTF-8, each image as its base64 length, and each question's key, instruction, label names
+  and descriptions. The envelope your leaf adds is not counted, so the cap holds only
+  approximately. A model with no body to cap has `UNBOUNDED`.
 - `truncates_silently`: whether the model cuts an over-long input without saying so. `True`
   needs a known `max_input_tokens`, since only that lets Fit stop the state first, and the
   constructor refuses it with `None`. `None` means undocumented.
 - `recounts_state_per_question`: the model reads the state once per question, so a wire
   request of `n` questions counts the state `n` times.
-- `max_questions` and `max_total_options`: how many questions, and how many labels and
-  levels in all, one wire request may carry. A request over them is split into several wire
-  requests, each repeating the state.
+- `max_questions` and `max_total_options`: how many questions, and how many options in all,
+  one wire request may carry, a `noul` counting 2. When the questions overflow these,
+  `max_body_bytes` or `max_input_tokens`, and the state alone fits, Fit packs them in order
+  into several wire requests, each repeating the state; a question that does not fit alone
+  with the state raises `DoesNotFit`.
 - `max_labels`, `max_levels` and `min_levels`: the labels of a `choice` and the levels of a
-  `score`. A leaf that answers neither has 0 for each.
+  `score`. Fit reads them only for those kinds, so for a leaf that answers neither, 0, as
+  `SpanLeaf` gives, or `None` is neither checked nor warned.
 - `key_patterns`: patterns every question key must match in full, for a model that
   restricts its ids.
 - `carries_noul_descriptions` and `carries_structured_instructions`: whether the leaf sends
@@ -217,9 +235,17 @@ CAPABILITIES = Capabilities(
 
 The estimator counts a request's tokens for Fit. It satisfies `TokenEstimator`:
 `estimate(state, questions)` returns `TokenEstimate(tokens, margin)`, and Fit checks
-`ceil(tokens * (1 + margin))` against the limits. `questions` may be empty, meaning the state
-alone, which is how Fit checks the state for overflow. A caller may give the dispatcher
-another estimator, which then replaces yours.
+`ceil(tokens * (1 + margin))` against the limits, the margin read as the decimal it prints
+as. `questions` may be empty, meaning the state alone, which is how Fit checks the state for
+overflow. A caller may give the dispatcher another estimator, which then replaces yours for
+Fit's estimate only.
+
+Count the state once in `estimate(state, questions)`. Where the record has
+`recounts_state_per_question`, Fit itself adds the state's own estimate `n - 1` more times
+for a wire request of `n` questions, each estimate taking its margin before the sum. If your
+leaf takes images, the estimator prices them too, by your model's image formula: no field of
+the record does. Where `truncates_silently` holds, the margin is all that stands between an
+undercount and a silent cut, so measure it.
 
 Count everything the model reads, not only the state: the labels, the instructions and any
 schema text you send with them share the model's window. The margin covers how far your
@@ -245,6 +271,15 @@ Map what the model returned to the kind's answer shape and nothing more: a `Noul
 warnings: an answer that breaks a rule becomes a `Fault` for that question alone, a missing
 key a `Fault`, and a key with no question is dropped with a warning.
 
+When one question's answer cannot be mapped, build a `Fault` for it yourself:
+`Fault(key, failures=(RuleFailure(rule=Rule.kind_shape, observed=<the type it came back
+as>, bound=None),), mapped=None)`, or `Rule.candidate_shape` for an answer in the shape of a
+kind idia has not admitted yet. Its siblings stand, and a `Fault` or `Refusal` you build
+passes through `validate_answers` unchanged. Only an output that cannot be read at all fails
+the whole call, with a non-retryable `ProviderError`. Parse a `date`, `time`, `datetime` or
+`duration` value to its standard-library type before validating, and leave one you cannot
+parse as given, for validation to fault. A list answer has one span per item.
+
 Never compute a confidence. Pass the model's own score as `confidence` where it gives one,
 for a kind your record lists, and leave it `None` where it gives none, as for a list of
 spans: an average of the spans' scores is a number the model never gave. A score outside
@@ -264,18 +299,24 @@ labels it sent.
 A leaf raises `ProviderError(message, is_retryable=..., status_code=..., request_id=...)`
 and nothing else. `is_retryable` tells the dispatcher whether another attempt could succeed:
 
+`is_retryable` is false unless you say otherwise.
+
 | What happened | `is_retryable` |
 |---|---|
 | The deadline passed before the call, or cut it | yes |
 | A connection error or a transport timeout | yes |
-| A wire status 408, 409, 429 or 5xx | yes |
+| A wire status 408, 409, 429 (not a quota) or 5xx | yes |
+| A quota the body names, whatever the status | no |
 | Any other wire status that is not a success | no |
 | An output the leaf cannot read | no |
 | A question or state the leaf cannot send, refused before anything is sent | no |
 | The model failed while running | no |
 | The model is not loaded, or the leaf is closed | no |
 
-Set `status_code` only to a status the wire returned, and `request_id` when you have one.
+Set `status_code` only to a status the wire returned, `retry_after` to the seconds the wire
+asks you to wait (its `retry-after-ms` or `retry-after`), `None` otherwise, and `request_id`
+when you have one. A refused credential is not retryable and carries its 401 or 403: the
+dispatcher reads exactly that to leave the rest of the request unsent.
 Never raise `DeadlineExceeded`: the dispatcher puts that on an outcome. Let
 `asyncio.CancelledError` propagate; it is not a failure of the model. A model that declines
 a question gives a `Refusal` answer, not an error.
@@ -289,8 +330,9 @@ is the leaf's own timeout:
   it has: nothing is sent.
 - Use `deadline.remaining()` only to size a wait, such as a timeout on the response, never
   below 0.
-- When the wait runs out, raise a retryable `ProviderError`. The dispatcher decides whether
-  to retry; once the deadline has passed it ends the wire request with `DeadlineExceeded`.
+- When the wait runs out, raise a retryable `ProviderError`. If attempts remain, the
+  dispatcher ends the wire request with `DeadlineExceeded`, your error kept on its failed
+  attempt; on the last attempt the outcome carries your error.
 
 ## Warn, and record where the answers came from
 
@@ -303,48 +345,85 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
   `snapshot_pinnable` holds and the caller pinned one; otherwise `None`, with a
   `WARNING_NO_SNAPSHOT` warning.
 - `prompt_sent`: what was sent, as JSON values; `None` only where the wire hides it.
-- `usage`: `Usage(input_tokens, output_tokens, raw_usage=...)`. A model that returns values
-  and no text reports 0 output tokens. Put the figures and how they were counted in
-  `raw_usage`.
-- `request_id`: the wire's id for the call. A model with none gets one from the leaf, such as
-  `<name>-<n>`, numbered as each call starts.
+  `SpanLeaf` leaves the text itself out on purpose and records its length and the labels.
+- `usage`: `Usage(input_tokens, output_tokens, passes=None, raw_usage=...)`, each count as
+  the wire or the runtime reports it and `None` where it reports none, never an estimate;
+  the raw figures go in `raw_usage`. `SpanLeaf` counts its input with its model's own
+  tokenizer, reports 0 output tokens, since its model writes no text, and one pass.
+- `request_id`: the wire's id for the call. The conformance suite expects one on every
+  response; a model with no ids of its own may number its calls, as `SpanLeaf` does.
 - `raw_body`: what the model returned, whole. The dispatcher drops it, but a recording keeps
   it, so put the runtime's versions here.
 - `warnings`: `Notice` values. Put the warnings `validate_answers` returned first, then your
   own, such as `WARNING_NO_SNAPSHOT` or `WARNING_PROVIDER_TRUNCATED` when the model reports
   that it cut the input, and last `unknown_options(wire_request.options, known)`, which
-  warns once naming every request option your leaf does not know. An option you do not know
-  changes nothing else.
+  warns once naming every request option your leaf does not know.
+
+A request's `options` are settings a caller passes per request. A key your leaf reads, it
+records in `prompt_sent`. A key it knows but does not read, such as one meant for another
+model behind the same router, has no effect, no warning and no record. A key it does not
+know goes into `unknown_options`, and changes nothing else.
 
 ## A model in your own process
 
-A model that runs in your process, on a local runtime such as torch, needs six more rules.
+A model that runs in your process, on a local runtime such as torch, follows six more
+practices, the ones idia's own in-process leaves follow.
 
 - **One worker of its own.** Loading and every forward pass block, so run them on a
   `ThreadPoolExecutor(max_workers=1)` the leaf owns, never on the event loop. Calls to one
   leaf then run one at a time, and a `ConcurrencyLimit` above 1 on its dispatcher gives no
   parallelism.
 - **Loading is a step of its own.** Give the leaf an `async load()`, the one place it may
-  fetch or read weights, and have the caller await it before the first call. Nothing inside
-  `call` touches the network: load from local files, with any hub set offline. A warm-up,
+  reach the network, to download the weights, and have the caller await it before the first
+  call. Nothing inside `call` touches the network: the model is already in memory. A warm-up,
   one small forward pass at the end of `load()`, keeps its cost out of the first call. A
   call before the model is loaded raises a non-retryable `ProviderError` and runs nothing. A
   leaf given a loaded model needs no load.
 - **A deadline cut leaves the worker busy.** Wait for the worker with
   `asyncio.wait_for(future, max(deadline.remaining(), 0))`, and turn a timeout into a
-  retryable `ProviderError`. The forward pass cannot be stopped: it runs to its end, and the
-  next call, a retry included, waits behind it inside its own deadline. A call still queued
-  behind it when its own deadline passes never runs.
+  retryable `ProviderError`. The forward pass cannot be stopped: it runs to its end, and a
+  call from another request, made before the pass ends, waits behind it inside its own
+  deadline. A call still queued behind it when its own deadline passes never runs.
 - **`aclose`.** Set a closed flag that `call` checks before anything is submitted, so a call
   after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`, and runs
   nothing. Drop a model the leaf loaded, never one it was given, and shut the worker down
   without waiting for a pass still running. Closing twice is harmless.
-- **The snapshot is the pinned revision.** Report as `snapshot` the revision of the weights
-  the caller pinned, and `None` with `WARNING_NO_SNAPSHOT` when none was pinned.
-- **The runtime's versions go in the raw body**, so a recording keeps what answered.
+- **The snapshot is the pinned revision.** Report as `snapshot` the commit the pinned
+  revision resolved to when `load()` ran, so a branch or tag is reported as its commit, and
+  `None` with `WARNING_NO_SNAPSHOT` when none was pinned. `SpanLeaf` echoes the string it
+  was given, where a real leaf resolves it.
+- **The runtime's versions go in the raw body**, so a recording keeps what answered: for a
+  torch model, its runtime package and torch.
 
-A text longer than the model's window is not cut into windows by the leaf: with a known
-`max_input_tokens`, Fit stops it before any call, and the caller splits it.
+What `load()` raises when the runtime or the weights are missing is not settled; `SpanLeaf`
+lets its loader's own error propagate, since `load()` is not a call.
+
+A text longer than the model's window is not cut into windows by the leaf. With a known
+`max_input_tokens`, Fit's estimate of the state alone exceeds it, and under the default
+overflow policy, `Fail`, Fit raises `DoesNotFit` with `state_overflow` true before any call;
+the caller splits the text.
+
+### Measure the record
+
+Several of the record's values are the model's, and only a run against it tells you them:
+
+- **The window.** Read the runtime's maximum input length, the encoder's and the runtime's
+  own setting, and confirm it by tokenizing a text with the labels as the runtime builds
+  them. That is `max_input_tokens`.
+- **Silent truncation.** Put a known entity just past the window and see whether it is lost
+  with no warning. That is `truncates_silently`, which, true, needs the window known.
+- **The labels' share.** Count the same text with 1, 4 and 16 labels and fit what each label
+  adds; the estimator counts it. Measure the estimator's margin against the real tokenizer:
+  a word count falls short of subword tokens.
+- **The question cap.** How many labels one pass carries before the window or the answers
+  give out. That is `max_questions`.
+- **The wording.** Send each question's instruction as it is, as the label; never reword it.
+  Two questions with the same instruction share one label in the model's call, and each
+  still gets its own answer by key.
+- **Settings.** Any threshold or other setting the leaf passes the runtime is a choice of
+  yours: record it in `prompt_sent` and say how you chose it.
+- **Offsets.** Check that the runtime's offsets count code points in the original text, and
+  convert them if not.
 
 The leaf:
 
@@ -408,10 +487,15 @@ class SpanLeaf:
             raise ProviderError(
                 f"the model failed: {type(error).__name__}: {error}", request_id=request_id
             ) from error
-        mapped = {
-            question.key: _answer(question, found.get(labels[question.key], ()))
-            for question in wire_request.questions
-        }
+        try:
+            mapped = {
+                question.key: _answer(question, found.get(labels[question.key], ()))
+                for question in wire_request.questions
+            }
+        except (AttributeError, TypeError, ValueError) as error:
+            raise ProviderError(
+                f"the model's output cannot be read: {error}", request_id=request_id
+            ) from error
         answers, warnings = validate_answers(
             wire_request.questions, mapped, self.capabilities.rounding
         )
@@ -424,12 +508,12 @@ class SpanLeaf:
                 ),
             )
         warnings += unknown_options(wire_request.options, frozenset())
-        tokens = self.estimator.estimate(wire_request.state, wire_request.questions).tokens
+        tokens = toy_tokens(text, tuple(labels.values()))
         spans: dict[str, JsonValue] = {label: tuple(found[label]) for label in found}
         versions: dict[str, JsonValue] = {
             "python": platform.python_version(),
             "idia": _version("idia"),
-        }
+        }  # a real leaf records its runtime here, and torch
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -440,7 +524,8 @@ class SpanLeaf:
             usage=Usage(
                 input_tokens=tokens,
                 output_tokens=0,
-                raw_usage={"input_tokens": tokens, "output_tokens": 0, "counted_by": "estimator"},
+                passes=1,
+                raw_usage={"input_tokens": tokens, "output_tokens": 0, "counted_by": "tokenizer"},
             ),
             request_id=request_id,
             raw_body={"spans": spans, "versions": versions},
@@ -499,8 +584,9 @@ def _version(package: str) -> str | None:
 
 ## Wrap it in a Dispatcher
 
-Build the leaf, await `load()`, and wrap it: `Dispatcher(leaf, retry=..., concurrency=...,
-rate=...)` is a provider. `async with` closes the leaf when the block ends.
+Build the leaf, wrap it, and await `load()`: `Dispatcher(leaf, retry=..., concurrency=...,
+rate=..., estimator=..., overflow=..., reask=...)` is a provider. `async with` closes the leaf
+when the block ends, also when loading fails.
 `idia.provider(name)` builds only the leaves idia registers, so a leaf of your own is
 always wrapped by hand.
 
@@ -514,7 +600,6 @@ from spanleaf import SpanLeaf
 
 async def main() -> None:
     leaf = SpanLeaf(revision="rev-1")
-    await leaf.load()
     request = Request(
         state=State(parts=(TextPart(text="Grace met Ada in Lyon."),)),
         questions=(
@@ -524,6 +609,7 @@ async def main() -> None:
         deadline=Deadline.after(10),
     )
     async with Dispatcher(leaf) as spans:
+        await leaf.load()
         response = await spans.answer(request)
     for key, answer in response.answers.items():
         assert isinstance(answer, ExtractionAnswer)
@@ -557,7 +643,11 @@ that is a model you inject in place of the real one, playing stored outputs:
 
 - **`Success(kind)`** plays the output the real model gave for `wire_request(kind)`,
   recorded by a run against it, and only for that request: a call whose inputs differ from
-  the stored ones must fail, so the check fails.
+  the stored ones must fail, so the check fails. In process, the model raising is how a call
+  fails, and the leaf turns that into a non-retryable `ProviderError`. `Success()` with no
+  kind answers whatever the provider harness's `request()` sends, matched by its inputs:
+  the provider half also splits that request one question to a call, so store an output
+  for each one-question split too.
 - **`Failure()`** with no status is a failure that is not retryable; for a model, the
   runtime raising.
 - **`Stall()`** never answers in time, so the call must end by its deadline.
@@ -566,10 +656,55 @@ that is a model you inject in place of the real one, playing stored outputs:
   body or an SDK the leaf does not have.
 
 A check whose drivers your harness cannot make is not applicable, or passes with a note
-saying what it did not run. Assert the set of checks that are not applicable exactly, so a
-check that stops running is noticed.
+saying what it did not run. Assert the set of checks that are not applicable exactly, and
+the notes of the checks that pass with one, so a check that stops running is noticed.
 
-The stored outputs, and the model that plays them:
+```python
+# stored.py
+"""The model's stored outputs: written by a run against it, read back by the tests."""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
+
+from spanleaf import Extractor, Found
+
+Outputs = dict[tuple[str, tuple[str, ...]], Mapping[str, Sequence[Found]]]
+"""The model's output for each text and set of labels."""
+
+
+def record_outputs(
+    extractor: Extractor,
+    asked: Iterable[tuple[str, tuple[str, ...]]],
+    path: Path,
+    recorded_with: Mapping[str, str | None],
+) -> None:
+    """Run the model on each text and set of labels, and write what it returned to path,
+    with the versions and the revision it ran under."""
+    cases = [
+        {"text": text, "labels": list(labels), "output": extractor(text, labels)}
+        for text, labels in asked
+    ]
+    document = {"recorded_with": dict(recorded_with), "cases": cases}
+    path.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def load_outputs(path: Path) -> Outputs:
+    """The outputs record_outputs wrote, each span a tuple again."""
+    document = json.loads(path.read_text(encoding="utf-8"))
+    outputs: Outputs = {}
+    for case in document["cases"]:
+        output = {
+            label: tuple((s[0], s[1], s[2], s[3]) for s in spans)
+            for label, spans in case["output"].items()
+        }
+        outputs[(case["text"], tuple(case["labels"]))] = output
+    return outputs
+```
+
+The tests, the stored outputs, and the model that plays them:
 
 ```python
 # test_spanleaf.py
@@ -618,6 +753,7 @@ from idia.conformance import (
 from idia.providers.recorded import Recorded
 from idia.providers.scripted import Scripted
 from spanleaf import CAPABILITIES, Found, SpanLeaf, toy_model
+from stored import Outputs, load_outputs, record_outputs
 
 TEXT = "Ada flew from Paris to Oslo."
 STATE = State(parts=(TextPart(text=TEXT),))
@@ -626,15 +762,20 @@ CITIES = Question(
     key="cities", kind="extraction", instruction="a city", value_type="text", is_list=True
 )
 
-STORED: Mapping[tuple[str, ...], Mapping[str, Sequence[Found]]] = {
-    ("a person", "a city"): {
-        "a person": [("Ada", 0, 3, 0.65)],
-        "a city": [("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7)],
+STORED: Outputs = {
+    (TEXT, ("a person", "a city")): {
+        "a person": (("Ada", 0, 3, 0.65),),
+        "a city": (("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7)),
     },
-    ("a person",): {"a person": [("Ada", 0, 3, 0.65)]},
-    ("a city",): {"a city": [("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7)]},
+    (TEXT, ("a person",)): {"a person": (("Ada", 0, 3, 0.65),)},
+    (TEXT, ("a city",)): {"a city": (("Paris", 14, 19, 0.75), ("Oslo", 23, 27, 0.7))},
 }
-"""What the model returned for TEXT and each set of labels, stored by a run against it."""
+"""What the model returned for each text and set of labels: the request the leaf half sends,
+and each one-question split of it, which the provider half sends. A real leaf keeps these
+in the file a run against the model wrote, and reads them with load_outputs."""
+
+REQUESTED = ("a person", "a city")
+"""The labels of the wire request every Success(kind) answers."""
 
 EXPECTED: Mapping[str, Answer] = {
     "who": ExtractionAnswer(value="Ada", confidence=0.65, span=Span(part=0, start=0, end=3)),
@@ -665,11 +806,17 @@ class Playback:
         exchange = self._exchanges.pop(0)
         if isinstance(exchange, Failure):
             raise RuntimeError("the model failed")
-        if isinstance(exchange, Stall):
+        if not isinstance(exchange, Success):
             time.sleep(1.0)
-        stored = STORED.get(tuple(labels))
-        if text != TEXT or stored is None:
-            raise RuntimeError(f"no stored output for {labels!r} over this text")
+            raise RuntimeError("stalled: no answer")
+        asked = (text, tuple(labels))
+        recorded = exchange.kind is None or asked == (TEXT, REQUESTED)
+        stored = STORED.get(asked)
+        if not recorded or stored is None:
+            raise RuntimeError(
+                "harness: no stored output for these inputs; "
+                "the leaf sent something other than the recorded request"
+            )
         return stored
 ```
 
@@ -814,6 +961,15 @@ def test_the_leaf_half_skips_exactly_what_a_model_in_process_cannot_make() -> No
 def test_the_provider_half_skips_exactly_what_a_wrapped_leaf_cannot_reach() -> None:
     expected = {"P6", "P9", "P12", "P14", "P15", "P16", "P17", "P18", "P20", "P21", "P23"}
     assert not_applicable(provider_checks(SpanProviderHarness)) == expected
+
+
+def test_l8_runs_its_retryable_half_over_the_deadline_cut() -> None:
+    [l8] = [check for check in leaf_checks(SpanLeafHarness) if check.id == "L8"]
+    [verdict] = asyncio.run(run_checks([l8]))
+    assert verdict.result == "pass"
+    assert verdict.reason == (
+        "the retryable half ran over a stall, not a 429: the model has no statuses"
+    )
 ```
 
 ## Let code that uses the leaf test without it
@@ -839,10 +995,19 @@ def test_code_that_reads_the_cities_with_a_scripted_leaf() -> None:
 `Recorded`, in `idia.providers.recorded`, records the calls of a real leaf to a log once and
 replays them after, with no model loaded. A consumer replays a log with
 `Recorded(None, log, "none", capabilities=...)`; keep one log per leaf configuration, since a
-log does not know the revision it was made under:
+log does not know the revision it was made under. With no leaf, the replay plans with its
+own character count, so a request near a limit may split differently and miss the log;
+when the plan matters, replay with the real leaf, not loaded, in mode `none`, which never
+calls it:
 
 ```python
 # test_spanleaf.py
+def test_the_stored_outputs_round_trip_through_their_file(tmp_path: Path) -> None:
+    path = tmp_path / "outputs.json"
+    record_outputs(toy_model, STORED, path, {"revision": "rev-1"})
+    assert load_outputs(path) == STORED
+
+
 def test_a_recording_replays_with_no_model(tmp_path: Path) -> None:
     log = tmp_path / "span-leaf.json"
     request = Request(state=STATE, questions=(WHO, CITIES), deadline=Deadline.after(5))
@@ -859,10 +1024,18 @@ def test_a_recording_replays_with_no_model(tmp_path: Path) -> None:
 
 ## Gate a run against the real model
 
-The tests above never load the real model. A test that does, to check the leaf against it
-or to record the stored outputs again, runs only when asked: behind a marker, and an
+The tests above never load the real model. A test that does, to check the stored outputs
+against it or to record them again, runs only when asked: behind a marker, and an
 environment variable set by hand. Run it with the model's files already cached and any hub
-set offline, so the run reads nothing from the network:
+set offline, so the run reads nothing from the network.
+
+Inject the fake at the runtime's own call, as `Playback` replaces the model function, so
+that the leaf's reading of the runtime's output stays under test. Key each stored output on
+every argument the leaf passes the runtime: here the text and the labels; for a real span
+model, also any threshold or mode it is given. Store the outputs with the revision and the
+runtime's versions. A real model's scores can move a little between builds of its runtime,
+so compare the spans exactly and the scores within a tolerance, and record again when they
+move further:
 
 ```python
 # conftest.py
@@ -882,31 +1055,32 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 ```python
 # test_real_model.py
-import asyncio
+import platform
+from pathlib import Path
 
 import pytest
 
-from idia import Deadline, WireRequest
-from spanleaf import SpanLeaf
-from test_spanleaf import CITIES, EXPECTED, STATE, WHO
+from spanleaf import load_toy_model
+from stored import load_outputs, record_outputs
+from test_spanleaf import STORED
 
 
 @pytest.mark.real_model
-def test_the_real_model_gives_the_stored_answers() -> None:
-    async def ask() -> object:
-        leaf = SpanLeaf(revision="rev-1")
-        await leaf.load()
-        try:
-            wire_request = WireRequest(state=STATE, questions=(WHO, CITIES))
-            return (await leaf.call(wire_request, Deadline.after(30))).answers
-        finally:
-            await leaf.aclose()
-
-    assert asyncio.run(ask()) == EXPECTED
+def test_the_real_model_still_gives_the_stored_outputs(tmp_path: Path) -> None:
+    path = tmp_path / "outputs.json"
+    versions = {"revision": "rev-1", "python": platform.python_version()}
+    record_outputs(load_toy_model("rev-1"), STORED, path, versions)
+    for asked, output in load_outputs(path).items():
+        for label, spans in output.items():
+            stored = STORED[asked][label]
+            assert [span[:3] for span in spans] == [span[:3] for span in stored]
+            for (*_, score), (*_, then) in zip(spans, stored, strict=True):
+                assert abs(score - then) <= 0.01
 ```
 
 Run the tests with `pytest`; the real-model test runs with `SPANLEAF_REAL_MODEL=1 pytest -m
-real_model`.
+real_model`. To record the stored outputs again, write them with `record_outputs` to the
+file your tests read, and commit it.
 
 ## Where next
 
