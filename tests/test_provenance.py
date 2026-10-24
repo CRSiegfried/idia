@@ -10,6 +10,7 @@ defaults, and one that fills them replays them unchanged.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib.metadata
 import json
 from pathlib import Path
@@ -395,3 +396,158 @@ def test_client_versions_never_gives_idia_which_dispatch_adds() -> None:
     from idia.providers.http import client_versions
 
     assert "idia" not in client_versions("idia", "httpx2")
+
+
+# ----------------------------------------------------------------------------------------
+# Upgrading a log written before the profile
+# ----------------------------------------------------------------------------------------
+
+
+def _old_log(tmp_path: Path, name: str, *items: Any) -> Path:
+    """A log as idia wrote it before the profile: recorded with every provenance field empty,
+    which the log leaves out."""
+    log = tmp_path / f"{name}.json"
+    leaf = Scripted(capabilities=capabilities(), script=list(items), name=name, model="m-1")
+    recorder = Recorded(leaf, log, "once")
+    for _ in items:
+        with contextlib.suppress(ProviderError):
+            asyncio.run(recorder.call(_wire(), Deadline.after(5)))
+        recorder = Recorded(leaf, log, "new")
+    assert all(k not in log.read_text() for k in ('"unreported"', '"versions"', '"claimed"'))
+    return log
+
+
+def _replayed(log: Path) -> list[WireResponse]:
+    document = json.loads(log.read_text(encoding="utf-8"))
+    return [
+        _replay_entry(entry)
+        for entries in document["calls"].values()
+        for entry in entries
+        if "response" in entry
+    ]
+
+
+def _replay_entry(entry: dict[str, Any]) -> WireResponse:
+    from idia.providers.recorded import _replay  # pyright: ignore[reportPrivateUsage]
+
+    return _replay(entry)
+
+
+def _bare(**fields: Any) -> Reply:
+    """A scripted reply that leaves the profile empty, as an old leaf's response was."""
+    return Reply(answers={"q": NoulAnswer(probability=0.25)}, unreported={}, **fields)
+
+
+def test_upgrading_a_wire_leafs_log_gives_the_reasons_the_leaf_gives_today(
+    tmp_path: Path,
+) -> None:
+    from idia.conformance._base import profile_problems  # pyright: ignore[reportPrivateUsage]
+    from idia.providers.recorded import upgrade_log
+
+    usage = Usage(input_tokens=3, output_tokens=0, raw_usage={"input_tokens": 3})
+    log = _old_log(tmp_path, "cloudflare-clairic", _bare(pinned=False, usage=usage))
+    before = log.read_text(encoding="utf-8")
+    assert upgrade_log(log) == 1
+    (response,) = _replayed(log)
+    assert dict(response.unreported) == {
+        "versions": "not-applicable",
+        "snapshot": "not-pinned",
+        "usage.passes": "not-reported",
+    }
+    assert dict(response.client_versions) == {}
+    assert response.claimed == frozenset()
+    assert profile_problems(response) == []
+    assert response.answers == {"q": NoulAnswer(probability=0.25)}
+    assert json.loads(log.read_text())["format"] == 2
+    after = log.read_text(encoding="utf-8")
+    assert upgrade_log(log) == 0
+    assert log.read_text(encoding="utf-8") == after != before
+
+
+def test_upgrading_keeps_every_recorded_value_and_leaves_errors_alone(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    refused = ProviderError("refused", status_code=400, request_id="r-1")
+    log = _old_log(tmp_path, "system-one", _bare(), refused)
+    old = json.loads(log.read_text(encoding="utf-8"))
+    upgrade_log(log)
+    new = json.loads(log.read_text(encoding="utf-8"))
+    for key, entries in old["calls"].items():
+        for was, now in zip(entries, new["calls"][key], strict=True):
+            if "error" in was:
+                assert now == was
+                continue
+            added = {"versions", "client_versions", "unreported", "claimed"}
+            assert {k: v for k, v in now["response"].items() if k not in added} == was["response"]
+    assert {k: v for k, v in new.items() if k != "calls"} == {
+        k: v for k, v in old.items() if k != "calls"
+    }
+
+
+def test_a_gliner_log_takes_its_versions_from_the_raw_body_and_claims(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "gliner", _bare(usage=Usage(input_tokens=9, output_tokens=None)))
+    document = json.loads(log.read_text(encoding="utf-8"))
+    (entries,) = document["calls"].values()
+    entries[0]["response"]["raw_body"] = {
+        "json": {
+            "output": {"entities": {}},
+            "versions": {
+                "python": "3.11.13",
+                "gliner2": "2.1.0",
+                "torch": "2.14.1",
+                "transformers": "5.20.2",
+                "huggingface_hub": "2.3.0",
+                "missing": None,
+            },
+        }
+    }
+    raw_body = entries[0]["response"]["raw_body"]
+    log.write_text(json.dumps(document), encoding="utf-8")
+    assert upgrade_log(log) == 1
+    (response,) = _replayed(log)
+    assert dict(response.versions) == {
+        "python": "3.11.13",
+        "gliner2": "2.1.0",
+        "torch": "2.14.1",
+        "transformers": "5.20.2",
+    }
+    assert dict(response.client_versions) == {"huggingface_hub": "2.3.0"}
+    assert dict(response.unreported) == {
+        "usage.output_tokens": "not-applicable",
+        "usage.passes": "not-reported",
+    }
+    assert response.claimed == {"model_reported", "snapshot"}
+    (entries,) = json.loads(log.read_text(encoding="utf-8"))["calls"].values()
+    assert entries[0]["response"]["raw_body"] == raw_body
+
+
+@pytest.mark.parametrize(
+    ("name", "reply", "message"),
+    [
+        pytest.param("someone-else", _bare(), "no upgrade rules for the leaf", id="unknown"),
+        pytest.param("gliner", _bare(), "records no versions", id="gliner-no-versions"),
+    ],
+)
+def test_upgrading_refuses_a_log_it_cannot_upgrade_honestly_and_writes_nothing(
+    tmp_path: Path, name: str, reply: Reply, message: str
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, name, reply)
+    before = log.read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        upgrade_log(log)
+    assert log.read_text(encoding="utf-8") == before
+
+
+def test_an_unknown_leaf_is_upgraded_with_the_reasons_its_caller_gives(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "someone-else", _bare(usage=Usage(input_tokens=1, output_tokens=1)))
+    with pytest.raises(ValueError, match=r"leave out usage\.passes"):
+        upgrade_log(log, reasons={"versions": "not-applicable"})
+    assert upgrade_log(log, reasons={"versions": "not-applicable", "usage.passes": "hidden"}) == 1
+    (response,) = _replayed(log)
+    assert dict(response.unreported) == {"versions": "not-applicable", "usage.passes": "hidden"}

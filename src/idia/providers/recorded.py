@@ -36,13 +36,18 @@ from pathlib import Path
 from typing import Final, Literal, TypeAlias, cast, get_args
 
 from idia.core import (
+    DETAILS,
+    WARNING_NO_SNAPSHOT,
     Capabilities,
     Deadline,
     Leaf,
+    ProvenanceDetail,
     ProviderError,
     TokenEstimator,
+    UnreportedReason,
     WireRequest,
     WireResponse,
+    _held,  # pyright: ignore[reportPrivateUsage]
 )
 from idia.providers._canon import (
     CharacterEstimator,
@@ -57,6 +62,7 @@ from idia.providers.scripted import ScriptedCall
 __all__ = [
     "Recorded",
     "ReplayMiss",
+    "upgrade_log",
 ]
 
 _Mode: TypeAlias = Literal["none", "once", "new"]
@@ -187,16 +193,23 @@ class Recorded:
             "enabled_features": sorted(self.capabilities.enabled_features),
             "calls": self._recorded,
         }
-        text = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
-        self._log.parent.mkdir(parents=True, exist_ok=True)
-        handle, temporary = tempfile.mkstemp(dir=self._log.parent, prefix=f".{self._log.name}.")
-        try:
-            with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as file:
-                file.write(text)
-            os.replace(temporary, self._log)
-        finally:
-            with contextlib.suppress(FileNotFoundError):
-                os.unlink(temporary)
+        _write(self._log, document)
+
+
+def _write(log: Path, document: typing.Mapping[str, object]) -> None:
+    """Write ``document`` to ``log`` whole, sorted and indented, in UTF-8 with LF line
+    endings, through a temporary file replaced in one step, so a reader never sees half a
+    log."""
+    text = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    handle, temporary = tempfile.mkstemp(dir=log.parent, prefix=f".{log.name}.")
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as file:
+            file.write(text)
+        os.replace(temporary, log)
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(temporary)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -281,3 +294,140 @@ def _replay(entry: _Entry) -> WireResponse:
     if "base64" in raw:
         return replace(response, raw_body=base64.b64decode(cast(str, raw["base64"])))
     return replace(response, raw_body=thaw(raw["json"]))
+
+
+# ----------------------------------------------------------------------------------------
+# Upgrading a log written before the provenance profile
+# ----------------------------------------------------------------------------------------
+
+_WIRE: Final = frozenset(
+    {"system-one", "openai-decisions", "openai-chat", "cloudflare-clef", "cloudflare-clairic"}
+)
+"""The wire leaves: no runtime of their own, and every detail their wire left out not
+reported."""
+
+_GLINER_RUNTIME: Final = ("python", "gliner2", "torch", "transformers")
+_GLINER_CLIENT: Final = ("huggingface_hub",)
+_ALWAYS: Final[frozenset[ProvenanceDetail]] = frozenset({"elicitation", "calibrated"})
+_PROVENANCE_KEYS: Final = frozenset({"versions", "client_versions", "unreported", "claimed"})
+
+
+def upgrade_log(
+    log: Path, *, reasons: typing.Mapping[ProvenanceDetail, UnreportedReason] | None = None
+) -> int:
+    """Bring a log written before the provenance profile up to it, offline, and return how
+    many responses changed; a second run changes none.
+
+    Each recorded response gets a reason for every profile detail that holds no value, by
+    the rules its leaf, the log's ``name``, states: for a wire leaf (System One, OpenAI's
+    two, Cloudflare's two) and the scripted leaf, ``versions`` ``not-applicable``, the
+    snapshot ``not-pinned`` beside its ``no-snapshot`` warning, and every other missing
+    detail ``not-reported``; for ``gliner``, ``versions`` and ``client_versions`` from the
+    versions its raw body recorded, the output tokens ``not-applicable``, the other missing
+    details as a wire leaf's, and ``model_reported`` and a snapshot claimed, since a log
+    cannot show the snapshot was resolved rather than given. Any other leaf takes its reasons
+    from ``reasons``, the reason for each detail it gives none of.
+
+    Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
+    reason, claim or version a response already holds stays. Error entries are left as they
+    are. The log is refused with ``ValueError``, and nothing written, when a leaf has no
+    rules and no ``reasons`` are given, a ``gliner`` log records no versions, a missing
+    snapshot has no ``no-snapshot`` warning, or a detail would be left with neither a value
+    nor a reason. The log keeps its format and keys, and is rewritten only if a response
+    changed.
+    """
+    held = _load(log)
+    document = cast(dict[str, object], json.loads(log.read_text(encoding="utf-8")))
+    changed = 0
+    for entries in held.calls.values():
+        for index, entry in enumerate(entries):
+            if "response" not in entry:
+                continue
+            before = _replay(entry)
+            after = _upgraded(before, held.name, reasons, log)
+            if after == before:
+                continue
+            upgraded = _response(after)
+            _expect_only_provenance_added(entry, upgraded, log)
+            entries[index] = upgraded
+            changed += 1
+    if changed:
+        document["calls"] = held.calls
+        _write(log, document)
+    return changed
+
+
+def _upgraded(
+    response: WireResponse,
+    name: str,
+    reasons: typing.Mapping[ProvenanceDetail, UnreportedReason] | None,
+    log: Path,
+) -> WireResponse:
+    """``response`` with the reasons, versions and claims its leaf's rules give it."""
+    versions = dict(response.versions)
+    client_versions = dict(response.client_versions)
+    claimed = set(response.claimed)
+    rules: dict[ProvenanceDetail, UnreportedReason]
+    if name in _WIRE or name == "scripted":
+        rules = {"versions": "not-applicable"}
+    elif name == "gliner":
+        if not versions:
+            recorded = _recorded_versions(response.raw_body)
+            if recorded is None:
+                raise ValueError(f"{log}: a gliner response records no versions to upgrade from")
+            versions = {k: v for k, v in recorded.items() if k in _GLINER_RUNTIME}
+            if not client_versions:
+                client_versions = {k: v for k, v in recorded.items() if k in _GLINER_CLIENT}
+        rules = {"usage.output_tokens": "not-applicable"}
+        claimed |= {"model_reported"} if response.model_reported is not None else set()
+        claimed |= {"snapshot"} if response.snapshot is not None else set()
+    elif reasons is not None:
+        rules = dict(reasons)
+    else:
+        raise ValueError(
+            f"{log}: no upgrade rules for the leaf {name!r}; pass the reasons it gives"
+        )
+    warned = any(w.code == WARNING_NO_SNAPSHOT for w in response.warnings)
+    if response.snapshot is None and not warned and "snapshot" not in response.unreported:
+        raise ValueError(f"{log}: a response has no snapshot and no no-snapshot warning")
+    filled = replace(response, versions=versions, client_versions=client_versions)
+    values = _held(filled)
+    unreported = dict(response.unreported)
+    for detail in sorted(DETAILS):
+        if values[detail] or detail in unreported:
+            continue
+        if detail in _ALWAYS:
+            raise ValueError(f"{log}: a response leaves out {detail}, which is always a value")
+        if detail == "snapshot":
+            unreported[detail] = "not-pinned"
+        elif detail in rules:
+            unreported[detail] = rules[detail]
+        elif name in _WIRE or name in {"scripted", "gliner"}:
+            unreported[detail] = "not-reported"
+        else:
+            raise ValueError(f"{log}: the reasons given for {name!r} leave out {detail}")
+    return replace(filled, unreported=unreported, claimed=frozenset(claimed - set(unreported)))
+
+
+def _recorded_versions(raw_body: object) -> dict[str, str] | None:
+    """The versions a gliner raw body recorded, string values only, ``idia`` left out."""
+    if not isinstance(raw_body, typing.Mapping):
+        return None
+    versions = cast(typing.Mapping[str, object], raw_body).get("versions")
+    if not isinstance(versions, typing.Mapping):
+        return None
+    held = cast(typing.Mapping[object, object], versions)
+    return {
+        str(package): version
+        for package, version in held.items()
+        if isinstance(version, str) and package != "idia"
+    }
+
+
+def _expect_only_provenance_added(before: _Entry, after: _Entry, log: Path) -> None:
+    """Refuse an upgrade that would change anything the log recorded."""
+    old = cast(dict[str, object], before["response"])
+    new = cast(dict[str, object], after["response"])
+    kept = {key: value for key, value in new.items() if key not in _PROVENANCE_KEYS}
+    if kept != {key: value for key, value in old.items() if key not in _PROVENANCE_KEYS}:
+        raise ValueError(f"{log}: upgrading a response would change what it recorded")
