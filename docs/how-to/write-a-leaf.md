@@ -449,10 +449,12 @@ practices, those idia sets for a leaf that runs its model in process.
 - **`aclose`.** Set a closed flag that `call` checks before anything is submitted, so a call
   or `load()` after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`,
   and runs nothing; a job still queued for the worker never runs, and its caller raises
-  the same, while a caller whose own task was cancelled stays cancelled. A close while `load()` runs wins over what the loader then returns or raises.
-  Drop a model the leaf loaded, never one it was given, and shut the worker down without
-  waiting for a pass still running. Closing twice is harmless.
-- **The snapshot is the pinned revision.** In `load()`, resolve the pinned revision to the
+  the same, while a caller whose own task was cancelled stays cancelled. A close while
+  `load()` runs wins over what the loader then returns or raises. Drop a model the leaf
+  loaded, never one it was given, and shut the worker down without waiting for a pass still
+  running. Closing twice is harmless.
+- **The snapshot is the pinned revision.** Refuse an empty or blank revision at
+  construction, since it names nothing. In `load()`, resolve the pinned revision to the
   commit it names, then load everything, the weights, the tokenizer and the configuration,
   from that commit's own files: some runtimes pin the weights but read the tokenizer from a
   path that ignores the revision. Report that commit as `snapshot`, so a branch or tag is
@@ -523,6 +525,8 @@ class SpanLeaf:
         self.model = model
         self.capabilities = CAPABILITIES
         self.estimator = WordEstimator()
+        if revision is not None and not revision.strip():
+            raise ValueError("a revision names a commit, branch or tag; pass None for none")
         self._revision = revision
         self._snapshot = revision if runtime is not None else None
         self._claimed: frozenset[ProvenanceDetail] = frozenset({"model_reported"})
@@ -1252,12 +1256,12 @@ anything imports the hub. The run then reads only the files already cached and n
 downloads.
 
 Inject the fake at the runtime's own call, as `Playback` stands in for `SpanModel`, the
-object whose methods the leaf calls, so that the leaf's reading of the runtime's output stays under test. Key each stored output on
-every argument the leaf passes the runtime: here the text and the labels; for a real span
-model, also any threshold or mode it is given. Store the outputs with the revision and the
-runtime's versions. A real model's scores can move a little between builds of its runtime,
-so compare the spans exactly and the scores within a tolerance, and record again when they
-move further:
+object whose methods the leaf calls, so that the leaf's reading of the runtime's output
+stays under test. Key each stored output on every argument the leaf passes the runtime:
+here the text and the labels; for a real span model, also any threshold or mode it is
+given. Store the outputs with the revision and the runtime's versions. A real model's
+scores can move a little between builds of its runtime, so compare the spans exactly and
+the scores within a tolerance, and record again when they move further:
 
 ```python
 # conftest.py
