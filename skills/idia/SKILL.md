@@ -16,6 +16,7 @@ limits allow, each call sending the input once.
 pip install "idia[system-one] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 pip install "idia[openai] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
+pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 ```
 
 Credentials come from the environment unless passed to `idia.provider`: `TYPESAFE_API_KEY`
@@ -108,7 +109,12 @@ covers `Scripted` and `Recorded`. The scripted leaf logs each call in `calls`, a
 - A missing extra makes `idia.provider` raise `ModuleNotFoundError` naming the extra it
   needs; install it with the matching line above.
 - A kind the provider lacks raises `DoesNotFit`: Clef takes no `extraction`, Clairic only
-  `extraction`. `cloudflare()`, in `idia.cloudflare`, routes each kind to the right one.
+  `extraction`, and `gliner` only `extraction` of text. `cloudflare()`, in `idia.cloudflare`,
+  routes each kind to the right one.
+- `gliner` runs a model in process and needs no credential: build it with
+  `idia.leaf("gliner")`, `await leaf.load()` once, then pass it to `Dispatcher(...)`;
+  `idia.provider("gliner")` gives a provider whose leaf is never loaded, so every call
+  fails. A text past 2,048 tokens is `DoesNotFit`, so split it first.
 - A leaf is not a provider: build one with `idia.provider(name)`, or build the leaf with
   `idia.leaf(name)`, wrap it in one of your own if you like (to count every call, say), and
   pass it to `Dispatcher(...)`. `idia.provider_names()` lists the names.

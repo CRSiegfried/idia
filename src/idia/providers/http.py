@@ -39,8 +39,8 @@ from typing import Final, Self, TypeVar, cast
 
 import httpx2
 
-from idia import __version__
 from idia.core import (
+    VERSION,
     Deadline,
     JsonValue,
     ProvenanceDetail,
@@ -66,7 +66,7 @@ __all__ = [
     "within",
 ]
 
-_USER_AGENT: Final = f"idia/{__version__}"
+_USER_AGENT: Final = f"idia/{VERSION}"
 
 
 def client_versions(*packages: str) -> dict[str, str]:

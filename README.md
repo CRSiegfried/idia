@@ -34,7 +34,7 @@ flowchart LR
   F --> C2["Call 2: input + the rest"]
   C1 --> D["Dispatch: deadline, retries, rate limits"]
   C2 --> D
-  D --> P["Leaf: one API call to System One / OpenAI / Cloudflare"]
+  D --> P["Leaf: one API call to System One / OpenAI / Cloudflare, or one pass of a local model"]
   D --> A["Response: answers with probabilities, one outcome per call"]
 ```
 
@@ -149,7 +149,13 @@ dependency:
 pip install "idia[system-one] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 pip install "idia[openai] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
+pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 ```
+
+The `gliner` extra runs a model in process on torch. pip takes torch from PyPI, whose Linux
+build is the CUDA one; for the CPU-only build, add
+`--extra-index-url https://download.pytorch.org/whl/cpu`. idia's own development lock takes
+torch from that CPU-only index, with macOS wheels for Apple silicon only.
 
 System One is TypeSafe's decision-model API, whose models are named `jev-*`. Each provider
 reads its credentials from the environment unless you pass them: System One reads
@@ -242,6 +248,7 @@ by hand; each such field is listed under **Changed**.
 uv sync --all-extras
 ```
 
+That installs every extra, torch among them; add `--no-extra gliner` to leave it out.
 Then run the checks in [CONTRIBUTING.md](CONTRIBUTING.md#development), which also gives the
 ground rules; [docs/spec](docs/spec/README.md) is the normative description.
 

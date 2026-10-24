@@ -254,6 +254,52 @@ def test_aclose_while_loading_drops_the_model_and_refuses_the_load(
     assert model.calls == 0  # the warm-up never ran
 
 
+def test_two_loads_at_once_load_the_model_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    model = Answering({"entities": {"x": []}})
+    loads: list[str | None] = []
+
+    def load(name: str, revision: str | None) -> tuple[Answering, str]:
+        loads.append(revision)
+        return model, REVISION
+
+    monkeypatch.setattr(_gliner, "_load_model", load)
+
+    async def run() -> None:
+        leaf = Gliner()
+        await asyncio.gather(leaf.load(), leaf.load())
+
+    asyncio.run(run())
+    assert loads == [REVISION]
+    assert model.calls == 1  # one warm-up
+
+
+def test_aclose_refuses_a_load_waiting_behind_another(monkeypatch: pytest.MonkeyPatch) -> None:
+    model = Answering({"entities": {"x": []}})
+    loading = threading.Event()
+    release = threading.Event()
+
+    def load(name: str, revision: str | None) -> tuple[Answering, str]:
+        loading.set()
+        release.wait(5)
+        return model, REVISION
+
+    monkeypatch.setattr(_gliner, "_load_model", load)
+
+    async def run() -> None:
+        leaf = Gliner()
+        first = asyncio.ensure_future(leaf.load())
+        await asyncio.to_thread(loading.wait, 5)
+        second = asyncio.ensure_future(leaf.load())
+        await asyncio.sleep(0)
+        await leaf.aclose()
+        release.set()
+        for loaded in (first, second):
+            with pytest.raises(ProviderError, match="the leaf is closed"):
+                await loaded
+
+    asyncio.run(run())
+
+
 def test_a_load_queued_behind_another_never_runs_after_aclose(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -446,6 +492,19 @@ def test_a_cut_through_a_dispatcher_is_one_failed_attempt_then_the_deadline() ->
     assert attempt.error.is_retryable
     assert "deadline passed during the pass" in str(attempt.error)
     assert model.calls == 1
+
+
+def test_a_timeout_the_runtime_raises_is_a_model_failure_not_the_deadline() -> None:
+    class TimesOut(Answering):
+        def extract_entities(
+            self, text: str, labels: Sequence[str], threshold: float
+        ) -> Mapping[str, Any]:
+            raise TimeoutError("the runtime gave up")
+
+    leaf = Gliner(revision=REVISION, runtime=TimesOut({}))
+    with pytest.raises(ProviderError, match="the model failed: TimeoutError") as raised:
+        _call(leaf, _wire(SENDER))
+    assert not raised.value.is_retryable
 
 
 def test_a_model_failure_is_not_retryable() -> None:

@@ -392,8 +392,9 @@ tests run with `--strict-markers`.
 
 ## The changelog
 
-Record the new provider under `Unreleased` in `CHANGELOG.md`, under **Added**: its name, its
-extra, and what it answers.
+Record the new provider in `CHANGELOG.md` under the release being prepared, under **Added**:
+its name, its extra, and what it answers. That is the top section until it is tagged, then a
+new `Unreleased` section above it.
 
 ## The checks
 

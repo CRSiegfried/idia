@@ -235,6 +235,7 @@ class Gliner:
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="idia-gliner")
         self._estimator = _PieceEstimator()
         self._closed = False
+        self._lock: tuple[asyncio.AbstractEventLoop, asyncio.Lock] | None = None
 
     @property
     def name(self) -> str:
@@ -259,12 +260,26 @@ class Gliner:
     async def load(self) -> None:
         """Resolve the revision and load the weights on the worker, then run one small pass
         so that its cost stays out of the first call. Loading again, or a leaf given a
-        runtime, does nothing; what the loader raises propagates. A leaf closed while it
-        loads drops the model and raises the closed leaf's ``ProviderError``."""
+        runtime, does nothing, and a load made while another runs waits for it; what the
+        loader raises propagates. A leaf closed while it loads drops the model and raises
+        the closed leaf's ``ProviderError``."""
         if self._closed:
             raise ProviderError("the leaf is closed")
         if self._runtime is not None:
             return
+        async with self._loading():
+            self._refuse_if_closed()
+            if self._runtime is None:
+                await self._load()
+
+    def _loading(self) -> asyncio.Lock:
+        """The lock the loads on the running loop share; another loop gets its own."""
+        loop = asyncio.get_running_loop()
+        if self._lock is None or self._lock[0] is not loop:
+            self._lock = (loop, asyncio.Lock())
+        return self._lock[1]
+
+    async def _load(self) -> None:
         revision = None if self._revision is None else str(self._revision)
         loop = asyncio.get_running_loop()
         try:
@@ -314,6 +329,10 @@ class Gliner:
             self._closed_cancellation()
             raise
         except TimeoutError:
+            if work.done() and not work.cancelled():
+                # The runtime raised it: a model failure, not the deadline's cut.
+                error = work.exception()
+                raise ProviderError(f"the model failed: {type(error).__name__}: {error}") from error
             raise ProviderError(
                 "the deadline passed during the pass, which runs to its end on the worker",
                 is_retryable=True,

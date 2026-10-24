@@ -443,8 +443,8 @@ practices, those idia sets for a leaf that runs its model in process.
   call from another request, made before the pass ends, waits behind it inside its own
   deadline. A call still queued behind it when its own deadline passes never runs.
 - **`aclose`.** Set a closed flag that `call` checks before anything is submitted, so a call
-  after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`, and runs
-  nothing. Drop a model the leaf loaded, never one it was given, and shut the worker down
+  or `load()` after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`,
+  and runs nothing; a call still queued for the worker never runs and raises the same. Drop a model the leaf loaded, never one it was given, and shut the worker down
   without waiting for a pass still running. Closing twice is harmless.
 - **The snapshot is the pinned revision.** In `load()`, resolve the pinned revision to the
   commit it names, then load everything, the weights, the tokenizer and the configuration,
