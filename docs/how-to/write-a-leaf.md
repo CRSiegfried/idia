@@ -449,7 +449,7 @@ practices, those idia sets for a leaf that runs its model in process.
 - **`aclose`.** Set a closed flag that `call` checks before anything is submitted, so a call
   or `load()` after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`,
   and runs nothing; a job still queued for the worker never runs, and its caller raises
-  the same. A close while `load()` runs wins over what the loader then returns or raises.
+  the same, while a caller whose own task was cancelled stays cancelled. A close while `load()` runs wins over what the loader then returns or raises.
   Drop a model the leaf loaded, never one it was given, and shut the worker down without
   waiting for a pass still running. Closing twice is harmless.
 - **The snapshot is the pinned revision.** In `load()`, resolve the pinned revision to the

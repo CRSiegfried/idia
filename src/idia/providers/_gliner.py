@@ -222,6 +222,8 @@ class Gliner:
             raise ValueError(f"Gliner does not know the model {model!r}; known: {_MODEL}")
         if not 0.0 < threshold <= 1.0:
             raise ValueError(f"the threshold is in (0, 1], not {threshold!r}")
+        if revision is not None and not str(revision).strip():
+            raise ValueError("a revision names a commit, branch or tag; pass None for none")
         self._revision = revision
         self._threshold = threshold
         self._runtime = runtime

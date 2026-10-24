@@ -245,7 +245,7 @@ Asked alone and asked first of three, the same question moved by 0.010 on clef a
 Its `name` is `gliner` and its `model` the checkpoint's id.
 It is the one leaf idia ships that makes no wire call: what this section calls the pass is one forward pass of the model.
 
-- **Construction refuses** another model and a `threshold` outside (0, 1], each with `ValueError`.
+- **Construction refuses** another model, a `threshold` outside (0, 1] and an empty or blank `revision`, each with `ValueError`; `None` is the revision that pins nothing.
   `revision` pins the weights, by default the commit the record was measured on and the stored outputs were recorded from; a branch or a tag is taken too, and `None` loads the hub's `main`.
   The default is the leaf's own, told apart from a `revision` the caller passes, even the same commit.
   `threshold` is gliner2's: a span scored below it is not returned.

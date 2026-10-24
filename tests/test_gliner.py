@@ -88,9 +88,12 @@ def test_the_leaf_is_named_and_pinned_by_default() -> None:
         ({"model": "fastino/gliner2-base-v1"}, "does not know the model"),
         ({"threshold": 0.0}, "the threshold is in (0, 1]"),
         ({"threshold": 1.5}, "the threshold is in (0, 1]"),
+        ({"revision": ""}, "a revision names"),
+        ({"revision": "  "}, "a revision names"),
+        ({"revision": "", "runtime": Answering({})}, "a revision names"),
     ],
 )
-def test_construction_refuses_another_model_or_a_threshold_outside_the_unit_interval(
+def test_construction_refuses_another_model_a_threshold_outside_the_unit_interval_or_no_revision(
     options: dict[str, Any], message: str
 ) -> None:
     with pytest.raises(ValueError, match=message.replace("(", r"\(").replace("]", r"\]")):
