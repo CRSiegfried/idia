@@ -1600,7 +1600,7 @@ def test_l25_is_not_applicable_where_no_extraction_answer_is_expected() -> None:
 
 
 # ----------------------------------------------------------------------------------------
-# L26 for a leaf whose wire or runtime gives no request id or output count
+# The provenance profile: L26, L28 and P8
 # ----------------------------------------------------------------------------------------
 
 
@@ -1618,48 +1618,100 @@ class Strips:
         return replace(response, **self._fields)  # pyright: ignore[reportArgumentType]
 
 
-def _stripped(**fields: object) -> Callable[[], LeafHarness]:
+def _stripped(
+    fields: Mapping[str, object], record: Capabilities = CAPABILITIES
+) -> Callable[[], LeafHarness]:
     class Harness(ScriptedHarness):
         def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Leaf:
             return Strips(super()._build(capabilities, script), **fields)
 
-    return Harness
+    return lambda: Harness(record)
 
 
-def test_l26_passes_a_leaf_with_no_request_id_or_output_count_with_a_note() -> None:
+_WIRE = {"usage.passes": "not-reported", "versions": "not-applicable"}
+_LOCAL = {**_WIRE, "usage.output_tokens": "not-applicable", "request_id": "not-reported"}
+
+
+def test_l26_and_p8_pass_a_leaf_that_gives_a_reason_for_each_detail_it_has_none_of() -> None:
     usage = Usage(input_tokens=12, output_tokens=None, raw_usage={"input_tokens": 12})
-    l26 = _check(leaf_checks(_stripped(request_id=None, usage=usage)), "L26")
-    assert l26 == Verdict(
-        "L26",
-        "pass",
-        "the wire responses carry no output token count and no request id, right only for a "
-        "leaf whose wire or runtime gives none",
-    )
+    fields: dict[str, object] = {"request_id": None, "usage": usage, "unreported": _LOCAL}
+    assert _check(leaf_checks(_stripped(fields)), "L26") == Verdict("L26", "pass")
 
-
-def test_l26_fails_a_leaf_with_no_input_count() -> None:
-    usage = Usage(input_tokens=None, output_tokens=0, raw_usage={"output_tokens": 0})
-    l26 = _check(leaf_checks(_stripped(usage=usage)), "L26")
-    assert l26.result == "fail"
-    assert l26.reason is not None
-    assert "usage input tokens" in l26.reason
-
-
-def test_l26_fails_an_empty_request_id() -> None:
-    l26 = _check(leaf_checks(_stripped(request_id="")), "L26")
-    assert l26.result == "fail"
-    assert l26.reason is not None
-    assert "request id is empty" in l26.reason
-
-
-def test_p8_passes_an_outcome_with_no_request_id_with_a_note() -> None:
     class NoIds(ScriptedProviders):
         def _wrap(self, leaf: Scripted) -> Leaf:
-            return Strips(leaf, request_id=None)
+            return Strips(leaf, **fields)
+
+        def leaf(self, exchanges: Sequence[Exchange]) -> Leaf:
+            return Strips(super().leaf(exchanges), **fields)
 
     p8 = _check(provider_checks(lambda: NoIds("leaf", [CAPABILITIES], CAPABILITIES)), "P8")
-    assert p8 == Verdict(
-        "P8",
-        "pass",
-        "an outcome carries no request id, right only for a leaf whose wire or runtime gives none",
+    assert p8 == Verdict("P8", "pass")
+
+
+@pytest.mark.parametrize(
+    ("fields", "reason"),
+    [
+        pytest.param({"request_id": None}, "request_id has neither", id="no-reason"),
+        pytest.param({"request_id": ""}, "request_id has neither", id="empty-request-id"),
+        pytest.param(
+            {"versions": {"torch": "2.1"}, "unreported": {}},
+            "usage.passes has neither",
+            id="a-dropped-reason",
+        ),
+        pytest.param(
+            {"request_id": None, "unreported": {"request_id": "not-sent"}},
+            "not-sent",
+            id="not-sent-on-the-wire",
+        ),
+        pytest.param({"client_versions": {"idia": "9"}}, "sets idia", id="sets-idia"),
+        pytest.param(
+            {"prompt_sent": None, "unreported": {"prompt_sent": "hidden"}},
+            "the prompt sent is hidden",
+            id="hidden-unannounced",
+        ),
+    ],
+)
+def test_l26_fails_a_profile_that_breaks_a_rule(fields: dict[str, object], reason: str) -> None:
+    base: dict[str, object] = {"unreported": _WIRE}
+    l26 = _check(leaf_checks(_stripped({**base, **fields})), "L26")
+    assert l26.result == "fail"
+    assert l26.reason is not None
+    assert reason in l26.reason
+
+
+def test_l28_fails_a_missing_snapshot_whose_reason_is_not_not_pinned() -> None:
+    record = replace(CAPABILITIES, snapshot_pinnable=False)
+    unreported = {**_WIRE, "snapshot": "hidden"}
+    l28 = _check(
+        leaf_checks(_stripped({"snapshot": None, "unreported": unreported}, record)), "L28"
     )
+    assert l28.result == "fail"
+    assert l28.reason is not None
+    assert "not-pinned: False" in l28.reason
+
+
+def test_p8_fails_a_wrapped_leaf_whose_outcome_is_not_what_the_leaf_gave() -> None:
+    class Differs(ScriptedProviders):
+        def _wrap(self, leaf: Scripted) -> Leaf:
+            return Strips(
+                leaf, versions={"runtime": "2"}, unreported={"usage.passes": "not-reported"}
+            )
+
+    p8 = _check(provider_checks(lambda: Differs("leaf", [CAPABILITIES], CAPABILITIES)), "P8")
+    assert p8.result == "fail"
+    assert p8.reason is not None
+    assert "is not the leaf's" in p8.reason
+
+
+def test_p8_checks_the_failed_outcomes_where_the_harness_can_make_a_failure() -> None:
+    p8 = _check(provider_checks(_wrapped), "P8")
+    assert p8 == Verdict("P8", "pass")
+
+    class NoFailure(ScriptedHarness):
+        def _refuse(self, exchange: Exchange) -> None:
+            if isinstance(exchange, Failure):
+                raise CheckNotApplicable("cannot fail")
+            super()._refuse(exchange)
+
+    p8 = _check(provider_checks(lambda: _wrapped(NoFailure)), "P8")
+    assert p8 == Verdict("P8", "pass", "the failed half was not run: cannot fail")

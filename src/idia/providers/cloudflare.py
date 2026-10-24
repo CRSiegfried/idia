@@ -61,7 +61,7 @@ from idia.core import (
     _without_keys,  # pyright: ignore[reportPrivateUsage]
     unknown_options,
 )
-from idia.providers.http import HttpLeaf
+from idia.providers.http import HttpLeaf, client_versions, wire_unreported
 
 __all__ = [
     "Clairic",
@@ -378,6 +378,7 @@ class _CloudflareLeaf(HttpLeaf):
             "alias drift cannot be detected from the response",
             field="snapshot",
         )
+        request_id = self.request_id(response)
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -386,8 +387,10 @@ class _CloudflareLeaf(HttpLeaf):
             snapshot=None,
             prompt_sent=prompt_sent,
             usage=usage,
-            request_id=self.request_id(response),
+            request_id=request_id,
             raw_body=envelope,
+            client_versions=client_versions("httpx2"),
+            unreported=wire_unreported(snapshot=None, usage=usage, request_id=request_id),
             warnings=(
                 *validated,
                 *warnings,

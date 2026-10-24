@@ -33,6 +33,7 @@ from idia.core import (
     WireResponse,
     unknown_options,
 )
+from idia.providers.http import wire_unreported
 from idia.providers.scripted import Reply, ScriptFunction
 
 
@@ -85,6 +86,8 @@ class OwnRules:
         snapshot = self.model if self.capabilities.snapshot_pinnable else None
         if snapshot is None:
             warnings += (Notice(code=WARNING_NO_SNAPSHOT, message="no snapshot"),)
+        usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"tokens": 2})
+        request_id = f"own-{self._n}"
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -92,10 +95,11 @@ class OwnRules:
             model_reported=self.model,
             snapshot=snapshot,
             prompt_sent="the prompt",
-            usage=Usage(input_tokens=1, output_tokens=1, raw_usage={"tokens": 2}),
-            request_id=f"own-{self._n}",
+            usage=usage,
+            request_id=request_id,
             raw_body={"answers": "as recorded"},
             warnings=warnings + unknown_options(wire_request.options, frozenset()),
+            unreported=wire_unreported(snapshot=snapshot, usage=usage, request_id=request_id),
         )
 
 

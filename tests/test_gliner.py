@@ -6,6 +6,7 @@ its provenance, its lifecycle and its estimator. No test here needs gliner2 or t
 from __future__ import annotations
 
 import asyncio
+import importlib.metadata
 import threading
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -455,7 +456,7 @@ def test_a_model_failure_is_not_retryable() -> None:
 # Reading and provenance
 
 
-def test_the_response_carries_the_snapshot_usage_versions_and_no_request_id() -> None:
+def test_the_response_carries_the_snapshot_usage_versions_and_its_reasons() -> None:
     response = _call(
         Gliner(revision=REVISION, runtime=Playback([Success("extraction")])), _wire(SENDER, TOPICS)
     )
@@ -474,15 +475,29 @@ def test_the_response_carries_the_snapshot_usage_versions_and_no_request_id() ->
         "threshold": 0.5,
     }
     raw_body = cast("dict[str, Any]", response.raw_body)
-    assert set(raw_body["versions"]) == {
-        "python",
-        "gliner2",
-        "torch",
-        "transformers",
-        "huggingface_hub",
+    assert raw_body == {"output": _gliner._json(OUTPUTS[ASKED[0]][0])}
+    # The runtime's packages are read from what is installed: without the extra, Python's
+    # version alone.
+    assert "python" in response.versions
+    assert set(response.versions) <= {"python", "gliner2", "torch", "transformers"}
+    assert set(response.client_versions) <= {"huggingface_hub"}
+    assert dict(response.unreported) == {
+        "usage.output_tokens": "not-applicable",
+        "usage.passes": "not-reported",
+        "request_id": "not-reported",
     }
-    assert raw_body["output"] == _gliner._json(OUTPUTS[ASKED[0]][0])
+    # The caller names the revision of a model it loaded itself, which the leaf cannot read.
+    assert response.claimed == {"model_reported", "snapshot"}
     assert response.warnings == ()
+
+
+def test_a_snapshot_it_resolved_is_not_claimed_and_none_is_not_pinned() -> None:
+    unpinned = _call(
+        Gliner(revision=None, runtime=Playback([Success("extraction")])), _wire(SENDER, TOPICS)
+    )
+    assert unpinned.snapshot is None
+    assert unpinned.unreported["snapshot"] == "not-pinned"
+    assert unpinned.claimed == {"model_reported"}
 
 
 def test_a_scalar_is_the_top_span_by_score_and_a_list_has_no_confidence() -> None:
@@ -715,5 +730,7 @@ def test_the_wrapper_asks_for_scores_and_spans_and_counts_the_text_as_gliner2_en
     ]
 
 
-def test_a_runtime_package_not_installed_has_no_version() -> None:
-    assert _gliner._version("idia-no-such-package") is None
+def test_a_runtime_package_not_installed_is_left_out_of_the_versions() -> None:
+    assert _gliner._installed(("idia-no-such-package", "pytest")) == {
+        "pytest": importlib.metadata.version("pytest")
+    }

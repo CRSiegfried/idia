@@ -10,6 +10,7 @@ defaults, and one that fills them replays them unchanged.
 from __future__ import annotations
 
 import asyncio
+import importlib.metadata
 import json
 from pathlib import Path
 from typing import Any
@@ -254,4 +255,36 @@ def test_a_log_that_fills_the_provenance_fields_replays_them_unchanged(tmp_path:
     assert dict(replayed.unreported) == {
         "snapshot": "not-pinned",
         "usage.passes": "not-reported",
+    }
+
+
+# ----------------------------------------------------------------------------------------
+# The wire leaves' shared helpers
+# ----------------------------------------------------------------------------------------
+
+
+def test_client_versions_reads_each_installed_package_and_leaves_out_the_rest() -> None:
+    pytest.importorskip("httpx2")
+    from idia.providers.http import client_versions
+
+    assert client_versions("httpx2", "idia-no-such-package") == {
+        "httpx2": importlib.metadata.version("httpx2")
+    }
+
+
+def test_wire_unreported_gives_the_reasons_a_wire_leaf_states() -> None:
+    pytest.importorskip("httpx2")
+    from idia.providers.http import wire_unreported
+
+    full = Usage(input_tokens=1, output_tokens=0, passes=2)
+    assert wire_unreported(snapshot="v1", usage=full, request_id="r") == {
+        "versions": "not-applicable"
+    }
+    assert wire_unreported(snapshot=None, usage=None, request_id=None) == {
+        "versions": "not-applicable",
+        "snapshot": "not-pinned",
+        "usage.input_tokens": "not-reported",
+        "usage.output_tokens": "not-reported",
+        "usage.passes": "not-reported",
+        "request_id": "not-reported",
     }

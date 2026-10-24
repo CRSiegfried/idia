@@ -72,9 +72,6 @@ def test_the_leaf_half_leaves_out_exactly_what_a_model_in_process_cannot_make() 
         "L21": read,
         "L25": "no expected extraction has a null value and a guess, so only that the leaf "
         "fills no guess was checked, not that a guess is kept and never moved into value",
-        # The runtime gives no request id and no output count.
-        "L26": "the wire responses carry no output token count and no request id, right only "
-        "for a leaf whose wire or runtime gives none",
     }
 
 
@@ -82,8 +79,6 @@ def test_the_provider_half_leaves_out_exactly_what_a_wrapped_leaf_cannot_reach()
     skipped, notes = _verdicts(provider_checks(GlinerProviderHarness))
     assert skipped == _WRAPPED_NOT_APPLICABLE
     assert notes == {
-        "P8": "an outcome carries no request id, right only for a leaf whose wire or runtime "
-        "gives none",
         "P12": "the fault half was not run: the request has no question whose sum can move",
         "P19": "a 503 then an answer was not recorded: the model has no statuses",
     }

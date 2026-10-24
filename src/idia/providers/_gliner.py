@@ -31,6 +31,7 @@ from idia.core import (
     JsonValue,
     MappedAnswer,
     Notice,
+    ProvenanceDetail,
     ProviderError,
     Question,
     Rounding,
@@ -41,6 +42,7 @@ from idia.core import (
     TextPart,
     TokenEstimate,
     TokenEstimator,
+    UnreportedReason,
     Usage,
     WireRequest,
     WireResponse,
@@ -53,8 +55,13 @@ _REVISION: Final = "7132dc4561c3f94563c6147e75ffa8ef34c4964a"
 outputs were recorded from."""
 _THRESHOLD: Final = 0.5
 """gliner2's own default: a span scored below it is not returned."""
-_VERSIONED: Final = ("gliner2", "torch", "transformers", "huggingface_hub")
-"""The runtime's packages whose versions every raw body records."""
+_RUNTIME: Final = ("gliner2", "torch", "transformers")
+"""The packages that run the model, whose versions every wire response's ``versions`` holds,
+beside Python's."""
+_CLIENT: Final = ("huggingface_hub",)
+"""The package that fetches and resolves the weights, in ``client_versions``."""
+_VERSIONED: Final = (*_RUNTIME, *_CLIENT)
+"""Every package whose version the stored outputs record."""
 
 
 class _Pinned(str):
@@ -219,8 +226,12 @@ class Gliner:
         self._runtime = runtime
         self._given = runtime is not None
         self._snapshot: str | None = None
+        self._claimed: frozenset[ProvenanceDetail] = frozenset({"model_reported"})
         if runtime is not None and revision is not None and not isinstance(revision, _Pinned):
             self._snapshot = str(revision)
+            self._claimed = frozenset({"model_reported", "snapshot"})
+        self._versions = {"python": platform.python_version(), **_installed(_RUNTIME)}
+        self._client_versions = _installed(_CLIENT)
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="idia-gliner")
         self._estimator = _PieceEstimator()
         self._closed = False
@@ -330,8 +341,13 @@ class Gliner:
                 ),
             )
         warnings += unknown_options(wire_request.options, frozenset())
-        versions: dict[str, JsonValue] = {"python": platform.python_version()}
-        versions.update({package: _version(package) for package in _VERSIONED})
+        unreported: dict[ProvenanceDetail, UnreportedReason] = {
+            "usage.output_tokens": "not-applicable",
+            "usage.passes": "not-reported",
+            "request_id": "not-reported",
+        }
+        if self._snapshot is None:
+            unreported["snapshot"] = "not-pinned"
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -348,8 +364,12 @@ class Gliner:
                 output_tokens=None,
                 raw_usage={"input_tokens": tokens, "counted_by": "gliner2 tokenizer"},
             ),
-            raw_body={"output": _json(raw), "versions": versions},
+            raw_body={"output": _json(raw)},
             warnings=warnings,
+            versions=self._versions,
+            client_versions=self._client_versions,
+            unreported=unreported,
+            claimed=self._claimed,
         )
 
     async def aclose(self) -> None:
@@ -442,8 +462,13 @@ def _json(value: object) -> JsonValue:
     return repr(value)
 
 
-def _version(package: str) -> str | None:
-    try:
-        return importlib.metadata.version(package)
-    except importlib.metadata.PackageNotFoundError:
-        return None
+def _installed(packages: Sequence[str]) -> dict[str, str]:
+    """The installed version of each of ``packages``, read from its metadata; a package with
+    no metadata is left out."""
+    versions: dict[str, str] = {}
+    for package in packages:
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return versions

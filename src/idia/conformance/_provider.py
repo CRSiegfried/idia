@@ -24,10 +24,12 @@ from idia.conformance._base import (
     expect,
     is_a,
     missing,
+    profile_problems,
     validate_spy,
 )
 from idia.core import (
     UNBOUNDED,
+    VERSION,
     WARNING_UNCHECKED_LIMIT,
     Capabilities,
     Deadline,
@@ -47,6 +49,7 @@ from idia.core import (
     Response,
     Rule,
     State,
+    WireRequest,
 )
 from idia.dispatch import Dispatcher
 from idia.providers.recorded import Recorded
@@ -277,35 +280,84 @@ async def _p8(harness: ProviderHarness) -> str | None:
     response = await _answer(harness, _answering(harness, request), request)
     expect(not hasattr(response, "provenance"), "the Response has a provenance attribute")
     members = set(harness.member_names())
-    unidentified = False
     for outcome in response.outcomes:
         absent = [
             name
             for name, held in (
                 ("provider", bool(outcome.provider)),
                 ("model_requested", bool(outcome.model_requested)),
-                ("model_reported", outcome.model_reported is not None),
-                ("elicitation", outcome.elicitation is not None),
-                ("calibrated", outcome.calibrated is not None),
-                ("usage", outcome.usage is not None),
                 ("latency", outcome.latency >= 0),
                 ("started_at", outcome.started_at > 0),
             )
             if not held
         ]
         expect(not absent, f"the outcome for {outcome.keys} leaves out {absent}")
-        if outcome.request_id is None:
-            unidentified = True
         named = (outcome.provider, outcome.model_requested)
         expect(named in members, f"the outcome names {named}, which is no member's leaf")
-        held = [f.name for f in dataclasses.fields(outcome)]
-        raw = [name for name in held if isinstance(getattr(outcome, name), bytes | bytearray)]
-        expect("raw_body" not in held and not raw, f"the outcome carries a raw body: {raw}")
-    if unidentified:
-        return (
-            "an outcome carries no request id, right only for a leaf whose wire or runtime "
-            "gives none"
+        fields = [f.name for f in dataclasses.fields(outcome)]
+        raw = [name for name in fields if isinstance(getattr(outcome, name), bytes | bytearray)]
+        expect("raw_body" not in fields and not raw, f"the outcome carries a raw body: {raw}")
+        problems = profile_problems(outcome)
+        if "not-sent" in outcome.unreported.values():
+            problems.append("an answered outcome gives not-sent")
+        if outcome.client_versions.get("idia") != VERSION:
+            problems.append(f"client_versions holds idia {outcome.client_versions.get('idia')}")
+        expect(not problems, f"the outcome for {outcome.keys}: {'; '.join(problems)}")
+    if harness.shape == "leaf":
+        await _p8_as_the_leaf_gave_it(harness, request, response)
+    return await _p8_failed(harness, request)
+
+
+async def _p8_as_the_leaf_gave_it(
+    harness: ProviderHarness, request: Request, response: Response
+) -> None:
+    """Each answered outcome of a wrapped leaf carries the provenance the leaf itself gives
+    for the same wire request, with idia's version added."""
+    leaf = harness.leaf(_answering(harness, request)[0])
+    by_key = {question.key: question for question in request.questions}
+    for outcome in response.outcomes:
+        wire_request = WireRequest(
+            state=request.state,
+            questions=tuple(by_key[key] for key in outcome.keys),
+            options=request.options,
         )
+        given = await leaf.call(wire_request, request.deadline)
+        for name in ("versions", "unreported", "claimed"):
+            expect(
+                getattr(outcome, name) == getattr(given, name),
+                f"the outcome's {name} {getattr(outcome, name)!r} is not the leaf's "
+                f"{getattr(given, name)!r}",
+            )
+        expect(
+            dict(outcome.client_versions) == {**given.client_versions, "idia": VERSION},
+            f"the outcome's client_versions {dict(outcome.client_versions)} are not the "
+            f"leaf's {dict(given.client_versions)} with idia's version",
+        )
+
+
+async def _p8_failed(harness: ProviderHarness, request: Request) -> str | None:
+    """Every failed outcome gives not-sent to each detail with no value, and no other
+    reason."""
+    failing: list[list[Exchange]] = [
+        [Failure()] * (len(request.questions) + 2) for _ in range(harness.members)
+    ]
+    try:
+        provider = harness.make(failing)
+    except CheckNotApplicable as not_applicable:
+        return f"the failed half was not run: {not_applicable.reason}"
+    raised = await _outcome(provider.answer(request))
+    expect(isinstance(raised, RequestFailed), f"a failure on every call ended in {raised!r}")
+    assert isinstance(raised, RequestFailed)
+    for outcome in raised.response.outcomes:
+        problems = profile_problems(outcome)
+        others = sorted(d for d, reason in outcome.unreported.items() if reason != "not-sent")
+        if others:
+            problems.append(f"{others} have a reason other than not-sent")
+        if outcome.claimed:
+            problems.append(f"{sorted(outcome.claimed)} are claimed on a failed outcome")
+        if outcome.client_versions.get("idia") != VERSION:
+            problems.append(f"client_versions holds idia {outcome.client_versions.get('idia')}")
+        expect(not problems, f"the failed outcome for {outcome.keys}: {'; '.join(problems)}")
     return None
 
 

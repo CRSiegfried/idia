@@ -27,6 +27,7 @@ from idia.conformance._base import (
     expect,
     is_a,
     missing,
+    profile_problems,
     validate_spy,
 )
 from idia.core import (
@@ -49,7 +50,6 @@ from idia.core import (
     Refusal,
     Rule,
     TokenEstimator,
-    Usage,
     WireResponse,
 )
 from idia.dispatch import Dispatcher
@@ -586,34 +586,21 @@ async def _l25(harness: LeafHarness) -> str | None:
 
 
 async def _l26(harness: LeafHarness) -> str | None:
-    unreported: set[str] = set()
     for kind in _claimed(harness):
         response = await _send(harness, kind, Success(kind))
-        usage = response.usage
-        absent = [
-            name
-            for name, held in (
-                ("model_reported", bool(response.model_reported)),
-                ("elicitation", response.elicitation in ("passthrough", "logprobs")),
-                ("prompt_sent", harness.prompt_hidden or response.prompt_sent is not None),
-                ("usage", isinstance(usage, Usage) and bool(usage.raw_usage)),
-                ("usage input tokens", usage is not None and usage.input_tokens is not None),
-                ("raw_body", response.raw_body is not None),
+        problems = profile_problems(response)
+        sent = sorted(d for d, reason in response.unreported.items() if reason == "not-sent")
+        if sent:
+            problems.append(f"{sent} are not-sent, which only Dispatch gives a failed outcome")
+        hidden = response.unreported.get("prompt_sent") == "hidden"
+        if hidden != harness.prompt_hidden:
+            problems.append(
+                f"the prompt sent is hidden: {hidden}; the harness says hidden: "
+                f"{harness.prompt_hidden}"
             )
-            if not held
-        ]
-        expect(not absent, f"the {kind} wire response leaves out {absent}")
-        if usage is not None and usage.output_tokens is None:
-            unreported.add("output token count")
-        if response.request_id is None:
-            unreported.add("request id")
-        else:
-            expect(bool(response.request_id), f"the {kind} wire response's request id is empty")
-    if unreported:
-        return (
-            f"the wire responses carry no {' and no '.join(sorted(unreported))}, right only "
-            "for a leaf whose wire or runtime gives none"
-        )
+        if response.raw_body is None:
+            problems.append("the raw body is missing")
+        expect(not problems, f"the {kind} wire response's provenance: {'; '.join(problems)}")
     return None
 
 
@@ -637,6 +624,11 @@ async def _l28(harness: LeafHarness) -> str | None:
         expect(
             (response.snapshot is None) == warned,
             f"snapshot {response.snapshot!r} with a no-snapshot warning: {warned}",
+        )
+        not_pinned = response.unreported.get("snapshot") == "not-pinned"
+        expect(
+            (response.snapshot is None) == not_pinned,
+            f"snapshot {response.snapshot!r} with the reason not-pinned: {not_pinned}",
         )
     return None
 

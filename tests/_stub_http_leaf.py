@@ -36,6 +36,7 @@ from idia.core import (
     unknown_options,
 )
 from idia.providers._canon import CharacterEstimator, decode, encode, plain, thaw
+from idia.providers.http import client_versions, wire_unreported
 
 URL: Final = "https://stub.invalid/v1/answer"
 SECRET: Final = "Bearer stub-secret"
@@ -113,6 +114,11 @@ class StubHttpLeaf:
         if snapshot is None:
             warnings += (Notice(code=WARNING_NO_SNAPSHOT, message="no snapshot", field="snapshot"),)
         usage = cast(Mapping[str, object], body.get("usage", {}))
+        normalized = Usage(
+            input_tokens=cast(int | None, usage.get("input_tokens")),
+            output_tokens=cast(int | None, usage.get("output_tokens")),
+            raw_usage=cast(Mapping[str, object], thaw(usage)),  # type: ignore[arg-type]
+        )
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -120,14 +126,12 @@ class StubHttpLeaf:
             model_reported=model_reported,
             snapshot=snapshot,
             prompt_sent=response.request.content.decode(),
-            usage=Usage(
-                input_tokens=cast(int | None, usage.get("input_tokens")),
-                output_tokens=cast(int | None, usage.get("output_tokens")),
-                raw_usage=cast(Mapping[str, object], thaw(usage)),  # type: ignore[arg-type]
-            ),
+            usage=normalized,
             request_id=request_id,
             raw_body=thaw(body),
             warnings=warnings + unknown_options(wire_request.options, frozenset()),
+            client_versions=client_versions("httpx2"),
+            unreported=wire_unreported(snapshot=snapshot, usage=normalized, request_id=request_id),
         )
 
 

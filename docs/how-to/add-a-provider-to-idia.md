@@ -247,8 +247,8 @@ its own covering:
 - how it reads the answers, kind by kind, including what it leaves `None`;
 - what it refuses before sending, and each error it raises, retryable or not;
 - its provenance: `elicitation`, `calibrated`, `model_reported`, `snapshot`, `prompt_sent`,
-  `usage`, `request_id` and `raw_body`, and for a model in your own process the runtime's
-  versions the raw body records;
+  `usage`, `request_id`, `versions`, `client_versions` and `raw_body`, each detail's reason
+  in `unreported` where it holds no value, and what it `claimed`;
 - its capabilities record, field by field, each value as measured or documented, `None`
   where unknown;
 - its estimator, and what it counts;

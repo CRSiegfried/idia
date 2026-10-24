@@ -29,6 +29,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import email.utils
+import importlib.metadata
 import inspect
 import json
 import math
@@ -42,13 +43,17 @@ from idia import __version__
 from idia.core import (
     Deadline,
     JsonValue,
+    ProvenanceDetail,
     ProviderError,
+    UnreportedReason,
+    Usage,
     _without_keys,  # pyright: ignore[reportPrivateUsage]
 )
 
 __all__ = [
     "HttpLeaf",
     "client_failed",
+    "client_versions",
     "created_client",
     "follow_the_loop",
     "malformed_request",
@@ -57,10 +62,46 @@ __all__ = [
     "retry_after",
     "status_error",
     "unreadable",
+    "wire_unreported",
     "within",
 ]
 
 _USER_AGENT: Final = f"idia/{__version__}"
+
+
+def client_versions(*packages: str) -> dict[str, str]:
+    """The installed version of each of ``packages``, the client libraries that make a
+    leaf's call, read from the package metadata so an injected client gives the same; a
+    package with no metadata is left out. Dispatch adds idia's own."""
+    versions: dict[str, str] = {}
+    for package in packages:
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return versions
+
+
+def wire_unreported(
+    *, snapshot: str | None, usage: Usage | None, request_id: str | None
+) -> dict[ProvenanceDetail, UnreportedReason]:
+    """The reasons a wire leaf gives for the details its wire did not fill: the snapshot
+    ``not-pinned``, ``versions`` ``not-applicable``, since a wire API's runtime is the
+    service's own, and each usage figure and the request id ``not-reported``."""
+    reasons: dict[ProvenanceDetail, UnreportedReason] = {"versions": "not-applicable"}
+    if snapshot is None:
+        reasons["snapshot"] = "not-pinned"
+    figures: dict[ProvenanceDetail, int | None] = {
+        "usage.input_tokens": None if usage is None else usage.input_tokens,
+        "usage.output_tokens": None if usage is None else usage.output_tokens,
+        "usage.passes": None if usage is None else usage.passes,
+    }
+    reasons.update({detail: "not-reported" for detail, held in figures.items() if held is None})
+    if request_id is None:
+        reasons["request_id"] = "not-reported"
+    return reasons
+
+
 _RETRYABLE: Final = frozenset({408, 409, 429})
 _MESSAGE_CHARS: Final = 300
 _T = TypeVar("_T")

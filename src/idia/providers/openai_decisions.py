@@ -59,6 +59,7 @@ from idia.providers._openai import (
     unreadable,
     usage,
 )
+from idia.providers.http import client_versions, wire_unreported
 
 __all__ = [
     "OpenAIDecisions",
@@ -213,6 +214,10 @@ class OpenAIDecisions(OpenAILeafBase):
                 field="snapshot",
             ),
         )
+        normalized = usage(
+            cast(Mapping[str, JsonValue], raw_usage), "input_tokens", "output_tokens"
+        )
+        request_id = response.headers.get(REQUEST_ID_HEADER)
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -220,10 +225,12 @@ class OpenAIDecisions(OpenAILeafBase):
             model_reported=model_reported,
             snapshot=None,
             prompt_sent=_prompt_sent(body, sizes),
-            usage=usage(cast(Mapping[str, JsonValue], raw_usage), "input_tokens", "output_tokens"),
-            request_id=response.headers.get(REQUEST_ID_HEADER),
+            usage=normalized,
+            request_id=request_id,
             raw_body=read,
             warnings=warnings + unknown_options(wire_request.options, frozenset()),
+            client_versions=client_versions("openai", "httpx2"),
+            unreported=wire_unreported(snapshot=None, usage=normalized, request_id=request_id),
         )
 
 

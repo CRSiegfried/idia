@@ -82,7 +82,6 @@ and end offset, and a score:
 from __future__ import annotations
 
 import asyncio
-import importlib.metadata
 import platform
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -98,6 +97,7 @@ from idia import (
     JsonValue,
     MappedAnswer,
     Notice,
+    ProvenanceDetail,
     ProviderError,
     Question,
     Rounding,
@@ -107,6 +107,7 @@ from idia import (
     State,
     TextPart,
     TokenEstimate,
+    UnreportedReason,
     Usage,
     WireRequest,
     WireResponse,
@@ -382,11 +383,35 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
 - `usage`: `Usage(input_tokens, output_tokens, passes=None, raw_usage=...)`, each count as
   the wire or the runtime reports it and `None` where it reports none, never an estimate;
   the raw figures go in `raw_usage`. A model in your own process reports its input as its
-  own tokenizer counts what it encoded, as `SpanLeaf` does, and no output tokens: `None`.
-- `request_id`: the wire's id for the call. `SpanLeaf` reports `None`: nothing assigns one
-  in process, and the conformance suite accepts that with a note.
+  own tokenizer counts what it encoded, as `SpanLeaf` does.
+- `request_id`: the wire's id for the call, `None` where nothing assigns one, as in process.
+- `versions`: the versions of the runtime that ran the model, package to version, with
+  `python` for the interpreter, read from the installed packages; empty for a wire API,
+  whose runtime is the service's own. A per-call fingerprint a wire returns is not a version:
+  leave it in the raw body.
+- `client_versions`: the versions of the client libraries that made the call, such as your
+  HTTP client or SDK, never `idia`, which the dispatcher adds.
 - `raw_body`: what the model returned, whole. The dispatcher drops it, but a recording keeps
-  it, so put the runtime's versions here.
+  it.
+
+Every detail of the provenance profile is a value or has a reason in `unreported`, a map
+from the detail's name to one of `UnreportedReason`'s codes; `DETAILS` and `REASONS` name
+them all. The profile's details are `model_reported`, `snapshot`, `versions`,
+`elicitation`, `calibrated`, `prompt_sent`, `usage.input_tokens`, `usage.output_tokens`,
+`usage.passes` and `request_id`. The codes a leaf gives:
+
+- `not-reported`: the wire or the runtime gives none, such as a missing request id;
+- `not-pinned`: the snapshot, exactly when you give the `no-snapshot` warning;
+- `hidden`: the provider's service withholds it;
+- `not-applicable`: the detail has no meaning for your source, such as `versions` for a wire
+  API, or for your kind of model, such as the output tokens of an encoder that writes none;
+- `not-exposed`: a library between you and the provider has it but does not make it public.
+
+`not-sent` is the dispatcher's alone, for a wire request that failed. A detail never has
+both a value and a reason, and the constructor refuses one that does. Name in `claimed` the
+details whose value you assert but cannot verify: `SpanLeaf` claims its `model_reported`,
+which is its own constant, not something its model reports, and the revision a caller gives
+for a model it loaded itself. The conformance suite checks the whole profile.
 - `warnings`: `Notice` values. Put the warnings `validate_answers` returned first, then your
   own, such as `WARNING_NO_SNAPSHOT` or `WARNING_PROVIDER_TRUNCATED` when the model reports
   that it cut the input, and last `unknown_options(wire_request.options, known)`, which
@@ -429,8 +454,9 @@ practices, those idia sets for a leaf that runs its model in process.
   given a loaded model resolves nothing: its caller gives the commit the model was loaded
   at, and the leaf reports it as given, unresolved, or `None` with the warning when the
   caller gives none.
-- **The runtime's versions go in the raw body**, so a recording keeps what answered: for a
-  torch model, its runtime package and torch.
+- **The runtime's versions go in `versions`**, read from the installed packages whether the
+  leaf loaded its model or was given one: for a torch model, its runtime package and torch,
+  and `python`. A library that only fetches the weights goes in `client_versions`.
 
 What `load()` raises when the runtime or the weights are missing is not settled; `SpanLeaf`
 lets its loader's own error propagate, since `load()` is not a call.
@@ -493,6 +519,9 @@ class SpanLeaf:
         self.estimator = WordEstimator()
         self._revision = revision
         self._snapshot = revision if runtime is not None else None
+        self._claimed: frozenset[ProvenanceDetail] = frozenset({"model_reported"})
+        if self._snapshot is not None:
+            self._claimed = frozenset({"model_reported", "snapshot"})
         self._runtime = runtime
         self._injected = runtime is not None
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="span-leaf")
@@ -546,10 +575,13 @@ class SpanLeaf:
             )
         warnings += unknown_options(wire_request.options, frozenset())
         spans: dict[str, JsonValue] = {label: tuple(found[label]) for label in found}
-        versions: dict[str, JsonValue] = {
-            "python": platform.python_version(),
-            "idia": _version("idia"),
-        }  # a real leaf records its runtime here, and torch
+        unreported: dict[ProvenanceDetail, UnreportedReason] = {
+            "usage.output_tokens": "not-applicable",
+            "usage.passes": "not-reported",
+            "request_id": "not-reported",
+        }
+        if self._snapshot is None:
+            unreported["snapshot"] = "not-pinned"
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -562,8 +594,12 @@ class SpanLeaf:
                 output_tokens=None,
                 raw_usage={"input_tokens": tokens, "counted_by": "tokenizer"},
             ),
-            raw_body={"spans": spans, "versions": versions},
+            raw_body={"spans": spans},
             warnings=warnings,
+            # A real leaf names its runtime package and torch beside Python.
+            versions={"python": platform.python_version()},
+            unreported=unreported,
+            claimed=self._claimed,
         )
 
     async def aclose(self) -> None:
@@ -623,13 +659,6 @@ def _answer(question: Question, spans: Sequence[Found]) -> MappedAnswer:
         return ExtractionAnswer(value=None)
     text, start, end, score = max(spans, key=lambda span: span[3])
     return ExtractionAnswer(value=text, confidence=score, span=Span(part=0, start=start, end=end))
-
-
-def _version(package: str) -> str | None:
-    try:
-        return importlib.metadata.version(package)
-    except importlib.metadata.PackageNotFoundError:
-        return None
 ```
 
 ## Wrap it in a Dispatcher
@@ -1066,15 +1095,11 @@ def test_the_leaf_half_notes_what_it_did_not_run() -> None:
         "L21": READ,
         "L25": "no expected extraction has a null value and a guess, so only that the leaf "
         "fills no guess was checked, not that a guess is kept and never moved into value",
-        "L26": "the wire responses carry no output token count and no request id, right only "
-        "for a leaf whose wire or runtime gives none",
     }
 
 
 def test_the_provider_half_notes_what_it_did_not_run() -> None:
     assert notes(provider_checks(SpanProviderHarness)) == {
-        "P8": "an outcome carries no request id, right only for a leaf whose wire or runtime "
-        "gives none",
         "P19": "a 503 then an answer was not recorded: the model has no statuses",
     }
 ```

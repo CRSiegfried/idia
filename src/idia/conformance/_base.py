@@ -10,6 +10,7 @@ from typing import Any, Literal, Protocol, TypeAlias
 
 from idia import answers
 from idia.core import (
+    DETAILS,
     Answer,
     Capabilities,
     Deadline,
@@ -17,12 +18,15 @@ from idia.core import (
     Kind,
     Leaf,
     MappedAnswer,
+    Outcome,
+    ProvenanceDetail,
     Provider,
     Question,
     Request,
     Rounding,
     Rule,
     WireRequest,
+    WireResponse,
 )
 
 # ----------------------------------------------------------------------------------------
@@ -315,3 +319,49 @@ def validate_spy() -> Generator[list[tuple[str, Rounding]], None, None]:
     finally:
         for namespace, name in bindings:
             namespace[name] = real
+
+
+# ----------------------------------------------------------------------------------------
+# The provenance profile
+# ----------------------------------------------------------------------------------------
+
+
+def held(record: WireResponse | Outcome) -> dict[ProvenanceDetail, bool]:
+    """Whether each provenance detail of ``record`` holds a value: ``None``, an empty
+    ``versions``, an empty request id and a missing ``usage`` hold none."""
+    usage = record.usage
+    return {
+        "model_reported": record.model_reported is not None,
+        "snapshot": record.snapshot is not None,
+        "versions": bool(record.versions),
+        "elicitation": record.elicitation is not None,
+        "calibrated": record.calibrated is not None,
+        "prompt_sent": record.prompt_sent is not None,
+        "usage.input_tokens": usage is not None and usage.input_tokens is not None,
+        "usage.output_tokens": usage is not None and usage.output_tokens is not None,
+        "usage.passes": usage is not None and usage.passes is not None,
+        "request_id": bool(record.request_id),
+    }
+
+
+def profile_problems(record: WireResponse | Outcome) -> list[str]:
+    """Each way ``record``'s provenance breaks the profile: a detail with neither a value nor
+    a reason, a detail with both, a claimed detail with no value, and ``idia`` set by a wire
+    response in ``client_versions``."""
+    values = held(record)
+    problems = [
+        f"{detail} has neither a value nor a reason"
+        for detail in sorted(DETAILS)
+        if not values[detail] and detail not in record.unreported
+    ]
+    problems += [
+        f"{detail} has a value and the reason {record.unreported[detail]!r}"
+        for detail in sorted(DETAILS)
+        if values[detail] and detail in record.unreported
+    ]
+    problems += [
+        f"{detail} is claimed with no value" for detail in record.claimed if not values[detail]
+    ]
+    if isinstance(record, WireResponse) and "idia" in record.client_versions:
+        problems.append("the wire response sets idia in client_versions, which is Dispatch's")
+    return problems

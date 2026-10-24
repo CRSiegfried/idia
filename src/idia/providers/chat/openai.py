@@ -66,6 +66,7 @@ from idia.providers._openai import (
     unreadable,
     usage,
 )
+from idia.providers.http import client_versions, wire_unreported
 
 TOP_LOGPROBS: Final = 20
 """The top-k Chat Completions allows, and so the label and level cap."""
@@ -275,6 +276,10 @@ class OpenAIChat(OpenAILeafBase):
                     field="snapshot",
                 ),
             )
+        normalized = usage(
+            cast(Mapping[str, JsonValue], raw_usage), "prompt_tokens", "completion_tokens"
+        )
+        request_id = response.headers.get(REQUEST_ID_HEADER)
         return WireResponse(
             answers=answers,
             elicitation="logprobs",
@@ -292,12 +297,12 @@ class OpenAIChat(OpenAILeafBase):
                 "letters": dict(letters),
                 "max_off_label_mass": self._bound,
             },
-            usage=usage(
-                cast(Mapping[str, JsonValue], raw_usage), "prompt_tokens", "completion_tokens"
-            ),
-            request_id=response.headers.get(REQUEST_ID_HEADER),
+            usage=normalized,
+            request_id=request_id,
             raw_body=read,
             warnings=warnings + unknown_options(wire_request.options, frozenset()),
+            client_versions=client_versions("openai", "httpx2"),
+            unreported=wire_unreported(snapshot=snapshot, usage=normalized, request_id=request_id),
         )
 
 
