@@ -29,7 +29,8 @@ import base64
 import contextlib
 import json
 import os
-import tempfile
+import secrets
+import stat
 import typing
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -199,13 +200,20 @@ class Recorded:
 def _write(log: Path, document: typing.Mapping[str, object]) -> None:
     """Write ``document`` to ``log`` whole, sorted and indented, in UTF-8 with LF line
     endings, through a temporary file replaced in one step, so a reader never sees half a
-    log."""
+    log. A log that exists keeps its mode, and one that is a link is written where it
+    points; a new log takes the mode the process's umask gives a new file."""
     text = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    log = log.resolve()
     log.parent.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(dir=log.parent, prefix=f".{log.name}.")
+    temporary = log.parent / f".{log.name}.{secrets.token_hex(8)}"
+    handle = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
     try:
         with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as file:
             file.write(text)
+            file.flush()
+            os.fsync(file.fileno())
+        with contextlib.suppress(FileNotFoundError):
+            os.chmod(temporary, stat.S_IMODE(log.stat().st_mode))
         os.replace(temporary, log)
     finally:
         with contextlib.suppress(FileNotFoundError):
@@ -221,22 +229,58 @@ class _Log:
     model: str
     features: frozenset[str]
     calls: dict[str, list[_Entry]]
+    document: dict[str, object]
 
 
 def _load(log: Path) -> _Log:
-    """Read ``log``, refusing a format this module does not write."""
-    document = json.loads(log.read_text(encoding="utf-8"))
+    """Read ``log``, refusing with ``ValueError`` a format this module does not write and a
+    document that is not a recorded leaf's log, each entry read as a replay would read it."""
+    text = log.read_text(encoding="utf-8")
+    try:
+        document: object = json.loads(text)
+    except RecursionError:
+        raise ValueError(f"{log} is not a recorded leaf's log: it nests too deep") from None
     if not isinstance(document, dict):
         raise ValueError(f"{log} is not a recorded leaf's log")
     held = cast(dict[str, object], document)
     if held.get("format") != _FORMAT:
         raise ValueError(f"{log} is in format {held.get('format')!r}; this reads {_FORMAT}")
-    return _Log(
-        name=str(held["name"]),
-        model=str(held["model"]),
-        features=frozenset(cast(list[str], held["enabled_features"])),
-        calls=cast(dict[str, list[_Entry]], held["calls"]),
-    )
+    try:
+        loaded = _Log(
+            name=_string(held["name"]),
+            model=_string(held["model"]),
+            features=frozenset(_string(f) for f in cast(list[object], held["enabled_features"])),
+            calls=_calls(held["calls"]),
+            document=held,
+        )
+    except (KeyError, TypeError, AttributeError, ValueError, RecursionError) as error:
+        raise ValueError(f"{log} is not a recorded leaf's log: {error!r}") from error
+    return loaded
+
+
+def _string(value: object) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"{value!r} is not a string")
+    return value
+
+
+def _calls(value: object) -> dict[str, list[_Entry]]:
+    """The recorded calls, each entry checked by reading it as a replay does."""
+    if not isinstance(value, dict):
+        raise TypeError("the calls are not a mapping")
+    calls = cast(dict[object, object], value)
+    for key, entries in calls.items():
+        if not isinstance(key, str) or not isinstance(entries, list):
+            raise TypeError(f"the calls under {key!r} are not a list")
+        for entry in cast(list[object], entries):
+            if not isinstance(entry, dict):
+                raise TypeError(f"an entry under {key!r} is not a mapping")
+            checked = cast(_Entry, entry)
+            if "error" in checked:
+                _recorded_error(checked)
+            else:
+                _replay(checked)
+    return cast(dict[str, list[_Entry]], calls)
 
 
 def _missing(log: Path) -> FileNotFoundError:
@@ -275,17 +319,22 @@ def _response(response: WireResponse) -> _Entry:
     return {"response": encoded}
 
 
+def _recorded_error(entry: _Entry) -> ProviderError:
+    """The recorded error as a plain ``ProviderError``."""
+    fields = cast(dict[str, typing.Any], entry["error"])
+    return ProviderError(
+        fields["message"],
+        is_retryable=fields["is_retryable"],
+        retry_after=fields["retry_after"],
+        status_code=fields["status_code"],
+        request_id=fields["request_id"],
+    )
+
+
 def _replay(entry: _Entry) -> WireResponse:
     """The recorded wire response, or raise the recorded error as a plain ProviderError."""
     if "error" in entry:
-        fields = cast(dict[str, typing.Any], entry["error"])
-        raise ProviderError(
-            fields["message"],
-            is_retryable=fields["is_retryable"],
-            retry_after=fields["retry_after"],
-            status_code=fields["status_code"],
-            request_id=fields["request_id"],
-        )
+        raise _recorded_error(entry)
     encoded = dict(cast(dict[str, object], entry["response"]))
     raw = cast(dict[str, object] | None, encoded.pop("raw_body", None))
     response = cast(WireResponse, decode({**encoded, "raw_body": None}, WireResponse))
@@ -333,15 +382,16 @@ def upgrade_log(
     Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
     reason, claim or version a response already holds stays. Error entries are left as they
     are. The log is refused with ``ValueError``, and nothing written, when a leaf has no
-    rules and no ``reasons`` are given, ``reasons`` give ``not-sent`` or a missing snapshot
-    a reason other than ``not-pinned``, a ``gliner`` log records no versions, a missing
+    rules and no ``reasons`` are given, ``reasons`` are given for a leaf with rules, give
+    ``not-sent`` or give a missing snapshot a reason other than ``not-pinned``, a ``gliner``
+    log records no runtime version, a missing
     snapshot has no ``no-snapshot`` warning, a response records an empty request id, its
     ``elicitation`` or ``calibrated`` holds no value or has a reason, or a detail would be
     left with neither a value nor a reason. The log keeps its format and keys, and is
     rewritten only if a response changed.
     """
     held = _load(log)
-    document = cast(dict[str, object], json.loads(log.read_text(encoding="utf-8")))
+    document = held.document
     changed = 0
     for entries in held.calls.values():
         for index, entry in enumerate(entries):
@@ -372,16 +422,18 @@ def _upgraded(
     client_versions = dict(response.client_versions)
     claimed = set(response.claimed)
     rules: dict[ProvenanceDetail, UnreportedReason]
+    if reasons is not None and (name in _WIRE or name in {"scripted", "gliner"}):
+        raise ValueError(f"{log}: {name!r} has rules of its own, so it takes no reasons")
     if name in _WIRE or name == "scripted":
         rules = {"versions": "not-applicable"}
     elif name == "gliner":
+        recorded = _recorded_versions(response.raw_body) or {}
         if not versions:
-            recorded = _recorded_versions(response.raw_body)
-            if recorded is None:
-                raise ValueError(f"{log}: a gliner response records no versions to upgrade from")
             versions = {k: v for k, v in recorded.items() if k in _GLINER_RUNTIME}
-            if not client_versions:
-                client_versions = {k: v for k, v in recorded.items() if k in _GLINER_CLIENT}
+            if not versions:
+                raise ValueError(f"{log}: a gliner response records no runtime version")
+        if not client_versions:
+            client_versions = {k: v for k, v in recorded.items() if k in _GLINER_CLIENT}
         rules = {"usage.output_tokens": "not-applicable"}
         claimed |= {"model_reported"} if response.model_reported is not None else set()
         claimed |= {"snapshot"} if response.snapshot is not None else set()

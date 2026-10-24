@@ -13,8 +13,10 @@ import asyncio
 import contextlib
 import importlib.metadata
 import json
+import stat
+import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -528,7 +530,7 @@ def test_a_gliner_log_takes_its_versions_from_the_raw_body_and_claims(tmp_path: 
     ("name", "reply", "message"),
     [
         pytest.param("someone-else", _bare(), "no upgrade rules for the leaf", id="unknown"),
-        pytest.param("gliner", _bare(), "records no versions", id="gliner-no-versions"),
+        pytest.param("gliner", _bare(), "records no runtime version", id="gliner-no-versions"),
     ],
 )
 def test_upgrading_refuses_a_log_it_cannot_upgrade_honestly_and_writes_nothing(
@@ -620,3 +622,97 @@ def test_the_suite_reads_values_as_core_does_and_flags_an_empty_request_id() -> 
         | {"versions": "not-applicable", "prompt_sent": "not-reported"},
     )
     assert profile_problems(response) == ["the request id is empty; a leaf with none gives None"]
+
+
+def _gliner_log(tmp_path: Path, versions: dict[str, object]) -> Path:
+    log = _old_log(tmp_path, "gliner", _bare(usage=Usage(input_tokens=9, output_tokens=None)))
+    document = json.loads(log.read_text(encoding="utf-8"))
+    (entries,) = document["calls"].values()
+    entries[0]["response"]["raw_body"] = {"json": {"output": {}, "versions": versions}}
+    log.write_text(json.dumps(document), encoding="utf-8")
+    return log
+
+
+@pytest.mark.parametrize(
+    "versions", [{}, {"huggingface_hub": "2.3.0"}], ids=["empty", "client-only"]
+)
+def test_a_gliner_log_recording_no_runtime_version_is_refused(
+    tmp_path: Path, versions: dict[str, object]
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _gliner_log(tmp_path, versions)
+    before = log.read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match="records no runtime version"):
+        upgrade_log(log)
+    assert log.read_text(encoding="utf-8") == before
+
+
+def test_a_leaf_with_rules_of_its_own_takes_no_reasons(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "system-one", _bare())
+    with pytest.raises(ValueError, match="takes no reasons"):
+        upgrade_log(log, reasons={"snapshot": "not-pinned"})
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX modes")
+def test_an_upgraded_log_keeps_its_mode_and_is_written_where_its_link_points(
+    tmp_path: Path,
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    target = _old_log(tmp_path, "system-one", _bare())
+    target.chmod(0o644)
+    link = tmp_path / "link.json"
+    link.symlink_to(target)
+    assert upgrade_log(link) == 1
+    assert link.is_symlink()
+    assert stat.S_IMODE(target.stat().st_mode) == 0o644
+    assert '"unreported"' in target.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "no-name",
+        "calls-a-list",
+        "features-unhashable",
+        "raw-body-of-no-shape",
+        "an-entry-not-a-mapping",
+    ],
+)
+def test_a_log_that_is_not_a_recorded_leafs_is_refused_with_value_error(
+    tmp_path: Path, change: str
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "system-one", _bare())
+    document: dict[str, Any] = json.loads(log.read_text(encoding="utf-8"))
+    entries: list[Any] = next(iter(cast(dict[str, list[Any]], document["calls"]).values()))
+    if change == "no-name":
+        del document["name"]
+    elif change == "calls-a-list":
+        document["calls"] = [1]
+    elif change == "features-unhashable":
+        document["enabled_features"] = [[1]]
+    elif change == "raw-body-of-no-shape":
+        entries[0]["response"]["raw_body"] = {"x": 1}
+    else:
+        entries.append(5)
+    log.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="is not a recorded leaf's log"):
+        upgrade_log(log)
+    with pytest.raises(ValueError, match="is not a recorded leaf's log"):
+        Recorded(None, log, "none", capabilities=capabilities())
+
+
+def test_a_log_nested_past_the_parsers_depth_is_refused_with_value_error(
+    tmp_path: Path,
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = tmp_path / "deep.json"
+    log.write_text("[" * 100_000, encoding="utf-8")
+    with pytest.raises(ValueError, match="nests too deep"):
+        upgrade_log(log)
