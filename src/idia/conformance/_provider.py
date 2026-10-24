@@ -630,6 +630,11 @@ def _replayable(result: Response | Exception) -> object:
                 outcome.usage,
                 outcome.request_id,
                 outcome.warnings,
+                outcome.rounding,
+                dict(outcome.versions),
+                dict(outcome.client_versions),
+                dict(outcome.unreported),
+                outcome.claimed,
                 tuple(
                     (
                         attempt.provider,

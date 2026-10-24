@@ -1814,3 +1814,23 @@ def test_p19_is_not_applicable_when_the_harness_can_make_no_leaf_to_record() -> 
 
     p19 = _check(provider_checks(lambda: NoLeaf("leaf", [CAPABILITIES], CAPABILITIES)), "P19")
     assert p19 == Verdict("P19", "not_applicable", "no bare leaf")
+
+
+def test_p19_fails_a_replay_that_loses_the_provenance_it_recorded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idia.conformance import _provider
+
+    class Forgets(Recorded):
+        async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+            response = await super().call(wire_request, deadline)
+            if self._records:  # pyright: ignore[reportPrivateUsage]
+                return response
+            kept = {d: r for d, r in response.unreported.items() if d != "usage.passes"}
+            return replace(response, unreported=kept)
+
+    monkeypatch.setattr(_provider, "Recorded", Forgets)
+    p19 = _check(provider_checks(_wrapped), "P19")
+    assert p19.result == "fail"
+    assert p19.reason is not None
+    assert "not what was recorded" in p19.reason
