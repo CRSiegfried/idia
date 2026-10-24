@@ -690,3 +690,10 @@ def test_within_a_passed_deadline_refuses_any_awaitable() -> None:
 
     with pytest.raises(ProviderError):
         asyncio.run(run())
+
+
+def test_an_empty_request_id_header_is_no_request_id() -> None:
+    leaf = HttpLeaf(base_url="https://wire.test/", request_id_header="x-req")
+    assert leaf.request_id(httpx2.Response(200, headers={"x-req": ""})) is None
+    assert leaf.request_id(httpx2.Response(200, headers={"x-req": "r-1"})) == "r-1"
+    assert leaf.request_id(httpx2.Response(200)) is None
