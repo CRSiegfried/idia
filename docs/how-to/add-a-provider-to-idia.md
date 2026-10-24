@@ -51,7 +51,7 @@ _EXTRAS: Final[dict[str, tuple[str, ...]]] = {
     "system-one": ("httpx2",),
     "openai": ("openai", "httpx2"),
     "cloudflare": ("httpx2",),
-    "gliner": ("gliner2", "torch"),
+    "gliner": ("gliner2", "torch", "transformers", "huggingface_hub", "google", "sentencepiece"),
 }
 ```
 

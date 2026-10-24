@@ -11,8 +11,9 @@ install passes and 1 with one line per problem otherwise. Standard library and i
 
 DEPENDENCIES is built from the registry's extras.
 
-The blocked-import tests prove the guard's logic in the dev environment, which has every
-extra; this proves the package as a user installs it.
+The blocked-import tests prove the guard's logic in the dev environment, which has the
+extras installed, though not always every one: CI's test jobs leave out the extras run
+in a job of their own. This proves the package as a user installs it.
 """
 
 from __future__ import annotations
