@@ -3,6 +3,11 @@
 - The README's keyless demo, the Python between its demo markers, runs in a fresh
   interpreter and prints the text block that follows it.
 - The tutorial's examples make live calls, so they are compiled, never run.
+- The how-to guide on writing a leaf is a working example in several files: each Python
+  block's first line names the file it belongs to, the blocks of one file joined in order.
+  Its `main.py` prints the text block that follows it, and its tests pass under pytest.
+- The guide on adding a provider quotes idia's own files: each Python or TOML block's first
+  line names the file, and the rest of the block appears in that file as written.
 - The agent skill in skills/idia has a frontmatter with a name and a description, its Python
   compiles, and every link is absolute, pinned to this version's tag, and names a file of
   this repository and, where it has one, a heading of that file. The skill is copied out of
@@ -20,6 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
 TUTORIAL = ROOT / "docs" / "tutorials" / "ask-a-provider.md"
 SKILL = ROOT / "skills" / "idia" / "SKILL.md"
+WRITE_A_LEAF = ROOT / "docs" / "how-to" / "write-a-leaf.md"
+ADD_A_PROVIDER = ROOT / "docs" / "how-to" / "add-a-provider-to-idia.md"
 VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
 PINNED = f"https://github.com/CRSiegfried/idia/blob/v{VERSION}/"
 
@@ -28,6 +35,8 @@ BLOCK = re.compile(r"```(\w*)\n(.*?)```", re.DOTALL)
 FENCE = re.compile(r"^```.*?^```", re.DOTALL | re.MULTILINE)
 HEADING = re.compile(r"^#{1,6} (.+)$", re.MULTILINE)
 LINK = re.compile(r"\]\(([^)\s]+)\)")
+FILE_LINE = re.compile(r"# ([\w-]+\.py)\n")
+PATH_LINE = re.compile(r"# ([\w./-]+)\n")
 
 
 def python_blocks(text: str) -> list[str]:
@@ -115,3 +124,62 @@ def test_skill_links_are_pinned_and_name_files_that_exist() -> None:
             assert fragment in {anchor(h) for h in HEADING.findall(text)}, (
                 f"{link} names no heading"
             )
+
+
+def guide_files(path: Path, into: Path) -> dict[str, str]:
+    """Write each Python block of ``path`` to the file its first line names, the blocks of
+    one file joined in order; return each file's text."""
+    files: dict[str, list[str]] = {}
+    for number, body in enumerate(python_blocks(path.read_text(encoding="utf-8")), start=1):
+        named = FILE_LINE.match(body)
+        assert named, f"{path.name} block {number} does not name its file on its first line"
+        files.setdefault(named.group(1), []).append(body[named.end() :])
+    written = {name: "\n\n".join(bodies) for name, bodies in files.items()}
+    for name, text in written.items():
+        (into / name).write_text(text, encoding="utf-8")
+    return written
+
+
+def test_write_a_leaf_main_prints_what_the_guide_shows(tmp_path: Path) -> None:
+    guide_files(WRITE_A_LEAF, tmp_path)
+    text = WRITE_A_LEAF.read_text(encoding="utf-8")
+    shown = re.compile(r"```text\n(.*?)```", re.DOTALL).search(text, text.index("# main.py"))
+    assert shown, "a text block follows main.py"
+    done = subprocess.run(
+        [sys.executable, "-X", "utf8", "main.py"],
+        cwd=tmp_path,
+        capture_output=True,
+        encoding="utf-8",
+        timeout=60,
+    )
+    assert done.returncode == 0, done.stderr
+    assert done.stdout == shown.group(1)
+
+
+def test_write_a_leaf_tests_pass(tmp_path: Path) -> None:
+    files = guide_files(WRITE_A_LEAF, tmp_path)
+    assert {"spanleaf.py", "test_spanleaf.py", "conftest.py", "test_real_model.py"} <= set(files)
+    done = subprocess.run(
+        [sys.executable, "-X", "utf8", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rs"],
+        cwd=tmp_path,
+        capture_output=True,
+        encoding="utf-8",
+        timeout=300,
+    )
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "failed" not in done.stdout
+    assert "SPANLEAF_REAL_MODEL" in done.stdout, "the real-model test is skipped by its gate"
+
+
+def test_add_a_provider_quotes_idias_files_as_they_are() -> None:
+    blocks = [
+        body
+        for kind, body in BLOCK.findall(ADD_A_PROVIDER.read_text(encoding="utf-8"))
+        if kind in ("python", "toml")
+    ]
+    assert blocks, "the guide quotes idia's files"
+    for body in blocks:
+        named = PATH_LINE.match(body)
+        assert named, f"a quoted block does not name its file: {body[:60]!r}"
+        source = (ROOT / named.group(1)).read_text(encoding="utf-8")
+        assert body[named.end() :] in source, f"the quote of {named.group(1)} is not in it"

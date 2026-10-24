@@ -201,6 +201,8 @@ takes, its limits and its models are in [the providers spec](docs/spec/providers
 - [Ask a provider](docs/tutorials/ask-a-provider.md): the tutorial, with live calls to
   Clef and Clairic, the `cloudflare()` router, and handling `RequestFailed`.
 - [The spec](docs/spec/README.md): the normative description of every type and behaviour.
+- [How-to guides](docs/how-to/README.md): writing a leaf of your own, and adding a
+  provider to idia.
 - [The changelog](CHANGELOG.md): what each release added and changed.
 - Deciding with ommat: ommat binds an idia provider as an oracle through its own
   `ommat[idia]` extra, taking one leaf's dispatcher per oracle. See ommat's tutorial,
