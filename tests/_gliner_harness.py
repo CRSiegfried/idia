@@ -1,8 +1,12 @@
 """The GLiNER2 leaf under the conformance suite: the leaf half over an injected model that
 plays the stored outputs, and the leaf wrapped in a dispatcher for the provider half.
 
-A model in process has no statuses, no HTTP client and no SDK: the harness raises
-``CheckNotApplicable`` for each, and the tests assert exactly which checks that leaves out.
+A model in process has no statuses, no transport, no HTTP client and no SDK: the harness
+raises ``CheckNotApplicable`` for each, and the tests assert exactly which checks that leaves
+out. It cannot make a key with no question either: the runtime answers by label and the leaf
+maps by question key, so no key without a question can reach validation. Each leaf is given
+the model with ``revision=_REVISION``, the commit the outputs were recorded at, as the
+caller's claim.
 """
 
 # pyright: reportPrivateUsage=false
@@ -29,7 +33,7 @@ from idia import (
     WireResponse,
 )
 from idia.conformance import CheckNotApplicable, Exchange
-from idia.providers._gliner import _RECORD, Gliner
+from idia.providers._gliner import _RECORD, _REVISION, Gliner
 from tests._gliner_cases import ASKED, OUTPUTS, SENDER, STATE, TOPICS, Playback
 
 EXPECTED: Final[Mapping[str, Answer]] = {
@@ -57,7 +61,7 @@ class GlinerHarness:
 
     def make(self, exchanges: Sequence[Exchange], features: frozenset[str] | None = None) -> Leaf:
         self._model = Playback(exchanges)
-        return Gliner(runtime=self._model)
+        return Gliner(runtime=self._model, revision=_REVISION)
 
     def capabilities_for(self, features: frozenset[str]) -> Capabilities:
         return _RECORD
@@ -82,7 +86,7 @@ class _LoggedGliner(Gliner):
     """The leaf with its record replaceable and a log of what it was called with."""
 
     def __init__(self, runtime: Playback, capabilities: Capabilities = _RECORD) -> None:
-        super().__init__(runtime=runtime)
+        super().__init__(runtime=runtime, revision=_REVISION)
         self._replaced = capabilities
         self.log: list[tuple[WireRequest, Deadline | None]] = []
 

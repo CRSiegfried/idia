@@ -40,16 +40,12 @@ from idia.core import (
     State,
     TextPart,
     TokenEstimate,
+    TokenEstimator,
     Usage,
     WireRequest,
     WireResponse,
     unknown_options,
 )
-
-__all__ = [
-    "Gliner",
-    "GlinerRuntime",
-]
 
 _MODEL: Final = "fastino/gliner2.5-small-v1"
 _REVISION: Final = "7132dc4561c3f94563c6147e75ffa8ef34c4964a"
@@ -59,6 +55,16 @@ _THRESHOLD: Final = 0.5
 """gliner2's own default: a span scored below it is not returned."""
 _VERSIONED: Final = ("gliner2", "torch", "transformers", "huggingface_hub")
 """The runtime's packages whose versions every raw body records."""
+
+
+class _Pinned(str):
+    """The default revision: the commit the record was measured on. A class of its own, so
+    that the leaf tells the default from a revision the caller passed, even the same one."""
+
+    __slots__ = ()
+
+
+_PINNED: Final = _Pinned(_REVISION)
 
 
 class GlinerRuntime(Protocol):
@@ -190,15 +196,17 @@ class Gliner:
     Await :meth:`load` before the first call: it resolves the revision to its commit and
     loads the weights from that snapshot, the only step that may reach the network. A call
     before it raises a non-retryable ``ProviderError``. ``runtime`` is a model already
-    loaded, which needs no load and which the leaf reports at ``revision`` as given.
-    Loading and every pass run on one worker the leaf owns, one at a time.
+    loaded, which needs no load. Its weights are the caller's to name: the leaf reports a
+    ``revision`` the caller passed as the snapshot, as the caller's claim, and with none
+    passed reports no snapshot and warns ``no-snapshot``. Loading and every pass run on
+    one worker the leaf owns, one at a time.
     """
 
     def __init__(
         self,
         *,
         model: Literal["fastino/gliner2.5-small-v1"] = "fastino/gliner2.5-small-v1",
-        revision: str | None = _REVISION,
+        revision: str | None = _PINNED,
         threshold: float = _THRESHOLD,
         runtime: GlinerRuntime | None = None,
     ) -> None:
@@ -210,7 +218,9 @@ class Gliner:
         self._threshold = threshold
         self._runtime = runtime
         self._given = runtime is not None
-        self._snapshot: str | None = revision if runtime is not None else None
+        self._snapshot: str | None = None
+        if runtime is not None and revision is not None and not isinstance(revision, _Pinned):
+            self._snapshot = str(revision)
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="idia-gliner")
         self._estimator = _PieceEstimator()
         self._closed = False
@@ -228,29 +238,50 @@ class Gliner:
         return _RECORD
 
     @property
-    def estimator(self) -> _PieceEstimator:
+    def estimator(self) -> TokenEstimator:
         return self._estimator
 
     def __repr__(self) -> str:
-        return f"Gliner(revision={self._revision!r})"
+        revision = None if self._revision is None else str(self._revision)
+        return f"Gliner(revision={revision!r})"
 
     async def load(self) -> None:
         """Resolve the revision and load the weights on the worker, then run one small pass
         so that its cost stays out of the first call. Loading again, or a leaf given a
-        runtime, does nothing; what the loader raises propagates."""
+        runtime, does nothing; what the loader raises propagates. A leaf closed while it
+        loads drops the model and raises the closed leaf's ``ProviderError``."""
         if self._closed:
             raise ProviderError("the leaf is closed")
         if self._runtime is not None:
             return
+        revision = None if self._revision is None else str(self._revision)
         loop = asyncio.get_running_loop()
-        runtime, commit = await loop.run_in_executor(
-            self._worker, _load_model, _MODEL, self._revision
-        )
-        await loop.run_in_executor(
-            self._worker, runtime.extract_entities, "Warm up.", ("x",), self._threshold
-        )
+        try:
+            runtime, commit = await loop.run_in_executor(
+                self._worker, _load_model, _MODEL, revision
+            )
+            self._refuse_if_closed()
+            await loop.run_in_executor(
+                self._worker, runtime.extract_entities, "Warm up.", ("x",), self._threshold
+            )
+            self._refuse_if_closed()
+        except asyncio.CancelledError:
+            self._closed_cancellation()
+            raise
         self._runtime = runtime
-        self._snapshot = commit if self._revision is not None else None
+        self._snapshot = commit if revision is not None else None
+
+    def _refuse_if_closed(self) -> None:
+        if self._closed:
+            raise ProviderError("the leaf is closed")
+
+    def _closed_cancellation(self) -> None:
+        """Turn the cancellation of a pass that :meth:`aclose` cancelled in the queue into
+        the closed leaf's ``ProviderError``; a cancellation of the awaiting task itself
+        is left to propagate."""
+        task = asyncio.current_task()
+        if self._closed and (task is None or task.cancelling() == 0):
+            raise ProviderError("the leaf is closed") from None
 
     async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
         """Run one pass over the wire request's text with every question's label."""
@@ -268,6 +299,9 @@ class Gliner:
         work = loop.run_in_executor(self._worker, _run, runtime, text, sent, self._threshold)
         try:
             raw, tokens = await asyncio.wait_for(work, max(deadline.remaining(), 0.0))
+        except asyncio.CancelledError:
+            self._closed_cancellation()
+            raise
         except TimeoutError:
             raise ProviderError(
                 "the deadline passed during the pass, which runs to its end on the worker",
@@ -279,9 +313,12 @@ class Gliner:
         if not isinstance(entities, Mapping):
             raise ProviderError("the model's output cannot be read: no entities map")
         found = cast("Mapping[str, object]", entities)
+        # gliner2 returns every label asked, an empty list where it found nothing, so a
+        # label missing from the output is a key the output left out: validation faults it.
         mapped = {
-            question.key: _answer(question, found.get(labels[question.key]))
+            question.key: _answer(question, found[labels[question.key]])
             for question in wire_request.questions
+            if labels[question.key] in found
         }
         answers, warnings = validate_answers(wire_request.questions, mapped, _RECORD.rounding)
         if self._snapshot is None:
@@ -317,11 +354,12 @@ class Gliner:
 
     async def aclose(self) -> None:
         """Refuse every later call, drop a model this leaf loaded, never one it was given,
-        and shut the worker down without waiting for a pass still running."""
+        and shut the worker down: a pass still queued never runs, and its call raises the
+        closed leaf's ``ProviderError``; a pass already running is not waited for."""
         self._closed = True
         if not self._given:
             self._runtime = None
-        self._worker.shutdown(wait=False)
+        self._worker.shutdown(wait=False, cancel_futures=True)
 
 
 def _run(

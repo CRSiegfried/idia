@@ -80,6 +80,66 @@
       },
       "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
       "threshold": 0.5
+    },
+    {
+      "input_tokens": 34,
+      "labels": [
+        "the sender",
+        "the phone number"
+      ],
+      "output": {
+        "entities": {
+          "the phone number": [],
+          "the sender": [
+            {
+              "confidence": 0.9894428253173828,
+              "end": 35,
+              "start": 21,
+              "text": "Dana Whitfield"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 40,
+      "labels": [
+        "the recipient",
+        "the city",
+        "the street"
+      ],
+      "output": {
+        "entities": {
+          "the city": [
+            {
+              "confidence": 0.9810757637023926,
+              "end": 44,
+              "start": 38,
+              "text": "Z\u00fcrich"
+            }
+          ],
+          "the recipient": [
+            {
+              "confidence": 0.9862238168716431,
+              "end": 34,
+              "start": 24,
+              "text": "Zo\u00eb M\u00fcller"
+            }
+          ],
+          "the street": [
+            {
+              "confidence": 0.981031060218811,
+              "end": 65,
+              "start": 46,
+              "text": "Stra\u00dfe des 17. Juni"
+            }
+          ]
+        }
+      },
+      "text": "\u00dcberweisen Sie 300 \u20ac an Zo\u00eb M\u00fcller in Z\u00fcrich, Stra\u00dfe des 17. Juni.",
+      "threshold": 0.5
     }
   ],
   "recorded_with": {
