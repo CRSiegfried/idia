@@ -152,8 +152,8 @@ pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
 ```
 
-The `gliner` extra runs a model in process on torch. pip takes torch from PyPI, whose Linux
-build is the CUDA one; for the CPU-only build, add
+The `gliner` extra runs a model in process on torch. pip takes torch from PyPI, whose default
+Linux wheel carries GPU support; for the CPU-only build, add
 `--extra-index-url https://download.pytorch.org/whl/cpu`. idia's own development lock takes
 torch from that CPU-only index, with macOS wheels for Apple silicon only.
 
@@ -194,7 +194,7 @@ extra that installs it; `idia.provider_names()` lists the names:
 | `openai-chat` | `openai` | `noul`, `choice`, `score` | no |
 | `cloudflare-clef` | `cloudflare` | `noul`, `choice`, `score` | no |
 | `cloudflare-clairic` | `cloudflare` | `extraction` | no |
-| `gliner` | `gliner` | `extraction` of text, run in this process | no |
+| `gliner` | `gliner` | `extraction` of text | no |
 
 `system-one` asks `jev-1.14.0` unless given `model=`. `openai-chat` needs `model=`, a chat
 model that returns logprobs, and `cloudflare-clef` also takes `model="clef-flash"`.
