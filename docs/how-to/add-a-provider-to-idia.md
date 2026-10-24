@@ -321,9 +321,10 @@ and each score within a tolerance. It writes nothing unless `IDIA_RECORD=1` is s
 so a run that passes leaves the stored outputs as they were reviewed, and a score cannot
 drift a little further on each run. With the switch, a run that passes writes back the
 outputs of every recorded case, each stored one compared first, with the versions it ran
-under; a failed comparison writes nothing either way. Record again when a case's outputs
-have moved past the tolerance for a reason you accept, and review the diff of the stored
-file. The switch, at the end of GLiNER2's gated test:
+under; a failed comparison writes nothing either way. When a case's outputs have moved past
+the tolerance for a reason you accept, its comparison fails and the switch writes nothing:
+remove that case from the stored file, run with `IDIA_RECORD=1`, and review the diff of
+the stored file. The switch, at the end of GLiNER2's gated test:
 
 ```python
 # tests/test_gliner_local_model.py
