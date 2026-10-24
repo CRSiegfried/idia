@@ -6,7 +6,7 @@
 - The how-to guide on writing a leaf is a working example in several files: each Python
   block's first line names the file it belongs to, the blocks of one file joined in order.
   Its `main.py` prints the text block that follows it, and its tests pass under pytest.
-- The guide on adding a provider quotes idia's own files: each Python or TOML block's first
+- The guide on adding a provider quotes idia's own files: each Python, TOML or YAML block's first
   line names the file, and the rest of the block appears in that file as written.
 - The agent skill in skills/idia has a frontmatter with a name and a description, its Python
   compiles, and every link is absolute, pinned to this version's tag, and names a file of
@@ -175,7 +175,7 @@ def test_add_a_provider_quotes_idias_files_as_they_are() -> None:
     blocks = [
         body
         for kind, body in BLOCK.findall(ADD_A_PROVIDER.read_text(encoding="utf-8"))
-        if kind in ("python", "toml")
+        if kind in ("python", "toml", "yaml")
     ]
     assert blocks, "the guide quotes idia's files"
     for body in blocks:
