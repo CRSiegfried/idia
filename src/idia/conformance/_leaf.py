@@ -550,13 +550,30 @@ async def _l24(harness: LeafHarness) -> str | None:
 async def _l25(harness: LeafHarness) -> str | None:
     if "extraction" not in harness.capabilities.kinds:
         raise CheckNotApplicable("the leaf does not claim extraction")
-    guessed = {
+    expected = {
         key: answer
         for key, answer in harness.expected("extraction").items()
-        if isinstance(answer, ExtractionAnswer) and answer.value is None and answer.guess
+        if isinstance(answer, ExtractionAnswer)
     }
-    expect(bool(guessed), "the harness supplies no extraction with a null value and a guess")
+    if not expected:
+        raise CheckNotApplicable("the harness expects no extraction answer")
+    guessed = {
+        key: answer for key, answer in expected.items() if answer.value is None and answer.guess
+    }
     response = await _send(harness, "extraction", Success("extraction"))
+    if not guessed:
+        for key, wire in expected.items():
+            answer = response.answers.get(key)
+            expect(
+                isinstance(answer, ExtractionAnswer)
+                and (answer.value, answer.guess) == (wire.value, wire.guess),
+                f"{key}: the wire's value {wire.value!r} and guess {wire.guess!r} became "
+                f"{answer!r}",
+            )
+        return (
+            "no expected extraction has a null value and a guess, so only that the leaf fills "
+            "no guess was checked, not that a guess is kept and never moved into value"
+        )
     for key, wire in guessed.items():
         answer = response.answers.get(key)
         expect(

@@ -24,12 +24,15 @@ from idia import (
     Capabilities,
     Deadline,
     Dispatcher,
+    ExtractionAnswer,
     Fallback,
     Fault,
     Kind,
     Leaf,
+    MappedAnswer,
     Provider,
     ProviderError,
+    Question,
     Refusal,
     Request,
     RequestFailed,
@@ -1536,3 +1539,53 @@ def test_p19_fails_a_statusless_replay_that_does_not_reproduce_the_recording() -
     assert p19.result == "fail"
     assert p19.reason is not None
     assert "not someone-else/model-0" in p19.reason
+
+
+# ----------------------------------------------------------------------------------------
+# L25 for a leaf whose model gives no guess
+# ----------------------------------------------------------------------------------------
+
+
+def _no_guess_cases(
+    answer: ExtractionAnswer,
+) -> dict[Kind, tuple[tuple[Question, MappedAnswer], ...]]:
+    cases = dict(CASES)
+    cases["extraction"] = tuple((question, answer) for question, _ in CASES["extraction"])
+    return cases
+
+
+def test_l25_checks_only_that_no_guess_is_filled_where_no_case_has_one() -> None:
+    harness = ScriptedHarness(cases=_no_guess_cases(ExtractionAnswer(value="Ada")))
+    l25 = _check(leaf_checks(lambda: harness), "L25")
+    assert l25.result == "pass"
+    assert l25.reason is not None
+    assert l25.reason.startswith("no expected extraction has a null value and a guess")
+
+
+def test_l25_fails_a_leaf_that_fills_a_guess_where_the_model_gave_none() -> None:
+    class FillsAGuess(ScriptedHarness):
+        def _item(self, exchange: Exchange, wire_request: WireRequest) -> Item:
+            reply = super()._item(exchange, wire_request)
+            if not isinstance(reply, Reply):
+                return reply
+            filled = {
+                key: replace(answer, guess="Eve")
+                if isinstance(answer, ExtractionAnswer)
+                else answer
+                for key, answer in reply.answers.items()
+            }
+            return replace(reply, answers=filled)
+
+    harness = FillsAGuess(cases=_no_guess_cases(ExtractionAnswer(value="Ada")))
+    l25 = _check(leaf_checks(lambda: harness), "L25")
+    assert l25.result == "fail"
+    assert l25.reason is not None
+    assert "guess None became" in l25.reason
+
+
+def test_l25_is_not_applicable_where_no_extraction_answer_is_expected() -> None:
+    cases = dict(CASES)
+    cases["extraction"] = tuple((question, Refusal()) for question, _ in CASES["extraction"])
+    harness = ScriptedHarness(replace(CAPABILITIES, returns_refusal=True), cases=cases)
+    l25 = _check(leaf_checks(lambda: harness), "L25")
+    assert l25 == Verdict("L25", "not_applicable", "the harness expects no extraction answer")
