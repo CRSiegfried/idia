@@ -693,6 +693,7 @@ _ERROR: dict[str, Any] = {
         "an-entry-of-neither",
         "retry-after-a-string",
         "retry-after-infinite",
+        "retry-after-past-any-float",
         "is-retryable-a-string",
         "status-code-a-string",
         "base64-not-base64",
@@ -729,6 +730,7 @@ def test_a_log_that_is_not_a_recorded_leafs_is_refused_with_value_error(
         field, value = {
             "retry-after-a-string": ("retry_after", "x"),
             "retry-after-infinite": ("retry_after", float("inf")),
+            "retry-after-past-any-float": ("retry_after", 10**400),
             "is-retryable-a-string": ("is_retryable", "yes"),
             "status-code-a-string": ("status_code", "a"),
         }[change]

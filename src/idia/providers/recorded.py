@@ -210,7 +210,9 @@ def _write(log: Path, document: typing.Mapping[str, object]) -> None:
     endings, through a temporary file replaced in one step, so a reader never sees half a
     log. A log that exists keeps its permission bits, set before anything is written, and
     one that is a link is written where it points; a link to nothing is refused with
-    ``ValueError``, and a new log takes the mode the process's umask gives a new file."""
+    ``ValueError``, and a new log takes the mode the process's umask gives a new file. On
+    Windows, which will not replace a read-only file, a read-only log is refused with the
+    ``PermissionError`` the replace raises."""
     text = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
     if log.is_symlink() and not log.exists():
         raise ValueError(f"{log} is a link to nothing; a log is written only where it points")
@@ -224,15 +226,18 @@ def _write(log: Path, document: typing.Mapping[str, object]) -> None:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     handle = os.open(temporary, flags, 0o666 if mode is None else 0o600)
     try:
-        if mode is not None:
-            os.chmod(temporary, mode)
         with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as file:
+            if mode is not None:
+                os.chmod(temporary, mode)
             file.write(text)
             file.flush()
             os.fsync(file.fileno())
         os.replace(temporary, log)
     finally:
-        with contextlib.suppress(FileNotFoundError):
+        # A read-only temporary file left by a failed replace is made writable to go.
+        with contextlib.suppress(OSError):
+            os.chmod(temporary, 0o600)
+        with contextlib.suppress(OSError):
             os.unlink(temporary)
 
 
@@ -271,7 +276,14 @@ def _load(log: Path) -> _Log:
             calls=_calls(held["calls"]),
             document=held,
         )
-    except (KeyError, TypeError, AttributeError, ValueError, RecursionError) as error:
+    except (
+        KeyError,
+        TypeError,
+        AttributeError,
+        ValueError,
+        OverflowError,
+        RecursionError,
+    ) as error:
         raise ValueError(f"{log} is not a recorded leaf's log: {error!r}") from error
     return loaded
 
