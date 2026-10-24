@@ -367,7 +367,7 @@ know goes into `unknown_options`, and changes nothing else.
 ## A model in your own process
 
 A model that runs in your process, on a local runtime such as torch, follows six more
-practices, the ones idia's own in-process leaves follow.
+practices, those idia sets for a leaf that runs its model in process.
 
 - **One worker of its own.** Loading and every forward pass block, so run them on a
   `ThreadPoolExecutor(max_workers=1)` the leaf owns, never on the event loop. Calls to one
@@ -1071,6 +1071,7 @@ def test_the_real_model_still_gives_the_stored_outputs(tmp_path: Path) -> None:
     versions = {"revision": "rev-1", "python": platform.python_version()}
     record_outputs(load_toy_model("rev-1"), STORED, path, versions)
     for asked, output in load_outputs(path).items():
+        assert output.keys() == STORED[asked].keys()
         for label, spans in output.items():
             stored = STORED[asked][label]
             assert [span[:3] for span in spans] == [span[:3] for span in stored]

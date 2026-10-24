@@ -25,13 +25,12 @@ Nothing under `idia.providers` imports the call loop, and `idia.core` imports no
 `idia.providers`.
 
 A model run in your own process needs its tests to run against stored outputs with no
-runtime installed, and a leaf whose dependency cannot be imported at its module's top is not
-supported yet. One layout keeps the
-guard as it is: the leaf's logic in an unlisted module that does not import the runtime,
-such as `idia/providers/_<name>.py`, which the tests import with an injected model, and the
-registered module importing the runtime at its top and re-exporting the class. The other
-moves the runtime's import into `load()`, which would let `idia.leaf(name)` succeed with no
-extra installed and so needs the guard and the bare-install check to change.
+runtime installed. Under the guard as it is, that takes two modules: the leaf's logic in an
+unlisted module that does not import the runtime, such as `idia/providers/_<name>.py`, which
+the tests import with an injected model, and the registered module importing the runtime at
+its top and re-exporting the class. Moving the runtime's import into `load()` instead is not
+supported yet: it would let `idia.leaf(name)` succeed with no extra installed, so the guard
+and the bare-install check would have to change.
 
 ## The registry and the import guard
 
