@@ -383,8 +383,8 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
   the wire or the runtime reports it and `None` where it reports none, never an estimate;
   the raw figures go in `raw_usage`. A model in your own process reports its input as its
   own tokenizer counts what it encoded, as `SpanLeaf` does, and no output tokens: `None`.
-- `request_id`: the wire's id for the call, or `None` where nothing assigns one, as for a
-  model in your own process. Never invent one.
+- `request_id`: the wire's id for the call. `SpanLeaf` reports `None`: nothing assigns one
+  in process, and the conformance suite accepts that with a note.
 - `raw_body`: what the model returned, whole. The dispatcher drops it, but a recording keeps
   it, so put the runtime's versions here.
 - `warnings`: `Notice` values. Put the warnings `validate_answers` returned first, then your
@@ -426,8 +426,9 @@ practices, those idia sets for a leaf that runs its model in process.
   from that commit's own files: some runtimes pin the weights but read the tokenizer from a
   path that ignores the revision. Report that commit as `snapshot`, so a branch or tag is
   reported as its commit, and `None` with `WARNING_NO_SNAPSHOT` when none was pinned. A leaf
-  given a loaded model resolves nothing: it reports the revision its caller says the model
-  was loaded at, and `None` with the warning when the caller says none.
+  given a loaded model resolves nothing: its caller gives the commit the model was loaded
+  at, and the leaf reports it as given, unresolved, or `None` with the warning when the
+  caller gives none.
 - **The runtime's versions go in the raw body**, so a recording keeps what answered: for a
   torch model, its runtime package and torch.
 
@@ -1014,11 +1015,13 @@ def test_provider_half(check: Check) -> None:
 ```
 
 Then assert which checks did not apply, and why that is right for your leaf, and every note
-a passing check gives, so a check that stops running part of itself is noticed too. For
-`SpanLeaf`: no SDK (L9), no status (L12, P9, P20, P21), no body to read (L13, P12), no HTTP
-client (L15), outputs that cannot be bent into broken ones (L19, L24), no kind whose
-probabilities sum (L18), no `noul` (L20), no opt-in feature (P6), no image (P23), and not
-a composite (P14 to P18):
+a passing check gives, so a check that stops running part of itself is noticed too. These
+tests pin idia's own wording: when an upgrade changes a note, reread that check before you
+update the test. For `SpanLeaf`: no SDK (L9), no status (L12, P9, P20, P21), no body to read
+(L13, P12), no HTTP client (L15), no answer key a model can drop or add, since the leaf maps
+every label it asked (L19), and no candidate shape (L24), no kind whose probabilities sum
+(L18), no `noul` (L20), no opt-in feature (P6), no image (P23), and not a composite (P14 to
+P18):
 
 ```python
 # test_spanleaf.py
@@ -1174,9 +1177,11 @@ def test_a_recording_replays_with_no_model(tmp_path: Path) -> None:
 The tests above never load the real model. A test that does, to check the stored outputs
 against it or to record them again, runs only when asked: behind a marker, and an
 environment variable set by hand, which also sets the model hub offline before any test
-module is imported, so the run reads only the files already cached and never downloads.
+module is imported: the hub reads that setting when it is first imported, so set it before
+anything imports the hub. The run then reads only the files already cached and never
+downloads.
 
-Inject the fake at the runtime's own call, as `Playback` replaces the model function, so
+Inject the fake at the runtime's own call, as `Playback` stands in for `SpanModel`, the object whose methods the leaf calls, so
 that the leaf's reading of the runtime's output stays under test. Key each stored output on
 every argument the leaf passes the runtime: here the text and the labels; for a real span
 model, also any threshold or mode it is given. Store the outputs with the revision and the
