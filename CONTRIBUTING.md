@@ -26,7 +26,7 @@ A script run outside pytest that imports `tests`, such as a one-off live recordi
 
 ## Ground rules for changes
 
-- **The core has no provider and no engine dependency.** Each wire provider is an optional extra behind an import guard. `core.py` imports nothing from `providers/`.
+- **The core has no provider and no engine dependency.** Each leaf or bridge with a dependency, a wire SDK or a local runtime such as torch, is an optional extra behind an import guard; the scripted and recorded leaves ship in the core with none. `core.py` imports nothing from `providers/`.
 - **A leaf never retries.** It sends one wire request in one call, sets any SDK's retries to zero, raises `ProviderError` and nothing else, and leaves every retry, wait and attempt count to the core's dispatcher.
 - **Probabilities are what the wire returned.** Nothing renormalizes, rounds or corrects one; a distribution that breaks a rule becomes a typed fault for that question, and its siblings stand.
 - **The spec is normative.** A change that alters behavior the spec describes changes the spec in the same PR, with tests.

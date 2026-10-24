@@ -17,8 +17,8 @@ Read [CONTRIBUTING](../../CONTRIBUTING.md) first: its ground rules hold for ever
 A leaf inside idia follows the outside guide, with four differences:
 
 - **Import from `idia.core`**, and `validate_answers` from `idia.answers`, not from `idia`,
-  as idia's own leaves do: a leaf's module then depends on the vocabulary alone, not on the
-  package root, which also loads the call loop.
+  as idia's own leaves do: a leaf's imports then name only the modules that define the
+  vocabulary, never the package root, which also re-exports the call loop.
 - **`name` is the registered name**: the leaf's `name` is the string its registry entry is
   keyed by, `"gliner"` for the GLiNER2 leaf, so every outcome names the provider a caller
   asked for.
@@ -36,13 +36,13 @@ inherit `HttpLeaf` from `idia.providers.http`, which owns the client, the deadli
 status table; see [Providers](../spec/providers.md#the-http-base). A leaf over an SDK sets
 the SDK's own retries to zero.
 
-The registered module imports at its top every package its extra installs, so that
-importing it without the extra, or with one of those packages missing, fails with
-`ModuleNotFoundError`, which the import guard turns into the install hint. Import each one,
-not only the runtime: some runtimes import their heavy dependencies lazily, so
-`import gliner2` succeeds without torch, and a missing torch would surface only at the
-first call. Nothing under `idia.providers` imports the call loop, and `idia.core` imports
-nothing from `idia.providers`.
+The registered module imports at its top every package the leaf needs from its extra,
+including those its runtime imports lazily, so that importing it without the extra, or with
+one of those packages missing, fails with `ModuleNotFoundError`, which the import guard
+turns into the install hint. Import each one, not only the runtime: some runtimes import
+their heavy dependencies lazily, so `import gliner2` succeeds without torch, and a missing
+torch would surface only at the first call. Nothing under `idia.providers` imports the call
+loop, and `idia.core` imports nothing from `idia.providers`.
 
 A model run in your own process needs its tests to run against stored outputs with no
 runtime installed, so it takes two modules:
@@ -110,10 +110,9 @@ Three tests list every registered name, and each needs yours:
 `test_registry_ships_these_leaves` and its extras in `tests/test_providers.py`, and
 `test_provider_names_are_what_provider_not_found_lists` in `tests/test_leaf.py`.
 
-Update the prose that describes the registry where it no longer fits: the docstring of
-`idia/providers/__init__.py`, the introduction of `docs/spec/providers.md` and the ground
-rule in CONTRIBUTING each say what the registered leaves are, and one written for wire
-leaves alone is wrong once a model run in process is among them.
+The docstring of `idia/providers/__init__.py`, the introduction of `docs/spec/providers.md`
+and the ground rule in CONTRIBUTING each say what the registered leaves are, and are written
+for every kind of leaf: check that each still holds for yours.
 
 ## The typed overloads
 
@@ -253,13 +252,16 @@ its own covering:
 - its capabilities record, field by field, each value as measured or documented, `None`
   where unknown;
 - its estimator, and what it counts;
+- for a model in your own process, its load step: what `load()` fetches, how it resolves the
+  revision, what it loads from that commit, and what it raises when the runtime or the
+  weights are missing;
 - anything the runtime does that a caller would not guess, such as an undocumented method
   the leaf relies on.
 
 Measure the record rather than assume it, and say in the spec what you measured. GLiNER2
 scores one shared pool of candidate spans across all the labels of a pass, so its
-`max_questions` of 16 is the most labels one pass was measured to carry without losing an
-answer, not a limit the model documents.
+`max_questions` of 16 is measured, not documented: passes of up to 16 labels found every
+label, 32 lost 2 and 64 found 29.
 
 `docs/spec` is written one sentence per line. Update, too, the README's table of providers,
 and the providers the agent skill in `skills/idia/SKILL.md` names in its description.
@@ -285,8 +287,8 @@ committed cassette that holds a key's shape.
 A model run in your own process has no exchanges to record. Its tests replay **stored
 outputs**, one JSON file per model at `tests/stored/<name>/<model>/outputs.json`, a model id
 with a slash taking two directories: `{"recorded_with": {...}, "cases": [...]}`. The
-`recorded_with` object holds the revision, the Python version and each runtime package's
-version; each case holds every argument the leaf passed the runtime (the text, the labels
+`recorded_with` object holds the commit the pinned revision resolved to, the Python version
+and each runtime package's version; each case holds every argument the leaf passed the runtime (the text, the labels
 and any threshold), the runtime's raw output and its token count. A model the harness
 injects in place of the real one plays them back, keyed by those arguments.
 
@@ -311,10 +313,14 @@ nothing from the network: it never downloads weights. Run it once per model:
 IDIA_LOCAL_MODEL=1 uv run pytest -m local_model -s
 ```
 
-The gated run checks each stored output against the real model, the spans and the token
-count exactly and each score within a tolerance, and then writes back exactly the outputs
-it compared, with the versions it ran under: whole or not at all, through a file beside the
-stored one replaced in one step, in UTF-8 with LF line endings. GLiNER2's writer:
+The gated run checks each recorded case against the real model: its spans against the
+texts the case expects, and where the case is stored, the spans and the token count exactly
+and each score within a tolerance. A failed comparison writes nothing. A run that passes
+writes back the outputs of every recorded case, each stored one compared first, with the
+versions it ran under: whole or not at all, through a file beside the stored one replaced
+in one step, in UTF-8 with LF line endings. To record a case again after its outputs have
+moved past the tolerance for a reason you accept, remove that case from the stored file and
+run the gated test. GLiNER2's writer:
 
 ```python
 # tests/_gliner_cases.py
@@ -376,9 +382,9 @@ extra, and what it answers.
 
 ## The checks
 
-Run every check before you open the pull request, twice: once with every extra but one CI
-installs in a job of its own, as the lint and test jobs run, and once with that extra, as
-its own job runs. Some errors show in only one of them: pyright's on a missing runtime
+Run every check before you open the pull request, twice: once with every extra except
+those in `SEPARATE_EXTRAS`, as the lint and test jobs run, and once with every extra, as the
+separate extra's own job runs. Some errors show in only one of them: pyright's on a missing runtime
 show only without the extra, and the registered module's tests run only with it.
 
 ```sh
