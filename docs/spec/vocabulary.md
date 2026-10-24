@@ -102,9 +102,9 @@ For a range rule `observed` is the value and `bound` the limit crossed; for a to
 
 ## Responses
 
-- `WireResponse(answers, elicitation, calibrated, model_reported=None, snapshot=None, prompt_sent=None, usage=None, request_id=None, raw_body=None, warnings=())`: what a leaf returns from one call.
+- `WireResponse(answers, elicitation, calibrated, model_reported=None, snapshot=None, prompt_sent=None, usage=None, request_id=None, raw_body=None, warnings=(), versions={}, client_versions={}, unreported={}, claimed=frozenset())`: what a leaf returns from one call.
   The raw body travels no further.
-- `Outcome`: one per wire request, in plan order: the `keys` it carried, in the order the wire request sent them, its `error` (a `ProviderError` or `None`), the leaf's `provider` and `model_requested`, `model_reported`, `snapshot`, `elicitation` and `calibrated` (unknown on a failed outcome), `prompt_sent`, `usage`, `latency`, `started_at`, `request_id`, `failed_attempts` and `warnings`.
+- `Outcome`: one per wire request, in plan order: the `keys` it carried, in the order the wire request sent them, its `error` (a `ProviderError` or `None`), the leaf's `provider` and `model_requested`, `model_reported`, `snapshot`, `elicitation` and `calibrated` (unknown on a failed outcome), `prompt_sent`, `usage`, `latency`, `started_at`, `request_id`, `failed_attempts`, `warnings`, `rounding`, its leaf's record's, so a composite's outcome gives the precision of the member that answered, and the provenance fields below.
   `attempts` is the failed attempts plus one when answered, 0 for a wire request never sent.
   `started_at` is wall-clock seconds since the epoch; `latency` and a failed attempt's `duration` are monotonic durations.
   `prompt_sent` is the supported way to see what was sent: the body or messages as the leaf sent them, `None` when the request was never sent or the wire API hides it.
@@ -115,6 +115,24 @@ For a range rule `observed` is the value and `bound` the limit crossed; for a to
 - `Notice(code, message, field=None)`: something the caller should know that is not a fault, held in `warnings`.
   The codes the core raises are published as constants: `WARNING_EXTRA_ANSWER_KEY` (`extra-answer-key`), `WARNING_UNCHECKED_LIMIT` (`unchecked-limit`), `WARNING_OVERFLOW_POLICY` (`overflow-policy`), `WARNING_PROVIDER_TRUNCATED` (`provider-truncated`, a leaf's report that the wire truncated the state), `WARNING_UNKNOWN_OPTION` (`unknown-option`, field `options`), `WARNING_NO_SNAPSHOT` (`no-snapshot`) and `WARNING_LABEL_ABSENT_FROM_LOGPROBS` (`label-absent-from-logprobs`), raised by a chat leaf, and `WARNING_CHOSEN_BELOW_MAX` (`chosen-below-max`, field the question's key).
 - `FailedAttempt(provider, model_requested, error, request_id, started_at, duration, usage=None)`.
+
+### Provenance
+
+Every outcome states one profile of detail, each a value or a reason why it is not.
+The details are `DETAILS`, the members of `ProvenanceDetail`: `model_reported`, `snapshot`, `versions`, `elicitation`, `calibrated`, `prompt_sent`, `usage.input_tokens`, `usage.output_tokens`, `usage.passes` and `request_id`; `None`, an empty `versions` and a `None` `usage` hold no value.
+`provider` and `model_requested` are always filled, latency, start time and warnings are the dispatcher's, and precision is the outcome's `rounding`, so none of them is a detail.
+These names are shared with ommat, which calls `snapshot` its revision, `versions` its runtime and `prompt_sent` its prompt.
+
+`WireResponse` and `Outcome` each carry four provenance fields, read-only and empty by default:
+
+- `versions: Mapping[str, str]`: the versions of the runtime that ran the model, package to version, with `python` for the interpreter; empty for a wire API, whose runtime is the service's own; a per-call backend fingerprint a wire API returns, such as OpenAI's `system_fingerprint`, is no version and stays in the raw body.
+- `client_versions: Mapping[str, str]`: the versions of the client libraries that made the call; the dispatcher adds `idia`, its own version, on every outcome, its entry winning, and a leaf never sets it.
+- `unreported: Mapping[ProvenanceDetail, UnreportedReason]`: the reason for each detail that holds no value, one of `REASONS`: `not-reported`, the provider or runtime gives none; `not-pinned`, no fixed version was asked for or resolved, the snapshot's reason exactly when the `no-snapshot` warning is given; `not-sent`, the wire request failed, sent or not, which only the dispatcher gives; `hidden`, the provider's service withholds it; `not-applicable`, the detail has no meaning for this source or its kind of model, such as `versions` for a wire API or the output tokens of an encoder; `not-exposed`, a library between the provider and the caller has it but does not make it public.
+- `claimed: frozenset[ProvenanceDetail]`: the details whose value the source asserts but cannot verify, such as a model id a leaf states as its own constant, or a revision a caller names for a model it loaded itself.
+
+Either constructor raises `ValueError` for a key of `unreported` or `claimed` outside `DETAILS`, a reason outside `REASONS`, a detail both unreported and claimed, a detail that holds a value and has a reason, or a claimed detail that holds none, and `TypeError` for a field of the wrong shape.
+That every detail with no value has a reason is checked by the conformance suite, not the constructor, so a hand-built response still builds.
+An answered outcome carries its wire response's `versions`, `unreported` and `claimed` as given; a failed outcome, sent or not, has `not-sent` for each detail that holds no value, a request id its error carries staying a value, and claims nothing.
 
 ### Usage
 
