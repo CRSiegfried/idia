@@ -188,10 +188,13 @@ extra that installs it; `idia.provider_names()` lists the names:
 | `openai-chat` | `openai` | `noul`, `choice`, `score` | no |
 | `cloudflare-clef` | `cloudflare` | `noul`, `choice`, `score` | no |
 | `cloudflare-clairic` | `cloudflare` | `extraction` | no |
+| `gliner` | `gliner` | `extraction` of text, run in this process | no |
 
 `system-one` asks `jev-1.14.0` unless given `model=`. `openai-chat` needs `model=`, a chat
 model that returns logprobs, and `cloudflare-clef` also takes `model="clef-flash"`.
-`cloudflare()`, in `idia.cloudflare`, is a router over Clef and Clairic. What each provider
+`cloudflare()`, in `idia.cloudflare`, is a router over Clef and Clairic. `gliner` runs
+GLiNER2 in this process and must load its weights first: build it with `idia.leaf("gliner")`,
+await its `load()`, then wrap it in a `Dispatcher`. What each provider
 takes, its limits and its models are in [the providers spec](docs/spec/providers.md).
 
 ## Where next

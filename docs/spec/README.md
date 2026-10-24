@@ -6,7 +6,7 @@ The code follows this document; where they differ, one of them has a bug, and th
 ## Sections
 
 - [Vocabulary](vocabulary.md): state, question, kind, answer, request, response, validation with its rounding tolerances, and the two protocols.
-- [Providers and capabilities](providers.md): the HTTP base and its status table, and each wire leaf's body, reading and record: System One, OpenAI's decisions leaf and its chat leaf, and Cloudflare's Clef and Clairic with the router the `cloudflare` extra returns.
+- [Providers and capabilities](providers.md): the HTTP base and its status table, and each wire leaf's body, reading and record: System One, OpenAI's decisions leaf and its chat leaf, Cloudflare's Clef and Clairic with the router the `cloudflare` extra returns, and GLiNER, run in this process.
 - [Fit](fit.md): preflight, the limits and their warnings, packing, state overflow and the overflow policy, and the merge.
 - [Dispatch](dispatch.md): the deadline scope, the retry policy and the limits, the outcome and its attempts, the three endings, the re-ask, and the router and fallback with their derived record.
 - [Elicitation from a chat model](elicitation.md): the `logprobs` read protocol of the chat leaf, its faults, its derived figures and what it records.

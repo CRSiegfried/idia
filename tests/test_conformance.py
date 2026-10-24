@@ -71,6 +71,7 @@ from tests import _dishonest, _dishonest_retry
 from tests._closable_scripted import ClosableScripted
 from tests._complementing_leaf import ComplementingScripted
 from tests._conformance import params, run
+from tests._support import SEPARATE_EXTRAS
 
 SCRIPTED_NOT_APPLICABLE = frozenset({"L9", "L12", "L13", "L15", "L24", "L30"})
 """What a script cannot reach: no SDK, no status mapper, no body, no client, no candidate."""
@@ -825,11 +826,17 @@ def test_no_core_path_imports_validation() -> None:
 
 
 def test_no_module_under_providers_reaches_into_the_call_loop() -> None:
+    separate = {module for extra in SEPARATE_EXTRAS for module in idia.providers._EXTRAS[extra]}
+    names = ["idia.providers"]
     for module in pkgutil.walk_packages(idia.providers.__path__, "idia.providers."):
-        importlib.import_module(module.name)
-    names = ["idia.providers"] + [
-        m.name for m in pkgutil.walk_packages(idia.providers.__path__, "idia.providers.")
-    ]
+        try:
+            importlib.import_module(module.name)
+        except ModuleNotFoundError as error:
+            # An extra CI runs in a job of its own is reviewed by that job; any other must import.
+            if (error.name or "").split(".")[0] not in separate:
+                raise
+            continue
+        names.append(module.name)
     for name in names:
         tree = _review.parse(name)
         assert _review.loop_imports(tree, name) == []

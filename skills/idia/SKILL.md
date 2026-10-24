@@ -1,6 +1,6 @@
 ---
 name: idia
-description: Use when code asks an LLM or decision model closed questions (yes/no, a label, a score, an extracted value, an image region) to classify, route or triage an input and needs the model's probabilities rather than text to parse, or batches many questions about one input into few calls, with the idia Python library over System One, OpenAI (Decisions or chat logprobs) or Cloudflare (Clef, Clairic).
+description: Use when code asks an LLM or decision model closed questions (yes/no, a label, a score, an extracted value, an image region) to classify, route or triage an input and needs the model's probabilities rather than text to parse, or batches many questions about one input into few calls, with the idia Python library over System One, OpenAI (Decisions or chat logprobs), Cloudflare (Clef, Clairic), or GLiNER2 run in process.
 ---
 
 # idia

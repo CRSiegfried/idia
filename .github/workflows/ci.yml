@@ -1,7 +1,9 @@
 # Lint, type-check and test on every push to main and every pull request.
 # Actions are pinned to full commit SHAs; Dependabot keeps them current.
 #
-# Every extra is installed, so the provider tests run rather than skip. Each job checks this
+# Every extra is installed, so the provider tests run rather than skip, but for the extra of a
+# model run in process, gliner, which pulls in torch: it is left out of those jobs and
+# installed by a job of its own, with torch from the CPU-only index. Each job checks this
 # repository out at idia/.
 # No job sets IDIA_LIVE, so the tests marked live skip and no job makes a live call.
 name: ci
@@ -38,7 +40,7 @@ jobs:
         with:
           python-version: "3.11"
           working-directory: idia
-      - run: uv sync --locked --all-extras
+      - run: uv sync --locked --all-extras --no-extra gliner
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run pyright
@@ -75,10 +77,29 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           working-directory: idia
-      - run: uv sync --locked --all-extras
+      - run: uv sync --locked --all-extras --no-extra gliner
       # The provider tests importorskip their extras; fail here rather than skip.
       - name: Every extra imports
         run: uv run python -c "import openai, httpx2"
+      - run: uv run pytest --cov
+
+  gliner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: idia
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.13"
+          working-directory: idia
+      # torch comes from the CPU-only index that pyproject.toml names; no weights are fetched.
+      - run: uv sync --locked --extra gliner
+      - name: Every extra imports
+        run: uv run python -c "import gliner2, torch, transformers, huggingface_hub, google.protobuf, sentencepiece"
+      # The tests that import the registered module, which the other jobs skip, run here, with
+      # the coverage floor the test jobs hold.
       - run: uv run pytest --cov
 
   build:

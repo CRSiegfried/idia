@@ -1,9 +1,11 @@
 """The leaves idia ships, and the registry that finds one by name.
 
-Each wire leaf is an optional extra. The registry maps a provider name to the module and
-class of its leaf, and :func:`_load_leaf` imports that module behind a guard: when the
-import fails because the extra's dependency is missing, the error is re-raised with the
-``pip install`` hint. Nothing under this package imports the call loop.
+Every registered leaf is installed by an optional extra; the test doubles, the scripted
+and recorded leaves, ship in the core and are not registered. The registry maps a provider
+name to the module and class of its leaf and to its extra, and :func:`_load_leaf` imports
+that module behind a guard: when the import fails because the extra's dependency is
+missing, the error is re-raised with the ``pip install`` hint. Nothing under this package
+imports the call loop.
 """
 
 from __future__ import annotations
@@ -48,13 +50,16 @@ _REGISTRY: Final[dict[str, _Entry]] = {
     "openai-chat": _Entry(target="idia.providers.chat.openai:OpenAIChat", extra="openai"),
     "cloudflare-clef": _Entry(target="idia.providers.cloudflare:Clef", extra="cloudflare"),
     "cloudflare-clairic": _Entry(target="idia.providers.cloudflare:Clairic", extra="cloudflare"),
+    "gliner": _Entry(target="idia.providers.gliner:Gliner", extra="gliner"),
 }
-"""Provider name to its leaf. Each wire leaf registers here."""
+"""Provider name to its leaf and its extra: every leaf idia ships but the core's test
+doubles."""
 
 _EXTRAS: Final[dict[str, tuple[str, ...]]] = {
     "system-one": ("httpx2",),
     "openai": ("openai", "httpx2"),
     "cloudflare": ("httpx2",),
+    "gliner": ("gliner2", "torch", "transformers", "huggingface_hub", "google", "sentencepiece"),
 }
 """Extra name to the top-level modules its dependencies install, for the import guard."""
 

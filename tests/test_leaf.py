@@ -103,6 +103,7 @@ def test_provider_names_are_what_provider_not_found_lists() -> None:
     assert names == (
         "cloudflare-clairic",
         "cloudflare-clef",
+        "gliner",
         "openai-chat",
         "openai-decisions",
         "system-one",

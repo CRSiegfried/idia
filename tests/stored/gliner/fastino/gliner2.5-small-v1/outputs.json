@@ -1,0 +1,153 @@
+{
+  "cases": [
+    {
+      "input_tokens": 33,
+      "labels": [
+        "the sender",
+        "the topics"
+      ],
+      "output": {
+        "entities": {
+          "the sender": [
+            {
+              "confidence": 0.9990885257720947,
+              "end": 35,
+              "start": 21,
+              "text": "Dana Whitfield"
+            }
+          ],
+          "the topics": [
+            {
+              "confidence": 0.9771665334701538,
+              "end": 55,
+              "start": 46,
+              "text": "Q3 budget"
+            },
+            {
+              "confidence": 0.9310061931610107,
+              "end": 66,
+              "start": 60,
+              "text": "hiring"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 30,
+      "labels": [
+        "the sender"
+      ],
+      "output": {
+        "entities": {
+          "the sender": [
+            {
+              "confidence": 0.995430588722229,
+              "end": 35,
+              "start": 21,
+              "text": "Dana Whitfield"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 30,
+      "labels": [
+        "the topics"
+      ],
+      "output": {
+        "entities": {
+          "the topics": [
+            {
+              "confidence": 0.8198025226593018,
+              "end": 55,
+              "start": 46,
+              "text": "Q3 budget"
+            },
+            {
+              "confidence": 0.6331368684768677,
+              "end": 66,
+              "start": 60,
+              "text": "hiring"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 34,
+      "labels": [
+        "the sender",
+        "the phone number"
+      ],
+      "output": {
+        "entities": {
+          "the phone number": [],
+          "the sender": [
+            {
+              "confidence": 0.9894428253173828,
+              "end": 35,
+              "start": 21,
+              "text": "Dana Whitfield"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 40,
+      "labels": [
+        "the recipient",
+        "the city",
+        "the street"
+      ],
+      "output": {
+        "entities": {
+          "the city": [
+            {
+              "confidence": 0.9810757637023926,
+              "end": 44,
+              "start": 38,
+              "text": "Z\u00fcrich"
+            }
+          ],
+          "the recipient": [
+            {
+              "confidence": 0.9862238168716431,
+              "end": 34,
+              "start": 24,
+              "text": "Zo\u00eb M\u00fcller"
+            }
+          ],
+          "the street": [
+            {
+              "confidence": 0.981031060218811,
+              "end": 65,
+              "start": 46,
+              "text": "Stra\u00dfe des 17. Juni"
+            }
+          ]
+        }
+      },
+      "text": "\u00dcberweisen Sie 300 \u20ac an Zo\u00eb M\u00fcller in Z\u00fcrich, Stra\u00dfe des 17. Juni.",
+      "threshold": 0.5
+    }
+  ],
+  "recorded_with": {
+    "gliner2": "2.1.0",
+    "huggingface_hub": "2.3.0",
+    "python": "3.11.13",
+    "revision": "7132dc4561c3f94563c6147e75ffa8ef34c4964a",
+    "torch": "2.14.1",
+    "transformers": "5.20.2"
+  }
+}

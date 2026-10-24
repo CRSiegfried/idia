@@ -20,6 +20,10 @@ from idia import (
     TokenEstimator,
 )
 
+SEPARATE_EXTRAS: frozenset[str] = frozenset({"gliner"})
+"""The extras CI installs in a job of their own and leaves out of the jobs that install every
+other one: a test may skip for a missing dependency of one of these, and of no other extra."""
+
 # One tick of ``time.monotonic()`` on Windows before Python 3.13 (15.6 ms, rounded up), where
 # asyncio may also fire a timer one clock resolution early: a test's lower bound on a
 # measured time allows this much slack.

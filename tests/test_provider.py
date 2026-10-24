@@ -14,6 +14,7 @@ import pytest
 
 from idia import Dispatcher, Provider, RetryPolicy, _provider, provider, providers
 from idia.providers import ProviderNotFound, _Entry
+from tests._support import SEPARATE_EXTRAS
 
 
 def test_provider_wraps_the_registry_leaf_in_a_dispatcher(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -139,7 +140,12 @@ def test_the_overloads_name_exactly_the_registered_providers() -> None:
 @pytest.mark.parametrize("name", sorted(providers._REGISTRY))
 def test_each_overload_takes_its_leafs_keywords_as_the_leaf_types_them(name: str) -> None:
     function = _typed()[name]
-    module_name, _, class_name = providers._REGISTRY[name].target.partition(":")
+    entry = providers._REGISTRY[name]
+    # An extra CI runs in a job of its own is checked here by that job; any other must import.
+    if entry.extra in SEPARATE_EXTRAS:
+        for dependency in providers._EXTRAS[entry.extra]:
+            pytest.importorskip(dependency)
+    module_name, _, class_name = entry.target.partition(":")
     leaf_class = getattr(importlib.import_module(module_name), class_name)
     parameters = dict(inspect.signature(leaf_class).parameters)
     keywords = {arg.arg: arg for arg in function.args.kwonlyargs}
