@@ -201,7 +201,7 @@ class SystemOne(HttpLeaf):
     def __init__(
         self,
         *,
-        model: str = "jev-1.13.0",
+        model: str = "jev-1.14.0",
         api_key: str | None = None,
         base_url: str = DEFAULT_BASE_URL,
         client: httpx2.AsyncClient | None = None,

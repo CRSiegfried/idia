@@ -189,8 +189,8 @@ extra that installs it; `idia.provider_names()` lists the names:
 | `cloudflare-clef` | `cloudflare` | `noul`, `choice`, `score` | no |
 | `cloudflare-clairic` | `cloudflare` | `extraction` | no |
 
-`openai-chat` needs `model=`, a chat model that returns logprobs, and `cloudflare-clef` also
-takes `model="clef-flash"`. `cloudflare()`, in `idia.cloudflare`, is a router over Clef and
+`system-one` asks `jev-1.14.0` unless given `model=`. `openai-chat` needs `model=`, a chat
+model that returns logprobs, and `cloudflare-clef` also takes `model="clef-flash"`. `cloudflare()`, in `idia.cloudflare`, is a router over Clef and
 Clairic. What each provider takes, its limits and its models are in
 [the providers spec](docs/spec/providers.md).
 

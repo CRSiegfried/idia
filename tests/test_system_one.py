@@ -126,7 +126,7 @@ def _raised(leaf: SystemOne, wire_request: WireRequest) -> ProviderError:
     return raised.value
 
 
-def _answering(answers: Mapping[str, object], model: str = "jev-1.13.0") -> Wire:
+def _answering(answers: Mapping[str, object], model: str = "jev-1.14.0") -> Wire:
     return Wire({"model": model, "answers": answers, "usage": {"input_tokens": 9}})
 
 
@@ -325,7 +325,7 @@ def test_it_is_a_leaf_and_not_a_provider_until_wrapped() -> None:
     assert isinstance(leaf, Leaf)
     assert not isinstance(leaf, Provider)
     assert isinstance(Dispatcher(leaf), Provider)
-    assert (leaf.name, leaf.model) == ("system-one", "jev-1.13.0")
+    assert (leaf.name, leaf.model) == ("system-one", "jev-1.14.0")
     with pytest.raises(AttributeError):
         leaf.capabilities = leaf.capabilities  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -346,7 +346,7 @@ def test_the_body_per_kind() -> None:
     _call(wire.leaf(), WireRequest(state=TEXT, questions=questions))
     body = wire.body_sent
     assert list(body) == ["model", "state", "questions"]
-    assert body["model"] == "jev-1.13.0"
+    assert body["model"] == "jev-1.14.0"
     assert body["state"] == TEXT.parts[0].text  # type: ignore[union-attr]
     assert list(body["questions"]) == ["q", "choice_weather", "score_rain", "score_mood"]
     assert body["questions"] == {
@@ -474,7 +474,7 @@ def test_the_prompt_sent_is_the_body_without_assets() -> None:
     wire = _answering({"q": {"type": "noul", "noul": 0.5}})
     response = _call(wire.leaf(), _one(_NOUL))
     assert response.prompt_sent == {
-        "model": "jev-1.13.0",
+        "model": "jev-1.14.0",
         "state": TEXT.parts[0].text,  # type: ignore[union-attr]
         "questions": {"q": {"type": "noul", "instructions": "Is it so?"}},
     }
@@ -915,8 +915,8 @@ def test_provider_builds_and_wraps_it() -> None:
     [outcome] = response.outcomes
     assert (outcome.provider, outcome.model_requested, outcome.snapshot) == (
         "system-one",
-        "jev-1.13.0",
-        "jev-1.13.0",
+        "jev-1.14.0",
+        "jev-1.14.0",
     )
 
 

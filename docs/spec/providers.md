@@ -47,11 +47,12 @@ Inheriting it is a convenience: satisfying `Leaf` is structural.
 
 ## System One
 
-`SystemOne(*, model="jev-1.13.0", api_key=None, base_url="https://api.typesafe.ai", client=None, long_context=False, images=False, capabilities=None)`, registered as `system-one`, speaks TypeSafe's System One API for one Jev model.
+`SystemOne(*, model="jev-1.14.0", api_key=None, base_url="https://api.typesafe.ai", client=None, long_context=False, images=False, capabilities=None)`, registered as `system-one`, speaks TypeSafe's System One API for one Jev model.
 Its `name` is `system-one` and its `model` the one it was built for.
 
 - **Construction refuses** an unknown model and a missing key (`api_key`, else `TYPESAFE_API_KEY`), each with `ValueError`.
-  The models known are `jev-1.13.0`, `jev-latest`, `jev-1.14.0` and `jev-preview`.
+  The models known are `jev-1.13.0`, `jev-latest`, `jev-1.14.0` and `jev-preview`; the default is `jev-1.14.0`.
+  `jev-latest` is a moving alias, offered without `box` since the version it names may change; the response's `model` names the version that answered, and a caller who needs `box` pins `jev-1.14.0`.
   `capabilities` replaces the declared record for a caller who knows better; it must agree with the feature flags, which alone decide the headers sent.
 - **The request** is `POST /v1/systemone` with `Authorization: Bearer <key>`, uncompressed JSON whose keys are `model`, `state`, `questions` and, with an image, `assets`, in that order, built the same way every time.
   `long_context` adds `TypeSafe-Danger-Zone-Long-Context: true`; `images` adds `TypeSafe-Danger-Zone-Images: true`.
