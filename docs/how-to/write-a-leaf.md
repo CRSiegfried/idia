@@ -83,8 +83,9 @@ from __future__ import annotations
 
 import asyncio
 import platform
+import threading
 from collections.abc import Mapping, Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Protocol, cast
 
 from idia import (
@@ -393,6 +394,10 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
   HTTP client or SDK, never `idia`, which the dispatcher adds.
 - `raw_body`: what the model returned, whole. The dispatcher drops it, but a recording keeps
   it.
+- `warnings`: `Notice` values. Put the warnings `validate_answers` returned first, then your
+  own, such as `WARNING_NO_SNAPSHOT` or `WARNING_PROVIDER_TRUNCATED` when the model reports
+  that it cut the input, and last `unknown_options(wire_request.options, known)`, which
+  warns once naming every request option your leaf does not know.
 
 Every detail of the provenance profile is a value or has a reason in `unreported`, a map
 from the detail's name to one of `UnreportedReason`'s codes; `DETAILS` and `REASONS` name
@@ -412,10 +417,6 @@ both a value and a reason, and the constructor refuses one that does. Name in `c
 details whose value you assert but cannot verify: `SpanLeaf` claims its `model_reported`,
 which is its own constant, not something its model reports, and the revision a caller gives
 for a model it loaded itself. The conformance suite checks the whole profile.
-- `warnings`: `Notice` values. Put the warnings `validate_answers` returned first, then your
-  own, such as `WARNING_NO_SNAPSHOT` or `WARNING_PROVIDER_TRUNCATED` when the model reports
-  that it cut the input, and last `unknown_options(wire_request.options, known)`, which
-  warns once naming every request option your leaf does not know.
 
 A request's `options` are settings a caller passes per request. A key your leaf reads, it
 records in `prompt_sent`. A key it knows but does not read, such as one meant for another
@@ -436,16 +437,21 @@ practices, those idia sets for a leaf that runs its model in process.
   call. Nothing inside `call` touches the network: the model is already in memory. A warm-up,
   one small forward pass at the end of `load()`, keeps its cost out of the first call. A
   call before the model is loaded raises a non-retryable `ProviderError` and runs nothing. A
-  leaf given a loaded model needs no load.
+  leaf given a loaded model needs no load. Loads made while one runs share its job on the
+  worker, so the weights load once, and a caller cancelled while it waits leaves the load
+  for the next.
 - **A deadline cut leaves the worker busy.** Wait for the worker with
-  `asyncio.wait_for(future, max(deadline.remaining(), 0))`, and turn a timeout into a
-  retryable `ProviderError`. The forward pass cannot be stopped: it runs to its end, and a
+  `asyncio.wait_for(future, max(deadline.remaining(), 0))`, and turn the deadline's cut
+  into a retryable `ProviderError`; a `TimeoutError` the model itself raised is a model
+  failure, not retryable. The forward pass cannot be stopped: it runs to its end, and a
   call from another request, made before the pass ends, waits behind it inside its own
   deadline. A call still queued behind it when its own deadline passes never runs.
 - **`aclose`.** Set a closed flag that `call` checks before anything is submitted, so a call
   or `load()` after `aclose` raises a non-retryable `ProviderError`, `the leaf is closed`,
-  and runs nothing; a call still queued for the worker never runs and raises the same. Drop a model the leaf loaded, never one it was given, and shut the worker down
-  without waiting for a pass still running. Closing twice is harmless.
+  and runs nothing; a job still queued for the worker never runs, and its caller raises
+  the same. A close while `load()` runs wins over what the loader then returns or raises.
+  Drop a model the leaf loaded, never one it was given, and shut the worker down without
+  waiting for a pass still running. Closing twice is harmless.
 - **The snapshot is the pinned revision.** In `load()`, resolve the pinned revision to the
   commit it names, then load everything, the weights, the tokenizer and the configuration,
   from that commit's own files: some runtimes pin the weights but read the tokenizer from a
@@ -526,15 +532,45 @@ class SpanLeaf:
         self._injected = runtime is not None
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="span-leaf")
         self._closed = False
+        self._guard = threading.Lock()
+        self._pending: Future[tuple[SpanModel, str | None]] | None = None
 
     async def load(self) -> None:
-        """Load the model on the worker: the one step that may fetch or read weights."""
-        if self._closed:
-            raise ProviderError("the leaf is closed")
-        if self._runtime is None:
-            loop = asyncio.get_running_loop()
-            loaded = await loop.run_in_executor(self._worker, load_toy_model, self._revision)
-            self._runtime, self._snapshot = loaded
+        """Load the model on the worker: the one step that may fetch or read weights.
+        Loads made while one runs share its job; a close while it runs wins."""
+        with self._guard:
+            if self._closed:
+                raise ProviderError("the leaf is closed")
+            if self._runtime is not None:
+                return
+            pending = self._pending
+            if pending is None or (
+                pending.done() and (pending.cancelled() or pending.exception() is not None)
+            ):
+                pending = self._worker.submit(load_toy_model, self._revision)
+                self._pending = pending
+        try:
+            # The shield keeps a cancelled caller from cancelling the load the others share.
+            loaded = await asyncio.shield(asyncio.wrap_future(pending))
+        except asyncio.CancelledError:
+            self._closed_cancellation()
+            raise
+        except Exception as error:
+            if self._closed:
+                raise ProviderError("the leaf is closed") from error
+            raise
+        with self._guard:
+            if self._closed:
+                raise ProviderError("the leaf is closed")
+            if self._runtime is None:
+                self._runtime, self._snapshot = loaded
+
+    def _closed_cancellation(self) -> None:
+        """A job ``aclose`` cancelled in the queue raises the closed leaf's error; the
+        caller's own cancellation propagates."""
+        task = asyncio.current_task()
+        if self._closed and (task is None or task.cancelling() == 0):
+            raise ProviderError("the leaf is closed") from None
 
     async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
         if self._closed:
@@ -551,7 +587,13 @@ class SpanLeaf:
         work = loop.run_in_executor(self._worker, _run, runtime, text, sent)
         try:
             output, tokens = await asyncio.wait_for(work, max(deadline.remaining(), 0.0))
+        except asyncio.CancelledError:
+            self._closed_cancellation()
+            raise
         except TimeoutError:
+            error = work.exception() if work.done() and not work.cancelled() else None
+            if error is not None:  # the model raised it: a failure, not the deadline's cut
+                raise ProviderError(f"the model failed: TimeoutError: {error}") from error
             raise ProviderError(
                 "the deadline cut the call; the worker finishes the pass before the next",
                 is_retryable=True,
@@ -603,11 +645,14 @@ class SpanLeaf:
         )
 
     async def aclose(self) -> None:
-        """Refuse every later call; drop a model this leaf loaded, never one it was given."""
-        self._closed = True
-        if not self._injected:
-            self._runtime = None
-        self._worker.shutdown(wait=False)
+        """Refuse every later call; drop a model this leaf loaded, never one it was given;
+        cancel the jobs still queued, whose callers then raise the closed leaf's error."""
+        with self._guard:
+            self._closed = True
+            self._pending = None
+            if not self._injected:
+                self._runtime = None
+            self._worker.shutdown(wait=False, cancel_futures=True)
 ```
 
 And the helpers it calls. `_one_text` refuses, before anything runs, what the record cannot
@@ -1206,8 +1251,8 @@ module is imported: the hub reads that setting when it is first imported, so set
 anything imports the hub. The run then reads only the files already cached and never
 downloads.
 
-Inject the fake at the runtime's own call, as `Playback` stands in for `SpanModel`, the object whose methods the leaf calls, so
-that the leaf's reading of the runtime's output stays under test. Key each stored output on
+Inject the fake at the runtime's own call, as `Playback` stands in for `SpanModel`, the
+object whose methods the leaf calls, so that the leaf's reading of the runtime's output stays under test. Key each stored output on
 every argument the leaf passes the runtime: here the text and the labels; for a real span
 model, also any threshold or mode it is given. Store the outputs with the revision and the
 runtime's versions. A real model's scores can move a little between builds of its runtime,
