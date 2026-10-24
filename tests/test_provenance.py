@@ -551,3 +551,18 @@ def test_an_unknown_leaf_is_upgraded_with_the_reasons_its_caller_gives(tmp_path:
     assert upgrade_log(log, reasons={"versions": "not-applicable", "usage.passes": "hidden"}) == 1
     (response,) = _replayed(log)
     assert dict(response.unreported) == {"versions": "not-applicable", "usage.passes": "hidden"}
+
+
+def test_a_pass_count_only_the_raw_usage_holds_is_not_exposed_and_stays_as_recorded(
+    tmp_path: Path,
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    usage = Usage(input_tokens=3, output_tokens=0, raw_usage={"input_tokens": 3, "passes": 2})
+    log = _old_log(tmp_path, "cloudflare-clairic", _bare(pinned=False, usage=usage))
+    assert upgrade_log(log) == 1
+    (response,) = _replayed(log)
+    assert response.unreported["usage.passes"] == "not-exposed"
+    assert response.usage is not None
+    assert response.usage.passes is None
+    assert response.usage.raw_usage["passes"] == 2

@@ -322,11 +322,13 @@ def upgrade_log(
     the rules its leaf, the log's ``name``, states: for a wire leaf (System One, OpenAI's
     two, Cloudflare's two) and the scripted leaf, ``versions`` ``not-applicable``, the
     snapshot ``not-pinned`` beside its ``no-snapshot`` warning, and every other missing
-    detail ``not-reported``; for ``gliner``, ``versions`` and ``client_versions`` from the
-    versions its raw body recorded, the output tokens ``not-applicable``, the other missing
-    details as a wire leaf's, and ``model_reported`` and a snapshot claimed, since a log
-    cannot show the snapshot was resolved rather than given. Any other leaf takes its reasons
-    from ``reasons``, the reason for each detail it gives none of.
+    detail ``not-reported``, but the passes ``not-exposed`` where the raw usage holds a pass
+    count the recording idia did not read; for ``gliner``, ``versions`` and
+    ``client_versions`` from the versions its raw body recorded, the output tokens
+    ``not-applicable``, the other missing details as a wire leaf's, and ``model_reported``
+    and a snapshot claimed, since a log cannot show the snapshot was resolved rather than
+    given. Any other leaf takes its reasons from ``reasons``, the reason for each detail it
+    gives none of.
 
     Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
     reason, claim or version a response already holds stays. Error entries are left as they
@@ -400,6 +402,9 @@ def _upgraded(
             raise ValueError(f"{log}: a response leaves out {detail}, which is always a value")
         if detail == "snapshot":
             unreported[detail] = "not-pinned"
+        elif detail == "usage.passes" and _raw_passes(filled):
+            # The wire reported it, but the idia that recorded the log did not read it.
+            unreported[detail] = "not-exposed"
         elif detail in rules:
             unreported[detail] = rules[detail]
         elif name in _WIRE or name in {"scripted", "gliner"}:
@@ -407,6 +412,15 @@ def _upgraded(
         else:
             raise ValueError(f"{log}: the reasons given for {name!r} leave out {detail}")
     return replace(filled, unreported=unreported, claimed=frozenset(claimed - set(unreported)))
+
+
+def _raw_passes(response: WireResponse) -> bool:
+    """Whether the raw usage holds a pass count that ``Usage.passes`` was not read from."""
+    usage = response.usage
+    if usage is None:
+        return False
+    passes = usage.raw_usage.get("passes")
+    return isinstance(passes, int) and not isinstance(passes, bool)
 
 
 def _recorded_versions(raw_body: object) -> dict[str, str] | None:
