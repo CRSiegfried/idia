@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # A push to main runs to the end, so the subjects of every push are checked.
+  # A push to main runs to the end, so the commit subjects of every push are checked.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
@@ -32,7 +32,7 @@ jobs:
         with:
           path: idia
           persist-credentials: false
-          # The whole history, so the commit subjects of the event's range can be read.
+          # The whole history, so the commit subjects of a push's range can be read.
           fetch-depth: 0
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
@@ -44,28 +44,20 @@ jobs:
       - run: uv run pyright
       - run: uv run python scripts/check_spec.py
       - run: uv run python scripts/check_terms.py
-      # The same patterns over the subjects of the commits this event brings: a pull
-      # request's base..head, a push's before..after. A push that creates the branch has no
-      # before, and a manual run has no range, so they check no subjects.
-      - name: New commit subjects use plain library terms
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+      # On a push to main, the same patterns over the subjects of the commits it brings,
+      # before..after. A push that creates the branch has no before, so it checks none.
+      - name: Commit subjects describe library changes
+        if: github.event_name == 'push'
         shell: bash
         env:
-          EVENT: ${{ github.event_name }}
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.event.after }}
         run: |
-          if [ "$EVENT" = pull_request ]; then
-            range="$BASE..$HEAD"
-          elif [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
-            range="$BEFORE..$AFTER"
-          else
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ]; then
             echo "no earlier commit to compare with; no subjects checked"
             exit 0
           fi
-          uv run python scripts/check_terms.py --subjects "$range"
+          uv run python scripts/check_terms.py --subjects "$BEFORE..$AFTER"
 
   test:
     strategy:

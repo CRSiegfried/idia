@@ -1,24 +1,24 @@
-"""Check that the library and its docs read in plain library terms.
+"""Check that the library, its docs and its commit subjects describe the library.
 
 Run it as ``uv run python scripts/check_terms.py``. It scans ``src/``, ``docs/``,
 ``tests/`` (its recorded cassettes aside), ``scripts/`` (this script aside), ``skills/``,
 the workflows in ``.github/``, the top-level README, CHANGELOG, CONTRIBUTING and SECURITY
-files and ``pyproject.toml`` for the vocabulary of a build process (offices, charters, ADRs,
-rulings, build steps and the like) and exits 1 with one line per hit, or 0 when none is found.
-Standard library only.
+files and ``pyproject.toml`` for the patterns in ``TERMS``, words that describe how a change
+was organized rather than what the library does, and exits 1 with one line per hit, or 0
+when none is found. Standard library only.
 
 Each pattern is a whole word or a phrase, matched with word boundaries, so the ordinary
 words beside it pass: ``registered`` and ``registry`` are not ``the register``, ``LeafHarness``
-and "the test HTTP harness" are not "the build harness", and "a ruled line" is not a ruling
-because only ``ruled on`` and ``ruled by`` are matched. A numbered round is a build round
-only when a lap, point, item or step follows it, so a fixpoint's "round 3 of the loop" and a
-``round_bound`` pass while "round 5 lap 2" does not. A line that must use a term in its
-ordinary sense carries ``check-terms: ok`` and is skipped.
+and "the test HTTP harness" are not matched, and "a ruled line" passes because only
+``ruled on`` and ``ruled by`` are matched. A numbered round matches only when a lap, point,
+item or step follows it, so a fixpoint's "round 3 of the loop" and a ``round_bound`` pass
+while "round 5 lap 2" does not. A line that must use a term in its ordinary sense carries
+``check-terms: ok`` and is skipped.
 
 ``TERMS`` is the module-level tuple of every pattern with its name, and ``hits`` applies them
 to one line. ``--subjects <range>`` applies the same patterns to the subject of each commit
 in a git revision range, such as ``main..HEAD``, instead of scanning files; CI runs it over
-the commits a pull request or a push brings.
+the commits a push to main brings.
 
 Before scanning, the script checks itself: every planted sentence in ``PLANTED`` must be
 caught and every sentence in ``ORDINARY`` must pass, so a pattern that stops matching, or
