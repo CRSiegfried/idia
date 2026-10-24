@@ -164,7 +164,9 @@ def map_status_error(error: openai.APIStatusError) -> ProviderError:
     """The status table over the SDK's error, a quota exhausted arriving as 429 made not
     retryable."""
     response = error.response
-    mapped = status_error(error.status_code, response.headers, response.content, error.request_id)
+    mapped = status_error(
+        error.status_code, response.headers, response.content, error.request_id or None
+    )
     if error.status_code == 429 and error.code == _QUOTA_CODE:
         return ProviderError(
             f"{mapped.message} (quota exhausted)",
@@ -176,14 +178,19 @@ def map_status_error(error: openai.APIStatusError) -> ProviderError:
     return mapped
 
 
+def read_request_id(response: httpx2.Response) -> str | None:
+    """The response's ``x-request-id``, an empty header read as none."""
+    return response.headers.get(REQUEST_ID_HEADER) or None
+
+
 def unreadable(response: httpx2.Response, why: str) -> ProviderError:
     """:func:`~idia.providers.http.unreadable` with OpenAI's request id."""
-    return http.unreadable(response, why, response.headers.get(REQUEST_ID_HEADER))
+    return http.unreadable(response, why, read_request_id(response))
 
 
 def read_body(response: httpx2.Response) -> Mapping[str, JsonValue]:
     """:func:`~idia.providers.http.read_object` with OpenAI's request id."""
-    return http.read_object(response, response.headers.get(REQUEST_ID_HEADER))
+    return http.read_object(response, read_request_id(response))
 
 
 def count(value: JsonValue) -> int | None:

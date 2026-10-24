@@ -119,6 +119,21 @@ def test_a_quota_exhausted_arriving_as_429_is_not_retryable() -> None:
     assert "quota" in error.message
 
 
+@pytest.mark.parametrize(
+    ("status", "body"),
+    [
+        pytest.param(500, _error(), id="status"),
+        pytest.param(429, _error("insufficient_quota"), id="quota"),
+        pytest.param(200, b"not json", id="unreadable-body"),
+    ],
+)
+def test_an_error_with_an_empty_request_id_header_has_no_request_id(
+    status: int, body: object
+) -> None:
+    error = _raised(_wire(status, body, {"x-request-id": ""}))
+    assert error.request_id is None
+
+
 def test_retry_after_ms_is_read_before_retry_after() -> None:
     error = _raised(_wire(429, _error(), {"retry-after-ms": "1500", "retry-after": "9"}))
     assert error.retry_after == 1.5

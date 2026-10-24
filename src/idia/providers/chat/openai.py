@@ -58,11 +58,11 @@ from idia.core import (
     unknown_options,
 )
 from idia.providers._openai import (
-    REQUEST_ID_HEADER,
     OpenAIEstimator,
     OpenAILeafBase,
     compact,
     read_body,
+    read_request_id,
     unreadable,
     usage,
 )
@@ -279,7 +279,7 @@ class OpenAIChat(OpenAILeafBase):
         normalized = usage(
             cast(Mapping[str, JsonValue], raw_usage), "prompt_tokens", "completion_tokens"
         )
-        request_id = response.headers.get(REQUEST_ID_HEADER) or None
+        request_id = read_request_id(response)
         return WireResponse(
             answers=answers,
             elicitation="logprobs",
