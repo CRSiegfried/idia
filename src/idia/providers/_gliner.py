@@ -15,8 +15,9 @@ import importlib
 import importlib.metadata
 import platform
 import re
+import threading
 from collections.abc import Mapping, Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Final, Literal, Protocol, cast
 
@@ -235,7 +236,8 @@ class Gliner:
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="idia-gliner")
         self._estimator = _PieceEstimator()
         self._closed = False
-        self._lock: tuple[asyncio.AbstractEventLoop, asyncio.Lock] | None = None
+        self._guard = threading.Lock()
+        self._pending: Future[tuple[GlinerRuntime, str] | None] | None = None
 
     @property
     def name(self) -> str:
@@ -260,42 +262,46 @@ class Gliner:
     async def load(self) -> None:
         """Resolve the revision and load the weights on the worker, then run one small pass
         so that its cost stays out of the first call. Loading again, or a leaf given a
-        runtime, does nothing, and a load made while another runs waits for it; what the
-        loader raises propagates. A leaf closed while it loads drops the model and raises
-        the closed leaf's ``ProviderError``."""
-        if self._closed:
-            raise ProviderError("the leaf is closed")
-        if self._runtime is not None:
-            return
-        async with self._loading():
-            self._refuse_if_closed()
-            if self._runtime is None:
-                await self._load()
-
-    def _loading(self) -> asyncio.Lock:
-        """The lock the loads on the running loop share; another loop gets its own."""
-        loop = asyncio.get_running_loop()
-        if self._lock is None or self._lock[0] is not loop:
-            self._lock = (loop, asyncio.Lock())
-        return self._lock[1]
-
-    async def _load(self) -> None:
+        runtime, does nothing. A load made while another runs, on the same loop or a later
+        one, waits for it and shares its result, and a caller cancelled while it waits
+        leaves the load running for the next. What the loader raises propagates; a leaf
+        closed while it loads drops the model and raises the closed leaf's
+        ``ProviderError`` instead."""
         revision = None if self._revision is None else str(self._revision)
-        loop = asyncio.get_running_loop()
+        with self._guard:
+            self._refuse_if_closed()
+            if self._runtime is not None:
+                return
+            pending = self._pending
+            if pending is None or (
+                pending.done() and (pending.cancelled() or pending.exception() is not None)
+            ):
+                pending = self._worker.submit(self._load_and_warm, revision)
+                self._pending = pending
         try:
-            runtime, commit = await loop.run_in_executor(
-                self._worker, _load_model, _MODEL, revision
-            )
-            self._refuse_if_closed()
-            await loop.run_in_executor(
-                self._worker, runtime.extract_entities, "Warm up.", ("x",), self._threshold
-            )
-            self._refuse_if_closed()
+            loaded = await asyncio.shield(asyncio.wrap_future(pending))
         except asyncio.CancelledError:
             self._closed_cancellation()
             raise
-        self._runtime = runtime
-        self._snapshot = commit if revision is not None else None
+        except Exception as error:
+            if self._closed:
+                raise ProviderError("the leaf is closed") from error
+            raise
+        with self._guard:
+            if self._closed or loaded is None:
+                raise ProviderError("the leaf is closed")
+            if self._runtime is None:
+                self._runtime, commit = loaded
+                self._snapshot = commit if revision is not None else None
+
+    def _load_and_warm(self, revision: str | None) -> tuple[GlinerRuntime, str] | None:
+        """On the worker: load the model, then warm it up unless the leaf closed
+        meanwhile, which gives ``None``."""
+        runtime, commit = _load_model(_MODEL, revision)
+        if self._closed:
+            return None
+        runtime.extract_entities("Warm up.", ("x",), self._threshold)
+        return runtime, commit
 
     def _refuse_if_closed(self) -> None:
         if self._closed:
@@ -329,9 +335,9 @@ class Gliner:
             self._closed_cancellation()
             raise
         except TimeoutError:
-            if work.done() and not work.cancelled():
+            error = work.exception() if work.done() and not work.cancelled() else None
+            if error is not None:
                 # The runtime raised it: a model failure, not the deadline's cut.
-                error = work.exception()
                 raise ProviderError(f"the model failed: {type(error).__name__}: {error}") from error
             raise ProviderError(
                 "the deadline passed during the pass, which runs to its end on the worker",
@@ -395,10 +401,12 @@ class Gliner:
         """Refuse every later call, drop a model this leaf loaded, never one it was given,
         and shut the worker down: a pass still queued never runs, and its call raises the
         closed leaf's ``ProviderError``; a pass already running is not waited for."""
-        self._closed = True
-        if not self._given:
-            self._runtime = None
-        self._worker.shutdown(wait=False, cancel_futures=True)
+        with self._guard:
+            self._closed = True
+            self._pending = None
+            if not self._given:
+                self._runtime = None
+            self._worker.shutdown(wait=False, cancel_futures=True)
 
 
 def _run(

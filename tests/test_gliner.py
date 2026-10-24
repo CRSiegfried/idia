@@ -273,6 +273,78 @@ def test_two_loads_at_once_load_the_model_once(monkeypatch: pytest.MonkeyPatch) 
     assert model.calls == 1  # one warm-up
 
 
+def test_a_load_cut_short_leaves_its_model_for_the_next_load_on_a_later_loop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = Answering({"entities": {"x": []}})
+    loads: list[str | None] = []
+    release = threading.Event()
+
+    def load(name: str, revision: str | None) -> tuple[Answering, str]:
+        loads.append(revision)
+        release.wait(5)
+        return model, REVISION
+
+    monkeypatch.setattr(_gliner, "_load_model", load)
+    leaf = Gliner()
+
+    async def cut() -> None:
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(leaf.load(), 0.05)
+
+    asyncio.run(cut())
+    release.set()
+    asyncio.run(leaf.load())
+    assert loads == [REVISION]
+    assert leaf._runtime is model
+    assert model.calls == 1  # one warm-up
+
+
+def test_a_loader_failing_after_aclose_raises_the_closed_leafs_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loading = threading.Event()
+    release = threading.Event()
+
+    def load(name: str, revision: str | None) -> tuple[Answering, str]:
+        loading.set()
+        release.wait(5)
+        raise OSError("the weights went away")
+
+    monkeypatch.setattr(_gliner, "_load_model", load)
+
+    async def run() -> None:
+        leaf = Gliner()
+        loaded = asyncio.ensure_future(leaf.load())
+        await asyncio.to_thread(loading.wait, 5)
+        await leaf.aclose()
+        release.set()
+        with pytest.raises(ProviderError, match="the leaf is closed") as raised:
+            await loaded
+        assert isinstance(raised.value.__cause__, OSError)
+
+    asyncio.run(run())
+
+
+def test_a_load_that_failed_is_tried_again(monkeypatch: pytest.MonkeyPatch) -> None:
+    model = Answering({"entities": {"x": []}})
+    attempts: list[int] = []
+
+    def load(name: str, revision: str | None) -> tuple[Answering, str]:
+        attempts.append(1)
+        if len(attempts) == 1:
+            raise OSError("offline")
+        return model, REVISION
+
+    monkeypatch.setattr(_gliner, "_load_model", load)
+    leaf = Gliner()
+    with pytest.raises(OSError, match="offline"):
+        asyncio.run(leaf.load())
+    asyncio.run(leaf.load())
+    assert len(attempts) == 2
+    assert leaf._runtime is model
+
+
 def test_aclose_refuses_a_load_waiting_behind_another(monkeypatch: pytest.MonkeyPatch) -> None:
     model = Answering({"entities": {"x": []}})
     loading = threading.Event()
