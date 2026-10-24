@@ -307,20 +307,34 @@ IDIA_LIVE=1 uv run pytest -m live -s
 A test that loads a model in your process carries the `local_model` marker and runs only
 with `IDIA_LOCAL_MODEL=1`, with the runtime installed and the weights already cached. That
 switch also sets `HF_HUB_OFFLINE=1` before any test module is imported, so the run reads
-nothing from the network: it never downloads weights. Run it once per model:
+nothing from the network: it never downloads weights. Run it once per model, and add
+`IDIA_RECORD=1`, set by hand, to record the stored outputs again:
 
 ```sh
 IDIA_LOCAL_MODEL=1 uv run pytest -m local_model -s
+IDIA_LOCAL_MODEL=1 IDIA_RECORD=1 uv run pytest -m local_model -s
 ```
 
 The gated run checks each recorded case against the real model: its spans against the
 texts the case expects, and where the case is stored, the spans and the token count exactly
-and each score within a tolerance. A failed comparison writes nothing. A run that passes
-writes back the outputs of every recorded case, each stored one compared first, with the
-versions it ran under: whole or not at all, through a file beside the stored one replaced
-in one step, in UTF-8 with LF line endings. To record a case again after its outputs have
-moved past the tolerance for a reason you accept, remove that case from the stored file and
-run the gated test. GLiNER2's writer:
+and each score within a tolerance. It writes nothing unless `IDIA_RECORD=1` is set as well,
+so a run that passes leaves the stored outputs as they were reviewed, and a score cannot
+drift a little further on each run. With the switch, a run that passes writes back the
+outputs of every recorded case, each stored one compared first, with the versions it ran
+under; a failed comparison writes nothing either way. Record again when a case's outputs
+have moved past the tolerance for a reason you accept, and review the diff of the stored
+file. The switch, at the end of GLiNER2's gated test:
+
+```python
+# tests/test_gliner_local_model.py
+    if os.environ.get("IDIA_RECORD") == "1":
+        versions = {package: importlib.metadata.version(package) for package in _VERSIONED}
+        recorded_with = {"revision": _REVISION, "python": platform.python_version(), **versions}
+        record_outputs(cases, STORED, recorded_with)
+```
+
+The writer writes the file whole or not at all, through a file beside the stored one
+replaced in one step, in UTF-8 with LF line endings. GLiNER2's writer:
 
 ```python
 # tests/_gliner_cases.py

@@ -1,15 +1,19 @@
-"""The runs against the real GLiNER2 model, one of which records the stored outputs the other
-tests replay. Skipped unless ``IDIA_LOCAL_MODEL=1``, which also sets ``HF_HUB_OFFLINE=1``:
-the weights at the pinned revision must already be cached, and nothing is downloaded.
+"""The runs against the real GLiNER2 model, one of which, when asked, records the stored
+outputs the other tests replay. Skipped unless ``IDIA_LOCAL_MODEL=1``, which also sets
+``HF_HUB_OFFLINE=1``: the weights at the pinned revision must already be cached, and nothing
+is downloaded.
 
 The model is loaded once, through the leaf's own loader. Each recorded case runs once: its
 spans must be the texts the case expects, at offsets that count characters, and where the
-case is stored, the same spans, each score within :data:`TOLERANCE` of the stored one and the
-same token count. The outputs that passed are written back, with the runtime's versions, and
-nothing else is. Then the estimator is measured against the tokenizer, as many labels as
-the record allows are all found at the window, 64 labels run in one pass, and the loaded
-leaf answers through a dispatcher. Run them once per model:
-``IDIA_LOCAL_MODEL=1 uv run pytest -m local_model -s``.
+case is stored, the same spans, each score within :data:`TOLERANCE` of the stored one and
+the same token count. Only with ``IDIA_RECORD=1`` set by hand as well are the outputs that
+passed written back, with the runtime's versions, and nothing else is; without it a passing
+run writes nothing, so the stored outputs stay the reviewed recording. Then the estimator is
+measured against the tokenizer, as many labels as the record allows are all found at the
+window, 64 labels run in one pass, and the loaded leaf answers through a dispatcher. Run
+them once per model: ``IDIA_LOCAL_MODEL=1 uv run pytest -m local_model -s``, and to record
+the stored outputs again, ``IDIA_LOCAL_MODEL=1 IDIA_RECORD=1 uv run pytest -m local_model
+-s``.
 """
 
 # pyright: reportPrivateUsage=false
@@ -18,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.metadata
+import os
 import platform
 import time
 from collections.abc import Mapping
@@ -141,7 +146,7 @@ def _question(index: int, label: str) -> Question:
     return Question(key=f"q{index}", kind="extraction", instruction=label, value_type="text")
 
 
-def test_the_real_model_gives_the_stored_outputs_and_records_them(runtime: GlinerRuntime) -> None:
+def test_the_real_model_gives_the_stored_outputs(runtime: GlinerRuntime) -> None:
     stored = load_outputs()
     cases: list[dict[str, Any]] = []
     for asked, expected in RECORDED.items():
@@ -176,10 +181,10 @@ def test_the_real_model_gives_the_stored_outputs_and_records_them(runtime: Gline
                 "input_tokens": tokens,
             }
         )
-    versions = {package: importlib.metadata.version(package) for package in _VERSIONED}
-    record_outputs(
-        cases, STORED, {"revision": _REVISION, "python": platform.python_version(), **versions}
-    )
+    if os.environ.get("IDIA_RECORD") == "1":
+        versions = {package: importlib.metadata.version(package) for package in _VERSIONED}
+        recorded_with = {"revision": _REVISION, "python": platform.python_version(), **versions}
+        record_outputs(cases, STORED, recorded_with)
 
 
 def test_the_estimate_with_its_margin_covers_the_tokenizers_count(runtime: GlinerRuntime) -> None:
