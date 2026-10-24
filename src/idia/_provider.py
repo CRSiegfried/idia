@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from typing_extensions import deprecated
 
     from idia.core import Capabilities
+    from idia.providers._gliner import GlinerRuntime
     from idia.providers.cloudflare import ClefModel
     from idia.providers.system_one import SystemOneModel
 
@@ -105,6 +106,19 @@ if TYPE_CHECKING:
     ) -> Dispatcher: ...
 
     @overload
+    def provider(
+        name: Literal["gliner"],
+        *,
+        model: Literal["fastino/gliner2.5-small-v1"] = ...,
+        revision: str | None = ...,
+        threshold: float = ...,
+        runtime: GlinerRuntime | None = ...,
+        retry: RetryPolicy = ...,
+        concurrency: ConcurrencyLimit | None = ...,
+        rate: RateLimiter | None = ...,
+    ) -> Dispatcher: ...
+
+    @overload
     @deprecated(
         "a registered provider takes its leaf's keywords, each of its type and every required "
         "one given, and retry, concurrency and rate; an unknown or missing keyword raises TypeError"
@@ -116,6 +130,7 @@ if TYPE_CHECKING:
             "openai-chat",
             "cloudflare-clef",
             "cloudflare-clairic",
+            "gliner",
         ],
         *,
         retry: RetryPolicy = ...,
@@ -193,6 +208,16 @@ if TYPE_CHECKING:
     ) -> Leaf: ...
 
     @overload
+    def leaf(
+        name: Literal["gliner"],
+        *,
+        model: Literal["fastino/gliner2.5-small-v1"] = ...,
+        revision: str | None = ...,
+        threshold: float = ...,
+        runtime: GlinerRuntime | None = ...,
+    ) -> Leaf: ...
+
+    @overload
     @deprecated(
         "a registered leaf takes its own keywords, each of its type and every required one "
         "given; an unknown or missing keyword raises TypeError"
@@ -204,6 +229,7 @@ if TYPE_CHECKING:
             "openai-chat",
             "cloudflare-clef",
             "cloudflare-clairic",
+            "gliner",
         ],
         **options: object,
     ) -> Leaf: ...

@@ -20,8 +20,9 @@ def test_registry_ships_these_leaves() -> None:
         "openai-chat",
         "cloudflare-clef",
         "cloudflare-clairic",
+        "gliner",
     }
-    assert set(providers._EXTRAS) == {"system-one", "openai", "cloudflare"}
+    assert set(providers._EXTRAS) == {"system-one", "openai", "cloudflare", "gliner"}
 
 
 def test_unknown_name_raises_a_typed_error() -> None:

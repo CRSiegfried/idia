@@ -825,11 +825,17 @@ def test_no_core_path_imports_validation() -> None:
 
 
 def test_no_module_under_providers_reaches_into_the_call_loop() -> None:
+    extras = {module for modules in idia.providers._EXTRAS.values() for module in modules}
+    names = ["idia.providers"]
     for module in pkgutil.walk_packages(idia.providers.__path__, "idia.providers."):
-        importlib.import_module(module.name)
-    names = ["idia.providers"] + [
-        m.name for m in pkgutil.walk_packages(idia.providers.__path__, "idia.providers.")
-    ]
+        try:
+            importlib.import_module(module.name)
+        except ModuleNotFoundError as error:
+            # An extra the jobs that sync every extra leave out is reviewed by its own job.
+            if (error.name or "").split(".")[0] not in extras:
+                raise
+            continue
+        names.append(module.name)
     for name in names:
         tree = _review.parse(name)
         assert _review.loop_imports(tree, name) == []

@@ -1,0 +1,93 @@
+{
+  "cases": [
+    {
+      "input_tokens": 33,
+      "labels": [
+        "the sender",
+        "the topics"
+      ],
+      "output": {
+        "entities": {
+          "the sender": [
+            {
+              "confidence": 0.9990885257720947,
+              "end": 35,
+              "start": 21,
+              "text": "Dana Whitfield"
+            }
+          ],
+          "the topics": [
+            {
+              "confidence": 0.9771665334701538,
+              "end": 55,
+              "start": 46,
+              "text": "Q3 budget"
+            },
+            {
+              "confidence": 0.9310061931610107,
+              "end": 66,
+              "start": 60,
+              "text": "hiring"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 30,
+      "labels": [
+        "the sender"
+      ],
+      "output": {
+        "entities": {
+          "the sender": [
+            {
+              "confidence": 0.995430588722229,
+              "end": 35,
+              "start": 21,
+              "text": "Dana Whitfield"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    },
+    {
+      "input_tokens": 30,
+      "labels": [
+        "the topics"
+      ],
+      "output": {
+        "entities": {
+          "the topics": [
+            {
+              "confidence": 0.8198025226593018,
+              "end": 55,
+              "start": 46,
+              "text": "Q3 budget"
+            },
+            {
+              "confidence": 0.6331368684768677,
+              "end": 66,
+              "start": 60,
+              "text": "hiring"
+            }
+          ]
+        }
+      },
+      "text": "Move the emails from Dana Whitfield about the Q3 budget and hiring to the Finance folder.",
+      "threshold": 0.5
+    }
+  ],
+  "recorded_with": {
+    "gliner2": "2.1.0",
+    "huggingface_hub": "2.3.0",
+    "python": "3.11.13",
+    "revision": "7132dc4561c3f94563c6147e75ffa8ef34c4964a",
+    "torch": "2.14.1",
+    "transformers": "5.20.2"
+  }
+}

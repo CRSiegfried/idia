@@ -38,6 +38,8 @@ Changelog = "https://github.com/CRSiegfried/idia/blob/main/CHANGELOG.md"
 system-one = ["httpx2>=2.16"]
 openai = ["openai>=3.35.1", "httpx2>=2.16"]
 cloudflare = ["httpx2>=2.16"]
+# One extra per model run in process. torch is named so that it comes from the CPU-only index.
+gliner = ["gliner2[local]>=2.0.0", "torch>=2.1", "protobuf>=4", "sentencepiece>=0.2"]
 
 [dependency-groups]
 dev = [
@@ -48,6 +50,14 @@ dev = [
     "httpx2>=2.16",
     "openai>=3.35.1",
 ]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["hatchling"]
