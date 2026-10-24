@@ -228,6 +228,8 @@ idia 0.1.0 is the first release. Before 1.0 a minor release may break the API, e
 listed in the [changelog](CHANGELOG.md). A public name, one in `idia.__all__` or in the
 `__all__` of a module [CONTRIBUTING.md](CONTRIBUTING.md#ground-rules-for-changes) lists, is
 removed or changed only after one minor release in which it raises a `DeprecationWarning`.
+A new `Capabilities` field is required, so a minor release that adds one breaks a record written
+by hand; each such field is listed under **Changed**.
 
 ## Development
 

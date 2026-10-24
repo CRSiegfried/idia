@@ -406,3 +406,15 @@ def test_a_router_sends_a_structured_instruction_to_a_member_that_carries_it() -
     response = asyncio.run(router.answer(request(structured())))
     assert len(nouls.calls) == 1
     assert [outcome.keys for outcome in response.outcomes] == [("q",)]
+
+
+def test_a_parsed_instruction_is_held_read_only_all_the_way_down() -> None:
+    parsed = json.loads('{"question": "Is it so?", "parts": ["a", {"b": ["c"]}]}')
+    question = Question(key="q", kind="noul", instruction=parsed)
+    held = cast(Any, question.instruction)
+    assert held == {"question": "Is it so?", "parts": ("a", {"b": ("c",)})}
+    assert isinstance(held["parts"], tuple)
+    with pytest.raises(TypeError):
+        held["parts"][1]["b"] = "changed"
+    parsed["parts"][1]["b"].append("d")
+    assert held["parts"][1]["b"] == ("c",)

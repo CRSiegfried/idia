@@ -13,7 +13,7 @@ The public names are those in `idia.__all__` and in the `__all__` of each module
   It types a structured part, a structured instruction, raw usage, the prompt sent and the raw body.
 - A **question** is `Question(key, kind, instruction, labels=(), value_type=None, is_list=False)`.
   `labels` holds `Label(name, description=None)` entries in the order asked; for a `score` a level's position from 0 is its value.
-  `instruction` is a non-empty string, or a non-empty JSON object (a mapping with string keys) or array (a tuple) for a wire API that takes structure; it is held as given, its inner values unchecked, and left out of the question's `hash()`.
+  `instruction` is a non-empty string, or a non-empty JSON object (a mapping with string keys) or array (a tuple) for a wire API that takes structure; it is held read-only all the way down, each object a read-only mapping and each list inside it a tuple, so `json.loads` output may be passed, its scalar values unchecked, and it is left out of the question's `hash()`; a list at the top is refused, an array being a tuple.
   A `choice` needs two or more labels and a `score` one or more; an `extraction` and a `box` take none.
   A `noul` takes none, or exactly `Label(name="yes", ...)` then `Label(name="no", ...)` with at least one described: the wording of what counts as each; its answer is still one probability of yes.
   A leaf sends a question's wording or refuses it, and never drops it: its record's `carries_noul_descriptions` and `carries_structured_instructions` say which it sends, Fit refuses the rest before any call, and the leaf itself refuses a call made past Fit with a non-retryable `ProviderError`; [Providers](providers.md) says which leaf does which.

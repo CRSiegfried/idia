@@ -58,8 +58,8 @@ async def main(messages: list[str]) -> None:
 
 - Put every question about one input in one `Request`. That is what batches them; a request
   per question sends the input once per question.
-- The deadline is one instant for the whole request: every call, retry and rate-limit wait,
-  across all its calls.
+- `Deadline.after(seconds)` takes seconds from now. The deadline is one instant for the
+  whole request: every call, retry and rate-limit wait, across all its calls.
 - Use `async with`, which closes the HTTP client the provider created; a `client=` you pass
   in stays yours to close.
 - Read `outcome.calibrated` before treating a probability as calibrated.

@@ -529,8 +529,8 @@ class Question:
     """One question put to a provider: a key, a kind, its instruction and its labels in order.
 
     The instruction is a non-empty string, or a non-empty JSON object or array for a wire API
-    that takes structure; an object is held read-only, as a request's options are, its
-    values as given, and the instruction is left out of the question's hash. A leaf
+    that takes structure; it is held read-only all the way down, each object a read-only
+    mapping and each list a tuple, and left out of the question's hash. A leaf
     sends it as it is or refuses it before sending, and never drops it.
 
     A ``choice`` takes two or more labels and a ``score`` one or more levels, both in
@@ -552,9 +552,8 @@ class Question:
         _check_text("Question", "key", self.key)
         _check_type("Question", "kind", self.kind, str, "a str")
         _check_instruction(self.instruction)
-        if isinstance(self.instruction, Mapping):
-            frozen = MappingProxyType(dict(cast(Mapping[str, JsonValue], self.instruction)))
-            object.__setattr__(self, "instruction", frozen)
+        if not isinstance(self.instruction, str):
+            object.__setattr__(self, "instruction", _frozen_json(self.instruction))
         _check_items("Question", "labels", self.labels, Label, "a Label")
         _check_type("Question", "is_list", self.is_list, bool, "a bool")
         if self.value_type is not None:
@@ -602,6 +601,17 @@ class Question:
 
 _NOUL_LABELS: Final = ("yes", "no")
 """The names a ``noul``'s labels take, in order, when it describes them."""
+
+
+def _frozen_json(value: object) -> JsonValue:
+    """``value`` read-only all the way down: every object a read-only mapping, every list or
+    tuple a tuple, as ``JsonValue`` types them, so ``json.loads`` output can be passed."""
+    if isinstance(value, Mapping):
+        items = cast(Mapping[str, object], value).items()
+        return MappingProxyType({key: _frozen_json(item) for key, item in items})
+    if isinstance(value, (list, tuple)):
+        return tuple(_frozen_json(item) for item in cast(Sequence[object], value))
+    return cast(JsonValue, value)
 
 
 def _check_instruction(instruction: object) -> None:

@@ -128,9 +128,9 @@ asyncio.run(main())
 Each answer is a `NoulAnswer`, `LabelAnswer`, `ExtractionAnswer`, `BoxAnswer`, `Refusal` or
 `Fault`; a fault is scoped to its question, and its siblings stand. A request idia cannot
 split to fit (a kind the provider lacks, too many labels on one question, an input too long
-for one call) raises `DoesNotFit` before any call; it is never truncated. When no wire
-request answers, `answer` raises `RequestFailed`, which carries the response and its
-outcomes. Give Clef a token that is not one and read why:
+for one call, a wording form its record does not carry) raises `DoesNotFit` before any call;
+it is never truncated. When no wire request answers, `answer` raises `RequestFailed`, which
+carries the response and its outcomes. Give Clef a token that is not one and read why:
 
 ```python
 import asyncio
