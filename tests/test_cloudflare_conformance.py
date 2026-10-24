@@ -65,6 +65,9 @@ def _not_applicable(checks: Iterable[Check]) -> set[str]:
     verdicts = asyncio.run(run_checks(checks))
     failed = {v.id: v.reason for v in verdicts if v.result == "fail"}
     assert not failed, failed
+    # A wire leaf gives a request id and both token counts: L26 and P8 pass with no note.
+    noted = {v.id: v.reason for v in verdicts if v.id in ("L26", "P8") and v.reason}
+    assert not noted, noted
     return {v.id for v in verdicts if v.result == "not_applicable"}
 
 
