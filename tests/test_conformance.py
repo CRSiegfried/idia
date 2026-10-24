@@ -1652,7 +1652,7 @@ def test_l26_and_p8_pass_a_leaf_that_gives_a_reason_for_each_detail_it_has_none_
     ("fields", "reason"),
     [
         pytest.param({"request_id": None}, "request_id has neither", id="no-reason"),
-        pytest.param({"request_id": ""}, "request_id has neither", id="empty-request-id"),
+        pytest.param({"request_id": ""}, "the request id is empty", id="empty-request-id"),
         pytest.param(
             {"versions": {"torch": "2.1"}, "unreported": {}},
             "usage.passes has neither",

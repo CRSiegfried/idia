@@ -607,3 +607,16 @@ def test_a_response_whose_elicitation_has_a_reason_is_refused(tmp_path: Path) ->
     response = _response(elicitation=None, snapshot="v1", unreported={"elicitation": "hidden"})
     with pytest.raises(ValueError, match="always a value"):
         _upgraded(response, "system-one", None, tmp_path / "log.json")
+
+
+def test_the_suite_reads_values_as_core_does_and_flags_an_empty_request_id() -> None:
+    from idia.conformance import _base
+
+    assert not hasattr(_base, "held")
+    response = _response(
+        request_id="",
+        unreported={"snapshot": "not-pinned", "usage.input_tokens": "not-reported"}
+        | {"usage.output_tokens": "not-reported", "usage.passes": "not-reported"}
+        | {"versions": "not-applicable", "prompt_sent": "not-reported"},
+    )
+    assert profile_problems(response) == ["the request id is empty; a leaf with none gives None"]
