@@ -672,6 +672,15 @@ def test_an_upgraded_log_keeps_its_mode_and_is_written_where_its_link_points(
     assert '"unreported"' in target.read_text(encoding="utf-8")
 
 
+_ERROR: dict[str, Any] = {
+    "message": "boom",
+    "is_retryable": False,
+    "retry_after": None,
+    "status_code": 500,
+    "request_id": None,
+}
+
+
 @pytest.mark.parametrize(
     "change",
     [
@@ -680,6 +689,14 @@ def test_an_upgraded_log_keeps_its_mode_and_is_written_where_its_link_points(
         "features-unhashable",
         "raw-body-of-no-shape",
         "an-entry-not-a-mapping",
+        "an-entry-of-both",
+        "an-entry-of-neither",
+        "retry-after-a-string",
+        "retry-after-infinite",
+        "is-retryable-a-string",
+        "status-code-a-string",
+        "base64-not-base64",
+        "nan",
     ],
 )
 def test_a_log_that_is_not_a_recorded_leafs_is_refused_with_value_error(
@@ -698,8 +715,24 @@ def test_a_log_that_is_not_a_recorded_leafs_is_refused_with_value_error(
         document["enabled_features"] = [[1]]
     elif change == "raw-body-of-no-shape":
         entries[0]["response"]["raw_body"] = {"x": 1}
-    else:
+    elif change == "an-entry-not-a-mapping":
         entries.append(5)
+    elif change == "an-entry-of-both":
+        entries[0]["error"] = _ERROR
+    elif change == "an-entry-of-neither":
+        entries.append({})
+    elif change == "base64-not-base64":
+        entries[0]["response"]["raw_body"] = {"base64": "!!"}
+    elif change == "nan":
+        entries[0]["response"]["raw_body"] = {"json": {"score": float("nan")}}
+    else:
+        field, value = {
+            "retry-after-a-string": ("retry_after", "x"),
+            "retry-after-infinite": ("retry_after", float("inf")),
+            "is-retryable-a-string": ("is_retryable", "yes"),
+            "status-code-a-string": ("status_code", "a"),
+        }[change]
+        entries.append({"error": {**_ERROR, field: value}})
     log.write_text(json.dumps(document), encoding="utf-8")
     with pytest.raises(ValueError, match="is not a recorded leaf's log"):
         upgrade_log(log)
@@ -716,3 +749,65 @@ def test_a_log_nested_past_the_parsers_depth_is_refused_with_value_error(
     log.write_text("[" * 100_000, encoding="utf-8")
     with pytest.raises(ValueError, match="nests too deep"):
         upgrade_log(log)
+
+
+def test_a_log_whose_errors_and_bodies_are_well_formed_loads(tmp_path: Path) -> None:
+    log = _old_log(tmp_path, "system-one", _bare())
+    document: dict[str, Any] = json.loads(log.read_text(encoding="utf-8"))
+    entries: list[Any] = next(iter(cast(dict[str, list[Any]], document["calls"]).values()))
+    entries[0]["response"]["raw_body"] = {"base64": "aGk="}
+    entries.append({"error": {**_ERROR, "retry_after": 1.5, "request_id": "r-1"}})
+    log.write_text(json.dumps(document), encoding="utf-8")
+    Recorded(None, log, "none", capabilities=capabilities())
+
+
+def test_a_link_to_nothing_is_refused_and_nothing_is_created(tmp_path: Path) -> None:
+    if sys.platform == "win32":
+        pytest.skip("POSIX links")
+    log = tmp_path / "link.json"
+    log.symlink_to(tmp_path / "elsewhere" / "log.json")
+    leaf = Scripted(capabilities=capabilities(), script=[_bare()], name="system-one")
+    with pytest.raises(ValueError, match="link to nothing"):
+        asyncio.run(Recorded(leaf, log, "once").call(_wire(), Deadline.after(5)))
+    assert not (tmp_path / "elsewhere").exists()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX modes")
+def test_a_private_log_stays_private_through_a_rewrite(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "system-one", _bare())
+    log.chmod(0o600)
+    assert upgrade_log(log) == 1
+    assert stat.S_IMODE(log.stat().st_mode) == 0o600
+
+
+def test_a_call_whose_write_fails_is_not_kept_for_replay(tmp_path: Path) -> None:
+    log = tmp_path / "log.json"
+    nan = _bare(usage=Usage(input_tokens=1, output_tokens=1, raw_usage={"x": float("nan")}))
+    leaf = Scripted(capabilities=capabilities(), script=[nan, _bare()], name="system-one")
+    recorder = Recorded(leaf, log, "once")
+    with pytest.raises(ValueError, match="Out of range float values"):
+        asyncio.run(recorder.call(_wire(), Deadline.after(5)))
+    asyncio.run(recorder.call(_wire(), Deadline.after(5)))
+    assert len(leaf.calls) == 2  # the refused call was not replayed from memory
+
+
+def test_a_callers_reason_for_the_passes_wins_over_not_exposed(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"passes": 2})
+    log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
+    reasons: dict[Any, Any] = {"versions": "not-applicable", "usage.passes": "hidden"}
+    assert upgrade_log(log, reasons=reasons) == 1
+    (response,) = _replayed(log)
+    assert response.unreported["usage.passes"] == "hidden"
+
+
+def test_an_unknown_leaf_whose_reasons_leave_out_the_passes_is_refused(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"passes": 2})
+    log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
+    with pytest.raises(ValueError, match=r"leave out usage\.passes"):
+        upgrade_log(log, reasons={"versions": "not-applicable"})

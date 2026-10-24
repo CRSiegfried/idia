@@ -28,6 +28,7 @@ from __future__ import annotations
 import base64
 import contextlib
 import json
+import math
 import os
 import secrets
 import stat
@@ -185,8 +186,9 @@ class Recorded:
 
     def _store(self, key: str, entry: _Entry) -> None:
         """Append ``entry`` under ``key`` and rewrite the whole log through a temporary
-        file, so a reader never sees half a log."""
-        self._recorded.setdefault(key, []).append(entry)
+        file, so a reader never sees half a log. An entry the write refuses is not kept."""
+        entries = self._recorded.setdefault(key, [])
+        entries.append(entry)
         document = {
             "format": _FORMAT,
             "name": self.name,
@@ -194,26 +196,40 @@ class Recorded:
             "enabled_features": sorted(self.capabilities.enabled_features),
             "calls": self._recorded,
         }
-        _write(self._log, document)
+        try:
+            _write(self._log, document)
+        except BaseException:
+            entries.pop()
+            if not entries:
+                del self._recorded[key]
+            raise
 
 
 def _write(log: Path, document: typing.Mapping[str, object]) -> None:
     """Write ``document`` to ``log`` whole, sorted and indented, in UTF-8 with LF line
     endings, through a temporary file replaced in one step, so a reader never sees half a
-    log. A log that exists keeps its mode, and one that is a link is written where it
-    points; a new log takes the mode the process's umask gives a new file."""
+    log. A log that exists keeps its permission bits, set before anything is written, and
+    one that is a link is written where it points; a link to nothing is refused with
+    ``ValueError``, and a new log takes the mode the process's umask gives a new file."""
     text = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    if log.is_symlink() and not log.exists():
+        raise ValueError(f"{log} is a link to nothing; a log is written only where it points")
     log = log.resolve()
+    try:
+        mode: int | None = stat.S_IMODE(log.stat().st_mode) & 0o777
+    except FileNotFoundError:
+        mode = None
     log.parent.mkdir(parents=True, exist_ok=True)
     temporary = log.parent / f".{log.name}.{secrets.token_hex(8)}"
-    handle = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    handle = os.open(temporary, flags, 0o666 if mode is None else 0o600)
     try:
+        if mode is not None:
+            os.chmod(temporary, mode)
         with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as file:
             file.write(text)
             file.flush()
             os.fsync(file.fileno())
-        with contextlib.suppress(FileNotFoundError):
-            os.chmod(temporary, stat.S_IMODE(log.stat().st_mode))
         os.replace(temporary, log)
     finally:
         with contextlib.suppress(FileNotFoundError):
@@ -237,9 +253,11 @@ def _load(log: Path) -> _Log:
     document that is not a recorded leaf's log, each entry read as a replay would read it."""
     text = log.read_text(encoding="utf-8")
     try:
-        document: object = json.loads(text)
+        document: object = json.loads(text, parse_constant=_no_constant)
     except RecursionError:
         raise ValueError(f"{log} is not a recorded leaf's log: it nests too deep") from None
+    except _Constant as error:
+        raise ValueError(f"{log} is not a recorded leaf's log: {error}") from None
     if not isinstance(document, dict):
         raise ValueError(f"{log} is not a recorded leaf's log")
     held = cast(dict[str, object], document)
@@ -256,6 +274,14 @@ def _load(log: Path) -> _Log:
     except (KeyError, TypeError, AttributeError, ValueError, RecursionError) as error:
         raise ValueError(f"{log} is not a recorded leaf's log: {error!r}") from error
     return loaded
+
+
+class _Constant(ValueError):
+    """A ``NaN`` or infinity in a log, which JSON does not allow and the writer refuses."""
+
+
+def _no_constant(name: str) -> object:
+    raise _Constant(f"it holds {name}, which is not a JSON number")
 
 
 def _string(value: object) -> str:
@@ -276,6 +302,8 @@ def _calls(value: object) -> dict[str, list[_Entry]]:
             if not isinstance(entry, dict):
                 raise TypeError(f"an entry under {key!r} is not a mapping")
             checked = cast(_Entry, entry)
+            if ("error" in checked) == ("response" in checked):
+                raise TypeError(f"an entry under {key!r} holds not exactly one of error, response")
             if "error" in checked:
                 _recorded_error(checked)
             else:
@@ -322,6 +350,24 @@ def _response(response: WireResponse) -> _Entry:
 def _recorded_error(entry: _Entry) -> ProviderError:
     """The recorded error as a plain ``ProviderError``."""
     fields = cast(dict[str, typing.Any], entry["error"])
+    retry_after = fields["retry_after"]
+    checks = {
+        "message": isinstance(fields["message"], str),
+        "is_retryable": isinstance(fields["is_retryable"], bool),
+        "retry_after": retry_after is None
+        or (
+            isinstance(retry_after, int | float)
+            and not isinstance(retry_after, bool)
+            and math.isfinite(retry_after)
+            and retry_after >= 0
+        ),
+        "status_code": fields["status_code"] is None
+        or (isinstance(fields["status_code"], int) and not isinstance(fields["status_code"], bool)),
+        "request_id": fields["request_id"] is None or isinstance(fields["request_id"], str),
+    }
+    wrong = [name for name, held in checks.items() if not held]
+    if wrong:
+        raise TypeError(f"a recorded error's {wrong} have the wrong type")
     return ProviderError(
         fields["message"],
         is_retryable=fields["is_retryable"],
@@ -341,7 +387,7 @@ def _replay(entry: _Entry) -> WireResponse:
     if raw is None:
         return response
     if "base64" in raw:
-        return replace(response, raw_body=base64.b64decode(cast(str, raw["base64"])))
+        return replace(response, raw_body=base64.b64decode(cast(str, raw["base64"]), validate=True))
     return replace(response, raw_body=thaw(raw["json"]))
 
 
@@ -465,13 +511,12 @@ def _upgraded(
             continue
         if detail == "snapshot":
             unreported[detail] = "not-pinned"
-        elif detail == "usage.passes" and _raw_passes(filled):
-            # The wire reported it, but the idia that recorded the log did not read it.
-            unreported[detail] = "not-exposed"
         elif detail in rules:
             unreported[detail] = rules[detail]
         elif name in _WIRE or name in {"scripted", "gliner"}:
-            unreported[detail] = "not-reported"
+            # A pass count the wire reported but the recording idia did not read.
+            passes = detail == "usage.passes" and _raw_passes(filled)
+            unreported[detail] = "not-exposed" if passes else "not-reported"
         else:
             raise ValueError(f"{log}: the reasons given for {name!r} leave out {detail}")
     return replace(filled, unreported=unreported, claimed=frozenset(claimed - set(unreported)))
