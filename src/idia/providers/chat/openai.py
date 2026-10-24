@@ -279,7 +279,7 @@ class OpenAIChat(OpenAILeafBase):
         normalized = usage(
             cast(Mapping[str, JsonValue], raw_usage), "prompt_tokens", "completion_tokens"
         )
-        request_id = response.headers.get(REQUEST_ID_HEADER)
+        request_id = response.headers.get(REQUEST_ID_HEADER) or None
         return WireResponse(
             answers=answers,
             elicitation="logprobs",

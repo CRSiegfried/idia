@@ -126,13 +126,13 @@ These names are shared with ommat, which calls `snapshot` its revision, `version
 `WireResponse` and `Outcome` each carry four provenance fields, read-only and empty by default:
 
 - `versions: Mapping[str, str]`: the versions of the runtime that ran the model, package to version, with `python` for the interpreter; empty for a wire API, whose runtime is the service's own; a per-call backend fingerprint a wire API returns, such as OpenAI's `system_fingerprint`, is no version and stays in the raw body.
-- `client_versions: Mapping[str, str]`: the versions of the client libraries that made the call; the dispatcher adds `idia`, its own version, on every outcome, its entry winning, and a leaf never sets it.
+- `client_versions: Mapping[str, str]`: the versions of the client libraries that made the call; a leaf fills it and never sets the key `idia`, which the dispatcher adds, its own version, on every outcome, its entry winning.
 - `unreported: Mapping[ProvenanceDetail, UnreportedReason]`: the reason for each detail that holds no value, one of `REASONS`: `not-reported`, the provider or runtime gives none; `not-pinned`, no fixed version was asked for or resolved, the snapshot's reason exactly when the `no-snapshot` warning is given; `not-sent`, the wire request failed, sent or not, which only the dispatcher gives; `hidden`, the provider's service withholds it; `not-applicable`, the detail has no meaning for this source or its kind of model, such as `versions` for a wire API or the output tokens of an encoder; `not-exposed`, a library between the provider and the caller has it but does not make it public.
 - `claimed: frozenset[ProvenanceDetail]`: the details whose value the source asserts but cannot verify, such as a model id a leaf states as its own constant, or a revision a caller names for a model it loaded itself.
 
 Either constructor raises `ValueError` for a key of `unreported` or `claimed` outside `DETAILS`, a reason outside `REASONS`, a detail both unreported and claimed, a detail that holds a value and has a reason, or a claimed detail that holds none, and `TypeError` for a field of the wrong shape.
 That every detail with no value has a reason is checked by the conformance suite, not the constructor, so a hand-built response still builds.
-An answered outcome carries its wire response's `versions`, `unreported` and `claimed` as given; a failed outcome, sent or not, has `not-sent` for each detail that holds no value, a request id its error carries staying a value, and claims nothing.
+An answered outcome carries its wire response's `versions`, `unreported` and `claimed` as given, and its `client_versions` with `idia` added; a failed outcome, sent or not, has `not-sent` for each detail that holds no value, a request id its error carries staying a value, and claims nothing.
 
 ### Usage
 

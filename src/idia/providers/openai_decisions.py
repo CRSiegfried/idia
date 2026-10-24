@@ -217,7 +217,7 @@ class OpenAIDecisions(OpenAILeafBase):
         normalized = usage(
             cast(Mapping[str, JsonValue], raw_usage), "input_tokens", "output_tokens"
         )
-        request_id = response.headers.get(REQUEST_ID_HEADER)
+        request_id = response.headers.get(REQUEST_ID_HEADER) or None
         return WireResponse(
             answers=answers,
             elicitation="passthrough",

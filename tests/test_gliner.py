@@ -152,8 +152,12 @@ def test_load_reports_the_commit_the_revision_resolved_to(
     pinned = asyncio.run(run("main"))
     assert pinned.snapshot == "c0ffee"
     assert not [w for w in pinned.warnings if w.code == WARNING_NO_SNAPSHOT]
+    # A commit the leaf resolved itself is a value it verified, not a claim.
+    assert pinned.claimed == {"model_reported"}
+    assert "snapshot" not in pinned.unreported
     unpinned = asyncio.run(run(None))
     assert unpinned.snapshot is None
+    assert unpinned.unreported["snapshot"] == "not-pinned"
     assert [w.field for w in unpinned.warnings if w.code == WARNING_NO_SNAPSHOT] == ["snapshot"]
     assert model.calls == 4  # per leaf, one warm-up and one call
 
@@ -491,7 +495,7 @@ def test_the_response_carries_the_snapshot_usage_versions_and_its_reasons() -> N
     assert response.warnings == ()
 
 
-def test_a_snapshot_it_resolved_is_not_claimed_and_none_is_not_pinned() -> None:
+def test_an_injected_model_with_no_revision_is_not_pinned() -> None:
     unpinned = _call(
         Gliner(revision=None, runtime=Playback([Success("extraction")])), _wire(SENDER, TOPICS)
     )

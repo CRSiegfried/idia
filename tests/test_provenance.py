@@ -23,10 +23,13 @@ from idia import (
     REASONS,
     Deadline,
     Dispatcher,
+    LabelAnswer,
     NoulAnswer,
+    Outcome,
     ProviderError,
     Question,
     RequestFailed,
+    Response,
     RetryPolicy,
     Rounding,
     State,
@@ -37,7 +40,7 @@ from idia import (
 )
 from idia.providers.recorded import Recorded
 from idia.providers.scripted import Reply, Scripted
-from tests._support import capabilities, noul, request
+from tests._support import capabilities, choice, noul, request
 
 _ROUNDING = Rounding(probability_decimals=2, score_decimals=2)
 
@@ -50,6 +53,28 @@ def _response(**fields: Any) -> WireResponse:
         "model_reported": "m",
     }
     return WireResponse(**{**base, **fields})
+
+
+def _outcome(**fields: Any) -> Outcome:
+    base: dict[str, Any] = {
+        "keys": ("q",),
+        "error": None,
+        "provider": "p",
+        "model_requested": "m",
+        "model_reported": "m",
+        "snapshot": None,
+        "elicitation": "passthrough",
+        "calibrated": False,
+        "prompt_sent": None,
+        "usage": None,
+        "latency": 0.0,
+        "started_at": 1.0,
+        "request_id": None,
+        "failed_attempts": (),
+        "warnings": (),
+        "rounding": _ROUNDING,
+    }
+    return Outcome(**{**base, **fields})
 
 
 # ----------------------------------------------------------------------------------------
@@ -104,11 +129,13 @@ def test_the_new_fields_default_empty_and_are_read_only() -> None:
         ({"claimed": frozenset({"snapshot"})}, "claimed but holds no value"),
     ],
 )
-def test_a_wire_response_refuses_an_inconsistent_profile(
+def test_a_wire_response_and_an_outcome_refuse_an_inconsistent_profile(
     fields: dict[str, Any], message: str
 ) -> None:
     with pytest.raises(ValueError, match=message):
         _response(**fields)
+    with pytest.raises(ValueError, match=message):
+        _outcome(**fields)
 
 
 @pytest.mark.parametrize(
@@ -121,11 +148,13 @@ def test_a_wire_response_refuses_an_inconsistent_profile(
         {"claimed": "snapshot"},
     ],
 )
-def test_a_wire_response_refuses_a_provenance_field_of_the_wrong_shape(
+def test_a_wire_response_and_an_outcome_refuse_a_provenance_field_of_the_wrong_shape(
     fields: dict[str, Any],
 ) -> None:
     with pytest.raises(TypeError):
         _response(**fields)
+    with pytest.raises(TypeError):
+        _outcome(**fields)
 
 
 def test_usage_figures_are_held_through_usage() -> None:
@@ -192,6 +221,77 @@ def test_a_wire_request_never_sent_gives_not_sent_to_its_request_id_too() -> Non
     (outcome,) = raised.value.response.outcomes
     assert outcome.attempts == 0
     assert dict(outcome.unreported) == dict.fromkeys(DETAILS, "not-sent")
+
+
+def _two_noul_plan(script: list[Any], **dispatcher: Any) -> RequestFailed | Response:
+    record = capabilities(max_questions=1)
+    leaf = Scripted(capabilities=record, script=script)
+    dispatch = Dispatcher(leaf, retry=RetryPolicy.without_delay(), **dispatcher)
+
+    async def ask() -> RequestFailed | Response:
+        try:
+            return await dispatch.answer(request(noul("a"), noul("b")))
+        except RequestFailed as failed:
+            return failed
+
+    return asyncio.run(ask())
+
+
+def test_a_wire_request_left_unsent_by_a_credential_error_gives_not_sent_to_all() -> None:
+    refused = ProviderError("unauthorized", status_code=401, request_id="r-1")
+    ended = _two_noul_plan([refused])
+    assert isinstance(ended, RequestFailed)
+    first, unsent = ended.response.outcomes
+    assert first.request_id == "r-1"
+    assert unsent.request_id is None
+    assert unsent.error is refused
+    assert dict(unsent.unreported) == dict.fromkeys(DETAILS, "not-sent")
+
+
+def test_a_retry_the_deadline_cannot_fit_gives_not_sent_and_keeps_the_attempts_id() -> None:
+    busy = ProviderError("busy", is_retryable=True, status_code=503, request_id="r-2")
+    leaf = Scripted(capabilities=capabilities(), script=[busy])
+    retry = RetryPolicy(attempts=3, base_delay=60.0, jitter=0.0)
+    with pytest.raises(RequestFailed) as raised:
+        asyncio.run(Dispatcher(leaf, retry=retry).answer(request(noul(), seconds=5.0)))
+    (outcome,) = raised.value.response.outcomes
+    assert outcome.request_id is None
+    assert [attempt.request_id for attempt in outcome.failed_attempts] == ["r-2"]
+    assert dict(outcome.unreported) == dict.fromkeys(DETAILS, "not-sent")
+
+
+def test_a_routers_outcomes_carry_each_members_own_rounding() -> None:
+    from idia import Router
+
+    label = Rounding(probability_decimals=2, score_decimals=2)
+    yes = Rounding(probability_decimals=4, score_decimals=None)
+    choices = Scripted(
+        capabilities=capabilities(kinds=frozenset({"choice"}), rounding=label),
+        script=[{"c": LabelAnswer(probabilities=(("red", 0.5), ("green", 0.3), ("blue", 0.2)))}],
+    )
+    nouls = Scripted(
+        capabilities=capabilities(kinds=frozenset({"noul"}), rounding=yes),
+        script=[{"n": NoulAnswer(probability=0.25)}],
+    )
+    router = Router({"choice": Dispatcher(choices), "noul": Dispatcher(nouls)})
+    response = asyncio.run(router.answer(request(choice("c"), noul("n"))))
+    by_keys = {outcome.keys: outcome.rounding for outcome in response.outcomes}
+    assert by_keys == {("c",): label, ("n",): yes}
+
+
+def test_a_fallbacks_answering_outcome_keeps_its_own_provenance() -> None:
+    from idia import Fallback
+
+    refused = ProviderError("refused", status_code=400)
+    first = Scripted(capabilities=capabilities(), script=[refused], name="first")
+    reply = Reply(answers={"q": NoulAnswer(probability=0.25)}, versions={"runtime": "1"})
+    second = Scripted(capabilities=capabilities(), script=[reply], name="second")
+    response = asyncio.run(Fallback([Dispatcher(first), Dispatcher(second)]).answer(request()))
+    (outcome,) = response.outcomes
+    assert outcome.provider == "second"
+    assert dict(outcome.versions) == {"runtime": "1"}
+    assert len(outcome.failed_attempts) == 1
+    assert dict(outcome.unreported) == {"usage.passes": "not-reported"}
 
 
 # ----------------------------------------------------------------------------------------
@@ -288,3 +388,10 @@ def test_wire_unreported_gives_the_reasons_a_wire_leaf_states() -> None:
         "usage.passes": "not-reported",
         "request_id": "not-reported",
     }
+
+
+def test_client_versions_never_gives_idia_which_dispatch_adds() -> None:
+    pytest.importorskip("httpx2")
+    from idia.providers.http import client_versions
+
+    assert "idia" not in client_versions("idia", "httpx2")

@@ -303,9 +303,15 @@ async def _p8(harness: ProviderHarness) -> str | None:
         if outcome.client_versions.get("idia") != VERSION:
             problems.append(f"client_versions holds idia {outcome.client_versions.get('idia')}")
         expect(not problems, f"the outcome for {outcome.keys}: {'; '.join(problems)}")
+    notes: list[str] = []
     if harness.shape == "leaf":
-        await _p8_as_the_leaf_gave_it(harness, request, response)
-    return await _p8_failed(harness, request)
+        try:
+            await _p8_as_the_leaf_gave_it(harness, request, response)
+        except CheckNotApplicable as not_applicable:
+            notes.append(f"the outcome was not compared with its leaf's: {not_applicable.reason}")
+    failed = await _p8_failed(harness, request)
+    notes += [failed] if failed else []
+    return "; ".join(notes) or None
 
 
 async def _p8_as_the_leaf_gave_it(

@@ -589,6 +589,9 @@ async def _l26(harness: LeafHarness) -> str | None:
     for kind in _claimed(harness):
         response = await _send(harness, kind, Success(kind))
         problems = profile_problems(response)
+        always = [d for d in ("elicitation", "calibrated") if d in response.unreported]
+        if always:
+            problems.append(f"{always} must hold a value, never a reason")
         sent = sorted(d for d, reason in response.unreported.items() if reason == "not-sent")
         if sent:
             problems.append(f"{sent} are not-sent, which only Dispatch gives a failed outcome")

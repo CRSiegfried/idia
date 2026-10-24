@@ -278,7 +278,8 @@ class Dispatcher:
         self, wire_request: WireRequest, error: ProviderError, warnings: tuple[Notice, ...]
     ) -> _Result:
         """The outcome of a wire request left unsent after a credential error: that error,
-        no attempts and no request id, as for one never sent because the deadline passed."""
+        no attempts and no request id, as for one never sent because the deadline passed, so
+        every provenance detail is ``not-sent``."""
         started_at = time.time()
         start = time.monotonic()
         keys = tuple(question.key for question in wire_request.questions)
@@ -305,7 +306,8 @@ class Dispatcher:
         warnings: tuple[Notice, ...],
     ) -> Outcome:
         """A failed wire request's outcome: no wire response, so no provenance from one, and
-        ``not-sent`` for each detail with no value; the request id the error carries stays."""
+        ``not-sent`` for each detail with no value; the ``request_id`` given, the id of this wire
+        request's own last call, stays a value."""
         sent: dict[ProvenanceDetail, UnreportedReason] = dict.fromkeys(DETAILS, "not-sent")
         if request_id is not None:
             del sent["request_id"]

@@ -1665,6 +1665,11 @@ def test_l26_and_p8_pass_a_leaf_that_gives_a_reason_for_each_detail_it_has_none_
         ),
         pytest.param({"client_versions": {"idia": "9"}}, "sets idia", id="sets-idia"),
         pytest.param(
+            {"elicitation": None, "unreported": {**_WIRE, "elicitation": "hidden"}},
+            "must hold a value",
+            id="elicitation-on-a-reason",
+        ),
+        pytest.param(
             {"prompt_sent": None, "unreported": {"prompt_sent": "hidden"}},
             "the prompt sent is hidden",
             id="hidden-unannounced",

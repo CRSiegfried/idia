@@ -1834,3 +1834,20 @@ def test_with_an_injected_client_a_clairic_call_on_a_second_loop_is_refused() ->
     assert raised.value.message == OTHER_LOOP
     assert not raised.value.is_retryable
     assert not client.is_closed
+
+
+def test_each_leaf_states_its_profile_with_these_reasons_and_claims_nothing() -> None:
+    answers = {"home_team": {"type": "text", "value": "Riverside Rovers", "p_null": 0.0}}
+    usage = {"input_tokens": 250, "output_tokens": 0, "passes": 2}
+    clairic = _read(EXTRACTION.questions[:1], answers, usage=usage)
+    clef = _call(_clef(_Wire(_ok(_clef_result(_NOUL)))), clef_request("noul"))
+    for response in (clairic, clef):
+        assert set(response.client_versions) == {"httpx2"}
+        assert response.claimed == frozenset()
+        assert dict(response.versions) == {}
+    assert dict(clairic.unreported) == {"versions": "not-applicable", "snapshot": "not-pinned"}
+    assert dict(clef.unreported) == {
+        "versions": "not-applicable",
+        "snapshot": "not-pinned",
+        "usage.passes": "not-reported",
+    }

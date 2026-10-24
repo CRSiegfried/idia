@@ -72,9 +72,11 @@ _USER_AGENT: Final = f"idia/{__version__}"
 def client_versions(*packages: str) -> dict[str, str]:
     """The installed version of each of ``packages``, the client libraries that make a
     leaf's call, read from the package metadata so an injected client gives the same; a
-    package with no metadata is left out. Dispatch adds idia's own."""
+    package with no metadata is left out, and so is ``idia``, which Dispatch adds."""
     versions: dict[str, str] = {}
     for package in packages:
+        if package == "idia":
+            continue
         try:
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
@@ -296,8 +298,8 @@ class HttpLeaf:
         )
 
     def request_id(self, response: httpx2.Response) -> str | None:
-        """The wire's request id, from the header the leaf named."""
-        return response.headers.get(self._request_id_header)
+        """The wire's request id, from the header the leaf named; an empty one is none."""
+        return response.headers.get(self._request_id_header) or None
 
     async def _post(
         self,
