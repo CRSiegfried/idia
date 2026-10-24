@@ -300,6 +300,9 @@ async def _p8(harness: ProviderHarness) -> str | None:
         problems = profile_problems(outcome)
         if "not-sent" in outcome.unreported.values():
             problems.append("an answered outcome gives not-sent")
+        always = [d for d in ("elicitation", "calibrated") if getattr(outcome, d) is None]
+        if always:
+            problems.append(f"{always} must hold a value on an answered outcome")
         if outcome.client_versions.get("idia") != VERSION:
             problems.append(f"client_versions holds idia {outcome.client_versions.get('idia')}")
         expect(not problems, f"the outcome for {outcome.keys}: {'; '.join(problems)}")

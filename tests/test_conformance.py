@@ -36,6 +36,7 @@ from idia import (
     Refusal,
     Request,
     RequestFailed,
+    Response,
     RetryPolicy,
     Router,
     Rule,
@@ -1720,3 +1721,96 @@ def test_p8_checks_the_failed_outcomes_where_the_harness_can_make_a_failure() ->
 
     p8 = _check(provider_checks(lambda: _wrapped(NoFailure)), "P8")
     assert p8 == Verdict("P8", "pass", "the failed half was not run: cannot fail")
+
+
+@pytest.mark.parametrize(
+    ("fields", "reason"),
+    [
+        pytest.param({"raw_body": None}, "the raw body is missing", id="no-raw-body"),
+        pytest.param(
+            {"prompt_sent": None, "unreported": {**_WIRE, "prompt_sent": "not-reported"}},
+            "only a hidden one is",
+            id="prompt-left-out-unhidden",
+        ),
+    ],
+)
+def test_l26_fails_a_wire_response_missing_what_it_must_carry(
+    fields: dict[str, object], reason: str
+) -> None:
+    l26 = _check(leaf_checks(_stripped({"unreported": _WIRE, **fields})), "L26")
+    assert l26.result == "fail"
+    assert l26.reason is not None
+    assert reason in l26.reason
+
+
+@pytest.mark.parametrize(
+    ("fields", "reason"),
+    [
+        pytest.param(
+            {"request_id": None, "unreported": {**_WIRE, "request_id": "not-sent"}},
+            "an answered outcome gives not-sent",
+            id="not-sent",
+        ),
+        pytest.param(
+            {"calibrated": None, "unreported": {**_WIRE, "calibrated": "hidden"}},
+            "must hold a value on an answered outcome",
+            id="calibrated-on-a-reason",
+        ),
+    ],
+)
+def test_p8_fails_an_answered_outcome_that_breaks_the_profile(
+    fields: dict[str, object], reason: str
+) -> None:
+    class Breaks(ScriptedProviders):
+        def _wrap(self, leaf: Scripted) -> Leaf:
+            return Strips(leaf, **fields)
+
+    p8 = _check(provider_checks(lambda: Breaks("leaf", [CAPABILITIES], CAPABILITIES)), "P8")
+    assert p8.result == "fail"
+    assert p8.reason is not None
+    assert reason in p8.reason
+
+
+def test_p8_fails_a_failed_outcome_with_a_reason_other_than_not_sent() -> None:
+    class Relabels:
+        def __init__(self, inner: Provider) -> None:
+            self._inner = inner
+
+        @property
+        def capabilities(self) -> Capabilities:
+            return self._inner.capabilities
+
+        async def answer(self, request: Request) -> Response:
+            try:
+                return await self._inner.answer(request)
+            except RequestFailed as failed:
+                outcomes = tuple(
+                    replace(o, unreported=dict.fromkeys(o.unreported, "not-reported"))
+                    for o in failed.response.outcomes
+                )
+                raise RequestFailed(replace(failed.response, outcomes=outcomes)) from None
+
+    class RelabelledProviders(ScriptedProviders):
+        def make(
+            self,
+            exchanges: Sequence[Sequence[Exchange]],
+            *,
+            overrides: Mapping[str, object] | None = None,
+        ) -> Provider:
+            return Relabels(super().make(exchanges, overrides=overrides))
+
+    p8 = _check(
+        provider_checks(lambda: RelabelledProviders("leaf", [CAPABILITIES], CAPABILITIES)), "P8"
+    )
+    assert p8.result == "fail"
+    assert p8.reason is not None
+    assert "have a reason other than not-sent" in p8.reason
+
+
+def test_p19_is_not_applicable_when_the_harness_can_make_no_leaf_to_record() -> None:
+    class NoLeaf(ScriptedProviders):
+        def leaf(self, exchanges: Sequence[Exchange]) -> Leaf:
+            raise CheckNotApplicable("no bare leaf")
+
+    p19 = _check(provider_checks(lambda: NoLeaf("leaf", [CAPABILITIES], CAPABILITIES)), "P19")
+    assert p19 == Verdict("P19", "not_applicable", "no bare leaf")

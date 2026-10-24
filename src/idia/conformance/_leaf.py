@@ -558,29 +558,22 @@ async def _l25(harness: LeafHarness) -> str | None:
     if not expected:
         raise CheckNotApplicable("the harness expects no extraction answer")
     guessed = {
-        key: answer for key, answer in expected.items() if answer.value is None and answer.guess
+        key: answer
+        for key, answer in expected.items()
+        if answer.value is None and answer.guess is not None
     }
     response = await _send(harness, "extraction", Success("extraction"))
-    if not guessed:
-        for key, wire in expected.items():
-            answer = response.answers.get(key)
-            expect(
-                isinstance(answer, ExtractionAnswer)
-                and (answer.value, answer.guess) == (wire.value, wire.guess),
-                f"{key}: the wire's value {wire.value!r} and guess {wire.guess!r} became "
-                f"{answer!r}",
-            )
-        return (
-            "no expected extraction has a null value and a guess, so only that the leaf fills "
-            "no guess was checked, not that a guess is kept and never moved into value"
-        )
-    for key, wire in guessed.items():
+    for key, wire in expected.items():
         answer = response.answers.get(key)
         expect(
             isinstance(answer, ExtractionAnswer)
-            and answer.value is None
-            and answer.guess == wire.guess,
-            f"{key}: the wire's guess {wire.guess!r} became {answer!r}",
+            and (answer.value, answer.guess) == (wire.value, wire.guess),
+            f"{key}: the wire's value {wire.value!r} and guess {wire.guess!r} became {answer!r}",
+        )
+    if not guessed:
+        return (
+            "no expected extraction has a null value and a guess, so only that the leaf fills "
+            "no guess was checked, not that a guess is kept and never moved into value"
         )
     return None
 
@@ -600,6 +593,10 @@ async def _l26(harness: LeafHarness) -> str | None:
             problems.append(
                 f"the prompt sent is hidden: {hidden}; the harness says hidden: "
                 f"{harness.prompt_hidden}"
+            )
+        if (response.prompt_sent is None) != harness.prompt_hidden:
+            problems.append(
+                f"the prompt sent is None: {response.prompt_sent is None}; only a hidden one is"
             )
         if response.raw_body is None:
             problems.append("the raw body is missing")
