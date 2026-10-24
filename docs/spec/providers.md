@@ -1,7 +1,7 @@
 # Providers and capabilities
 
-The wire leaves idia ships, the HTTP base they share, and the capabilities record each declares.
-A wire leaf is an optional extra: `idia.provider(name, **options)` imports it behind a guard that names the extra to install, builds it from the options and wraps it in a `Dispatcher`.
+The leaves idia ships, the HTTP base the wire leaves share, and the capabilities record each declares.
+Each leaf is an optional extra: `idia.provider(name, **options)` imports it behind a guard that names the extra to install, builds it from the options and wraps it in a `Dispatcher`.
 `idia.leaf(name, **options)` builds the same leaf through the same guard and returns it unwrapped, and `idia.provider_names()` lists the names in the table below.
 
 | Name | Leaf | Extra | Dependency |
@@ -11,6 +11,7 @@ A wire leaf is an optional extra: `idia.provider(name, **options)` imports it be
 | `openai-chat` | `OpenAIChat` in `idia.providers.chat` | `openai` | `openai`, `httpx2` |
 | `cloudflare-clef` | `Clef` in `idia.providers.cloudflare` | `cloudflare` | `httpx2` |
 | `cloudflare-clairic` | `Clairic` in `idia.providers.cloudflare` | `cloudflare` | `httpx2` |
+| `gliner` | `Gliner` in `idia.providers.gliner` | `gliner` | `gliner2[local]`, `torch`, `protobuf`, `sentencepiece` |
 
 ## The HTTP base
 
@@ -235,3 +236,60 @@ Each model answered a request whose keys no wire pattern takes (`q:match/<key>`)
 An identical body sent twice answered identically on clef, clef-flash and Clairic, and reversing four questions moved a probability by up to 0.053 on clef and 0.032 on clef-flash, and a confidence by up to 0.143 and 0.085, while reversing Clairic's two fields moved nothing.
 Adding to a request one question whose key sorts first, so that each of its other questions moved one place, moved every other question's probability by up to 0.13 on Clef and none on `openai-decisions`; a neighbour can move a Clef answer by up to 0.13, more than reordering did.
 Asked alone and asked first of three, the same question moved by 0.010 on clef and 0.024 on clef-flash; so the alias and neighbour moves above come from the change to the body, not from run-to-run variation, unless the model behind the short name changed between recordings.
+
+## GLiNER
+
+`Gliner(*, model="fastino/gliner2.5-small-v1", revision="7132dc4561c3f94563c6147e75ffa8ef34c4964a", threshold=0.5, runtime=None)`, registered as `gliner`, runs the GLiNER2 span extractor `fastino/gliner2.5-small-v1` in this process with gliner2, for `extraction` of text.
+Its `name` is `gliner` and its `model` the checkpoint's id.
+It is the one leaf idia ships that makes no wire call: what this section calls the pass is one forward pass of the model.
+
+- **Construction refuses** another model and a `threshold` outside (0, 1], each with `ValueError`.
+  `revision` pins the weights, by default the commit the record was measured on and the stored outputs were recorded from; a branch or a tag is taken too, and `None` loads the hub's `main`.
+  `threshold` is gliner2's: a span scored below it is not returned.
+  `runtime` is a model already loaded, anything with the leaf's two runtime methods: one pass returning gliner2's output with scores and spans, and its tokenizer's count for a text and labels.
+- **Loading** is a step of its own: `await leaf.load()` resolves `revision` to its commit through the Hugging Face hub's `snapshot_download`, from the cache or the network, and loads the weights from that snapshot with gliner2's `AutoExtractor`, then runs one small pass so that its cost stays out of the first call.
+  The checkpoint's architecture is `boundary`; `AutoExtractor` reads it from the checkpoint's config, while `GLiNER2.from_pretrained` builds the span architecture and fails on this checkpoint.
+  `load()` is the only step that may reach the network, and nothing it raises is turned into a `ProviderError`: the loader's own error propagates.
+  Loading again, or a leaf given a `runtime`, does nothing; a call before the model is loaded raises a non-retryable `ProviderError`, `the model is not loaded: await leaf.load() first`, and runs nothing.
+  `idia.provider("gliner")` returns a dispatcher over a leaf not loaded, so a caller builds the leaf with `idia.leaf("gliner")`, awaits `load()`, and wraps it in a `Dispatcher`.
+- **One worker.** Loading and every pass run on one thread the leaf owns, one at a time, never on the event loop; a `ConcurrencyLimit` above 1 gives no parallelism.
+- **`aclose`** refuses every later call and `load()` with a non-retryable `ProviderError`, `the leaf is closed`, drops a model the leaf loaded, never one it was given, and shuts the worker down without waiting for a pass still running; closing twice is harmless.
+
+**What it runs.** The state must be one text part, and every question an `extraction` with `value_type` `text`, a value or a list; a state of several parts or none, a part that is not text, another value type and a structured instruction are each refused by the leaf with a non-retryable `ProviderError`, one failed attempt, before the pass.
+One pass runs gliner2's `extract_entities` over the text with every question's instruction as its label, sent as it is and never reworded, a label two questions share sent once, with scores and spans asked for.
+A text is never split into windows: one longer than the record's window does not fit, and Fit raises `DoesNotFit` with `state_overflow` true before any call, so the caller splits it.
+The leaf reads no request option: any given draws one `unknown-option` warning naming them all.
+
+- **The deadline.** A deadline already passed raises a retryable `ProviderError` before the pass.
+  The leaf waits for the worker until the deadline and then raises a retryable `ProviderError`; the pass cannot be stopped and runs to its end, and a later call waits behind it within its own deadline.
+- **A failure of the model** in the pass raises a non-retryable `ProviderError` naming the error's class; so does an output with no `entities` map.
+
+**Reading.** The spans under each label are read as `(text, start, end, confidence)`, `start` and `end` character offsets into the text.
+A value is the top span by score, with that score as `confidence` and its `Span(part=0, start, end)`; with no span the value is `None`.
+A list is every span in the order returned, with their spans, and `confidence` `None`, since gliner2 scores each span and not the list.
+No answer has a `guess` or a `p_null`.
+A label missing from the output, or spans that cannot be read, is that question's `Fault` with `Rule.kind_shape`, and its siblings stand.
+
+**Provenance**: `passthrough`; `calibrated` false; `model_reported` the checkpoint's id; `snapshot` the commit the pinned revision resolved to when `load()` ran, or for a leaf given a `runtime` the `revision` as given, and with no revision pinned `None` and a `no-snapshot` warning on every response; `prompt_sent` the text's length in characters, not the text, each question's label by key, and the threshold; `request_id` `None`, since nothing assigns one; `raw_body` the runtime's output whole, with the versions of Python, gliner2, torch, transformers and huggingface_hub that answered.
+`usage` has `input_tokens` as the model's own tokenizer counts what the pass encoded and `output_tokens` `None`, with both figures and `counted_by` in `raw_usage`.
+The count is the length of the input ids gliner2's processor builds for the text and the labels' schema, the text first ended with a full stop when it does not end in `.`, `!` or `?`, as gliner2 ends it before a pass.
+
+| Field | Value |
+|---|---|
+| `kinds`; `modalities`; `image_carriers` | `extraction`; text; none |
+| `max_input_tokens` | 2,048, a limit chosen for the leaf: gliner2 cuts no input by default |
+| `max_question_tokens`, `max_body_bytes`, `max_total_options` | `UNBOUNDED` |
+| `max_questions` | 32, a chosen cap on the labels of one pass |
+| `max_images`, `max_images_per_question`, `max_image_bytes`, `max_total_image_bytes`, `min_image_side`; `image_media_types` | 0; none |
+| `max_labels`, `max_levels`, `min_levels`; `key_patterns` | 0; none |
+| `truncates_silently` | false: the leaf leaves gliner2's `max_len` unset, so no word of the text is dropped |
+| `confidence`; `rounding` | `top_span_score`; none |
+| `calibrated`, `returns_refusal`, `recounts_state_per_question` | false |
+| `snapshot_pinnable` | true |
+| `carries_noul_descriptions`, `carries_structured_instructions` | false |
+
+**The estimator**, margin 0.1, counts with no tokenizer: 8 tokens for the frame, the text's pieces, and 2 plus its pieces for each distinct label, a piece being an ASCII word at 1 plus a fifth of its length, and each digit and each other character not a space at 1.
+Against the real tokenizer it overcounts English by about 30% and undercounts Latin by up to 9%.
+
+**What the model did.** The stored outputs were recorded at the default revision with gliner2 2.1.0, torch 2.14.1 and transformers 5.20.2: one text asked for a sender and a list of topics gave `Dana Whitfield` at 0.999 and `Q3 budget` and `hiring`, counted at 33 input tokens, and the same labels asked one per pass gave the same spans at 30 tokens each, the topics' scores lower alone than together (0.820 and 0.633 against 0.977 and 0.931).
+gliner2 2.0.0 with transformers 4.57.6 gave the same spans, scores and counts.
