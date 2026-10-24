@@ -2,12 +2,6 @@
 
 All notable changes to idia are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0, a minor release may break the API; each break is listed under **Changed** or **Removed**. A new question kind, a new elicitation or a new validation rule is a minor release and is listed here.
 
-## [Unreleased]
-
-### Added
-
-- `gliner` (extra `gliner`): the GLiNER2 span extractor `fastino/gliner2.5-small-v1`, run in this process, for `extraction` of text from one text part, a value as the top-scoring span with its score as `confidence`, or a list. Its weights are pinned to a revision by default and loaded by an explicit `await leaf.load()`; a model passed in as `runtime` is reported at the `revision` the caller passes, and with none at no snapshot, with the `no-snapshot` warning; its usage counts input tokens with the model's own tokenizer. The leaf, `Gliner`, is in `idia.providers.gliner`, which is not yet part of the public API.
-
 ## [0.1.0] - 2026-10-23
 
 The first release.
@@ -22,10 +16,11 @@ The first release.
 - Fit: preflight of a request against a provider's capabilities, refusing with `DoesNotFit` before any call a request it cannot split to fit or a wording form the record does not carry, `unchecked-limit` warnings for limits nobody knows, greedy packing of overflowing questions into wire requests that repeat the state, and `OverflowPolicy` with `Fail` as the default.
 - Dispatch: `Dispatcher`, the one loop that runs a fit plan inside the caller's `Deadline`, with `RetryPolicy`, `ConcurrencyLimit` and `RateLimiter`, one `Outcome` per wire request with its attempts and provenance, the re-ask after a fault, and a stop after a credential error; `Dispatcher.plan` for the plan alone; `Router` and `Fallback` with their derived capabilities; `aclose()` and `async with` on every provider.
 - Provenance on every outcome to one profile: each of `DETAILS`, from the model reported to the request id, a value or an `UnreportedReason` in `unreported` (`not-reported`, `not-pinned`, `not-sent`, `hidden`, `not-applicable`, `not-exposed`), the details a source only `claimed`, the runtime's `versions` and the client libraries' `client_versions`, idia's own among them, and each outcome's `rounding`; the conformance suite holds every leaf to it.
-- `idia.provider(name, ...)` and the registry of wire leaves, each behind an optional extra whose name the import error gives; `idia.leaf(name, ...)`, which builds the same leaf unwrapped, so a caller can wrap a leaf of its own around it, such as one counting every call; and `idia.provider_names()`, the registered names:
+- `idia.provider(name, ...)` and the registry of leaves, each behind an optional extra whose name the import error gives; `idia.leaf(name, ...)`, which builds the same leaf unwrapped, so a caller can wrap a leaf of its own around it, such as one counting every call; and `idia.provider_names()`, the registered names:
   - `system-one` (extra `system-one`): System One's decision models, `jev-1.14.0` by default, with images and, on the models that take it, `box`; `jev-latest`, a moving alias, is offered without `box`;
   - `openai-decisions` and `openai-chat` (extra `openai`): OpenAI's Decisions API, and a chat model read by the `logprobs` elicitation;
   - `cloudflare-clef` and `cloudflare-clairic` (extra `cloudflare`): Workers AI's Clef for the label kinds and Clairic for extraction, and `cloudflare()` in `idia.cloudflare`, a router over the two sharing one client.
+  - `gliner` (extra `gliner`): the GLiNER2 span extractor `fastino/gliner2.5-small-v1`, run in this process, for `extraction` of text from one text part, a value as the top-scoring span with its score as `confidence`, or a list. Its weights are pinned to a revision by default and loaded by an explicit `await leaf.load()`; a model passed in as `runtime` is reported at the `revision` the caller passes, and with none at no snapshot, with the `no-snapshot` warning; its usage counts input tokens with the model's own tokenizer. The leaf, `Gliner`, is in `idia.providers.gliner`, which is not yet part of the public API.
 - `HttpLeaf` in `idia.providers.http`, the base a leaf over a raw HTTP API may inherit: client lifecycle, one POST under the deadline, and the status table.
 - Test doubles: `Scripted`, a leaf answered from a script, and `Recorded`, which records a leaf's calls under the hash of the canonical wire request and replays them in modes `none`, `once` and `new`.
 - The conformance suite, `idia.conformance`: `leaf_checks` (L1 to L31) and `provider_checks` (P1 to P23), run with `run_checks` against a harness built from exchanges, so a leaf written outside idia can check itself.
@@ -36,5 +31,4 @@ The first release.
 
 - The binding to ommat ships with ommat, as `ommat[idia]`; idia has no dependency on ommat.
 
-[Unreleased]: https://github.com/CRSiegfried/idia/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.1.0
