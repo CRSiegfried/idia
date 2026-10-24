@@ -348,10 +348,10 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
   `SpanLeaf` leaves the text itself out on purpose and records its length and the labels.
 - `usage`: `Usage(input_tokens, output_tokens, passes=None, raw_usage=...)`, each count as
   the wire or the runtime reports it and `None` where it reports none, never an estimate;
-  the raw figures go in `raw_usage`. `SpanLeaf` counts its input with its model's own
-  tokenizer, reports 0 output tokens, since its model writes no text, and one pass.
-- `request_id`: the wire's id for the call. The conformance suite expects one on every
-  response; a model with no ids of its own may number its calls, as `SpanLeaf` does.
+  the raw figures go in `raw_usage`. A model in your own process reports its input as its
+  own tokenizer counts what it encoded, as `SpanLeaf` does, and no output tokens: `None`.
+- `request_id`: the wire's id for the call, or `None` where nothing assigns one, as for a
+  model in your own process. Never invent one.
 - `raw_body`: what the model returned, whole. The dispatcher drops it, but a recording keeps
   it, so put the runtime's versions here.
 - `warnings`: `Notice` values. Put the warnings `validate_answers` returned first, then your
@@ -449,7 +449,6 @@ class SpanLeaf:
         self._injected = extractor is not None
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="span-leaf")
         self._closed = False
-        self._calls = 0
 
     async def load(self) -> None:
         """Load the model on the worker: the one step that may fetch or read weights."""
@@ -471,8 +470,6 @@ class SpanLeaf:
         labels = {question.key: _label(question) for question in wire_request.questions}
         if deadline.passed():
             raise ProviderError("the deadline passed before the call", is_retryable=True)
-        self._calls += 1
-        request_id = f"{self.name}-{self._calls}"
         loop = asyncio.get_running_loop()
         work = loop.run_in_executor(self._worker, extractor, text, tuple(labels.values()))
         try:
@@ -481,21 +478,16 @@ class SpanLeaf:
             raise ProviderError(
                 "the deadline cut the call; the worker finishes the pass before the next",
                 is_retryable=True,
-                request_id=request_id,
             ) from None
         except Exception as error:
-            raise ProviderError(
-                f"the model failed: {type(error).__name__}: {error}", request_id=request_id
-            ) from error
+            raise ProviderError(f"the model failed: {type(error).__name__}: {error}") from error
         try:
             mapped = {
                 question.key: _answer(question, found.get(labels[question.key], ()))
                 for question in wire_request.questions
             }
         except (AttributeError, TypeError, ValueError) as error:
-            raise ProviderError(
-                f"the model's output cannot be read: {error}", request_id=request_id
-            ) from error
+            raise ProviderError(f"the model's output cannot be read: {error}") from error
         answers, warnings = validate_answers(
             wire_request.questions, mapped, self.capabilities.rounding
         )
@@ -523,11 +515,9 @@ class SpanLeaf:
             prompt_sent={"text_chars": len(text), "labels": labels},
             usage=Usage(
                 input_tokens=tokens,
-                output_tokens=0,
-                passes=1,
-                raw_usage={"input_tokens": tokens, "output_tokens": 0, "counted_by": "tokenizer"},
+                output_tokens=None,
+                raw_usage={"input_tokens": tokens, "counted_by": "tokenizer"},
             ),
-            request_id=request_id,
             raw_body={"spans": spans, "versions": versions},
             warnings=warnings,
         )
@@ -614,7 +604,9 @@ async def main() -> None:
     for key, answer in response.answers.items():
         assert isinstance(answer, ExtractionAnswer)
         print(key, answer.value, answer.confidence, answer.span)
-    print(response.outcomes[0].snapshot, response.outcomes[0].request_id)
+    outcome = response.outcomes[0]
+    assert outcome.usage is not None
+    print(outcome.snapshot, outcome.usage.input_tokens)
 
 
 asyncio.run(main())
@@ -625,7 +617,7 @@ asyncio.run(main())
 ```text
 who Grace 0.75 Span(part=0, start=0, end=5)
 where Lyon 0.7 Span(part=0, start=17, end=21)
-rev-1 span-leaf-1
+rev-1 9
 ```
 
 ## Test it with the conformance suite
@@ -940,7 +932,8 @@ def test_provider_half(check: Check) -> None:
     run(check)
 ```
 
-Then assert which checks did not apply, and why that is right for your leaf. For
+Then assert which checks did not apply, and why that is right for your leaf, and the
+notes of the checks that pass without running everything. For
 `SpanLeaf`: no SDK (L9), no status (L12, P9, P20, P21), no body to read (L13, P12), no HTTP
 client (L15), outputs that cannot be bent into broken ones (L19, L24), no kind whose
 probabilities sum (L18), no `noul` (L20), no opt-in feature (P6), no image (P23), and not
@@ -963,13 +956,30 @@ def test_the_provider_half_skips_exactly_what_a_wrapped_leaf_cannot_reach() -> N
     assert not_applicable(provider_checks(SpanProviderHarness)) == expected
 
 
-def test_l8_runs_its_retryable_half_over_the_deadline_cut() -> None:
-    [l8] = [check for check in leaf_checks(SpanLeafHarness) if check.id == "L8"]
-    [verdict] = asyncio.run(run_checks([l8]))
-    assert verdict.result == "pass"
-    assert verdict.reason == (
-        "the retryable half ran over a stall, not a 429: the model has no statuses"
-    )
+def test_the_leaf_half_notes_what_a_model_in_process_does_not_have() -> None:
+    notes = {
+        verdict.id: verdict.reason
+        for verdict in asyncio.run(run_checks(leaf_checks(SpanLeafHarness)))
+        if verdict.result == "pass" and verdict.id in ("L8", "L26")
+    }
+    assert notes == {
+        "L8": "the retryable half ran over a stall, not a 429: the model has no statuses",
+        "L26": "the wire responses carry no output token count and no request id, right only "
+        "for a leaf whose wire or runtime gives none",
+    }
+
+
+def test_the_provider_half_notes_what_a_model_in_process_does_not_have() -> None:
+    notes = {
+        verdict.id: verdict.reason
+        for verdict in asyncio.run(run_checks(provider_checks(SpanProviderHarness)))
+        if verdict.result == "pass" and verdict.reason
+    }
+    assert notes == {
+        "P8": "an outcome carries no request id, right only for a leaf whose wire or runtime "
+        "gives none",
+        "P19": "a 503 then an answer was not recorded: the model has no statuses",
+    }
 ```
 
 ## Let code that uses the leaf test without it

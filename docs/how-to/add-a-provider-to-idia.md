@@ -111,8 +111,18 @@ step in `.github/workflows/ci.yml`. The build job installs the wheel alone and r
 registered provider names its extra in the install hint.
 
 A local runtime such as torch is large, and CI downloads no model weights: such a leaf's
-tests replay stored outputs through an injected model, needing neither. Whether CI's sync
-leaves such an extra out, rather than installing every extra as it does now, is not settled.
+tests replay stored outputs through an injected model, needing neither. So its extra is left
+out of the jobs that sync every extra, and checked by a job of its own:
+
+- In `.github/workflows/ci.yml`, the jobs that run `uv sync --locked --all-extras` add
+  `--no-extra <extra>`.
+- A job of its own runs `uv sync --locked --extra <extra>` with torch taken from the
+  CPU-only wheel index, then the "Every extra imports" check for that extra alone, as
+  `uv run python -c "import <runtime>, torch"`.
+- The CPU-only index is named in `pyproject.toml`, as uv's documentation for PyTorch shows:
+  a `[[tool.uv.index]]` entry for `https://download.pytorch.org/whl/cpu` with
+  `explicit = true`, and `torch` taken from it under `[tool.uv.sources]`. Run `uv lock` and
+  check that the lock's torch wheels are the CPU ones before you commit it.
 
 ## The public API
 
@@ -176,19 +186,37 @@ the cassettes it leaves behind:
 IDIA_LIVE=1 uv run pytest -m live -s
 ```
 
-idia has no gate of its own yet for a test that loads a model in your process. The
-proposal, not yet added, is a marker of its own, `local_model`, run only with
-`IDIA_LOCAL_MODEL=1`, the runtime installed, the weights already cached, and
-`HF_HUB_OFFLINE=1` set so the run reads nothing from the network. Until it is added, skip
-such a test in its own module unless `IDIA_LOCAL_MODEL=1` is set, with `pytest.mark.skipif`,
-and add no marker to `pyproject.toml`. `live` is gated in `tests/conftest.py`:
+A test that loads a model in your process carries the `local_model` marker and runs only
+with `IDIA_LOCAL_MODEL=1`, with the runtime installed and the weights already cached. That
+switch also sets `HF_HUB_OFFLINE=1` before any test module is imported, so the run reads
+nothing from the network: it never downloads weights. Run it once per model, recording the
+stored outputs it checks:
+
+```sh
+IDIA_LOCAL_MODEL=1 uv run pytest -m local_model -s
+```
+
+Both gates are in `tests/conftest.py`:
 
 ```python
 # tests/conftest.py
+def pytest_configure(config: pytest.Config) -> None:
+    """With ``IDIA_LOCAL_MODEL=1``, set the Hugging Face hub offline before any test module
+    is imported, so a run against a model in process reads only cached weights."""
+    if os.environ.get("IDIA_LOCAL_MODEL") == "1":
+        os.environ["HF_HUB_OFFLINE"] = "1"
+
+
 def pytest_runtest_setup(item: pytest.Item) -> None:
-    """Skip a test marked ``live`` unless ``IDIA_LIVE=1`` is set."""
+    """Skip a test marked ``live`` unless ``IDIA_LIVE=1`` is set, and one marked
+    ``local_model`` unless ``IDIA_LOCAL_MODEL=1`` is set."""
     if item.get_closest_marker("live") is not None and os.environ.get("IDIA_LIVE") != "1":
         pytest.skip("live call; set IDIA_LIVE=1 to run")
+    if (
+        item.get_closest_marker("local_model") is not None
+        and os.environ.get("IDIA_LOCAL_MODEL") != "1"
+    ):
+        pytest.skip("loads a model in process; set IDIA_LOCAL_MODEL=1 to run, its weights cached")
 ```
 
 Each marker is declared under `markers` in `pyproject.toml`'s pytest options, since the

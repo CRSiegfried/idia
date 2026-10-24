@@ -60,6 +60,7 @@ xfail_strict = true
 filterwarnings = ["error"]
 markers = [
     "live: makes a real call to a wire API; skipped unless IDIA_LIVE=1",
+    "local_model: loads a model in this process; skipped unless IDIA_LOCAL_MODEL=1, which sets HF_HUB_OFFLINE=1",
 ]
 
 [tool.coverage.run]
