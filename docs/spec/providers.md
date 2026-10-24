@@ -286,7 +286,7 @@ The count is the length of the input ids gliner2's processor builds for the text
 | `kinds`; `modalities`; `image_carriers` | `extraction`; text; none |
 | `max_input_tokens` | 2,048, a limit chosen for the leaf: a pass's time grows with its tokens, and past about 2,600 tokens the model returned spurious spans in measurement |
 | `max_question_tokens`, `max_body_bytes`, `max_total_options` | `UNBOUNDED` |
-| `max_questions` | 32, a chosen cap on the labels of one pass |
+| `max_questions` | 16, the most labels of one pass measured to lose none: gliner2 has no hard cap, but the checkpoint shares one candidate pool across a pass's labels, and in measurement 32 labels lost 2 and 64 found 29 |
 | `max_images`, `max_images_per_question`, `max_image_bytes`, `max_total_image_bytes`, `min_image_side`; `image_media_types` | 0; none |
 | `max_labels`, `max_levels`, `min_levels`; `key_patterns` | 0; none |
 | `truncates_silently` | false: the leaf leaves gliner2's `max_len` unset, so no word of the text is dropped |
@@ -304,4 +304,4 @@ gliner2 2.0.0 with transformers 4.57.6 gave the same spans, scores and counts.
 A label that matched nothing in that text came back as an empty list beside the others, and a text whose spans follow characters of more than one byte, `Überweisen Sie 300 € an Zoë Müller in Zürich, Straße des 17. Juni.`, gave offsets that count characters, not bytes.
 The estimate with its margin covered the tokenizer's count of an English, a Latin and that text, each with three or four labels: 59, 71 and 50 estimated against 41, 66 and 40 counted.
 gliner2's source has no cap on the labels of one pass, but the checkpoint pools its candidate spans across every label of a pass: 32 start and 32 end positions, 192 candidates, 8 reserved per label.
-A text of 553 tokens giving each of 64 labels a span of its own found every one asked alone and in passes of up to 16 labels, missed 2 in passes of 32, and found 29 of 64 in one pass of all 64; padded to 2,032 tokens it still found 29, every label coming back without error, and a pass took about 0.65 s on an Apple M4 Max CPU.
+A text of 553 tokens giving each of 64 labels a span of its own found every one asked alone and in passes of up to 16 labels, missed 2 in passes of 32, and found 29 of 64 in one pass of all 64; padded to just under 2,048 tokens, the first 16 labels were all found, and all 64 still found 29 at 2,032 tokens, every label coming back without error, and a pass took about 0.65 s on an Apple M4 Max CPU.

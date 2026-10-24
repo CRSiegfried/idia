@@ -6,8 +6,9 @@ The model is loaded once, through the leaf's own loader. Each recorded case runs
 spans must be the texts the case expects, at offsets that count characters, and where the
 case is stored, the same spans, each score within :data:`TOLERANCE` of the stored one and the
 same token count. The outputs that passed are written back, with the runtime's versions, and
-nothing else is. Then the estimator is measured against the tokenizer, 64 labels run in one
-pass, and the loaded leaf answers through a dispatcher. Run them once per model:
+nothing else is. Then the estimator is measured against the tokenizer, as many labels as
+the record allows are all found at the window, 64 labels run in one pass, and the loaded
+leaf answers through a dispatcher. Run them once per model:
 ``IDIA_LOCAL_MODEL=1 uv run pytest -m local_model -s``.
 """
 
@@ -192,15 +193,35 @@ def test_the_estimate_with_its_margin_covers_the_tokenizers_count(runtime: Gline
         assert estimate.tokens * (1 + estimate.margin) >= tokens, (text, estimate, tokens)
 
 
+def _filled(runtime: GlinerRuntime, pairs: tuple[tuple[str, str], ...]) -> tuple[str, int]:
+    """The probe's text for ``pairs``, padded to just within the window, and its count."""
+    labels = [label for label, _ in pairs]
+    text = " ".join(f"{label[4:].capitalize()}: {value}." for label, value in pairs)
+    while runtime.input_tokens(text + _FILLER, labels) <= WINDOW:
+        text += _FILLER
+    return text, runtime.input_tokens(text, labels)
+
+
+def test_as_many_labels_as_the_record_allows_are_all_found_at_the_window(
+    runtime: GlinerRuntime,
+) -> None:
+    assert _RECORD.max_questions == len(PROBE[:16])
+    pairs = PROBE[:16]
+    labels = [label for label, _ in pairs]
+    text, tokens = _filled(runtime, pairs)
+    assert tokens <= WINDOW
+    entities = runtime.extract_entities(text, labels, 0.5)["entities"]
+    assert list(entities) == labels
+    for label, value in pairs:
+        assert value in [span["text"] for span in entities[label]], label
+
+
 def test_64_labels_within_the_window_run_in_one_pass(
     runtime: GlinerRuntime, record_property: Any
 ) -> None:
     labels = [label for label, _ in PROBE]
-    text = " ".join(f"{label[4:].capitalize()}: {value}." for label, value in PROBE)
     assert _RECORD.max_input_tokens == WINDOW
-    while runtime.input_tokens(text + _FILLER, labels) <= WINDOW:
-        text += _FILLER
-    tokens = runtime.input_tokens(text, labels)
+    text, tokens = _filled(runtime, PROBE)
     assert tokens <= WINDOW
     runtime.extract_entities(text, labels, 0.5)  # the first pass at this size is not timed
     passes = 3
