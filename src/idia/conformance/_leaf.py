@@ -586,27 +586,34 @@ async def _l25(harness: LeafHarness) -> str | None:
 
 
 async def _l26(harness: LeafHarness) -> str | None:
+    unreported: set[str] = set()
     for kind in _claimed(harness):
         response = await _send(harness, kind, Success(kind))
+        usage = response.usage
         absent = [
             name
             for name, held in (
                 ("model_reported", bool(response.model_reported)),
                 ("elicitation", response.elicitation in ("passthrough", "logprobs")),
                 ("prompt_sent", harness.prompt_hidden or response.prompt_sent is not None),
-                ("usage", isinstance(response.usage, Usage) and bool(response.usage.raw_usage)),
-                (
-                    "usage token counts",
-                    response.usage is not None
-                    and response.usage.input_tokens is not None
-                    and response.usage.output_tokens is not None,
-                ),
-                ("request_id", bool(response.request_id)),
+                ("usage", isinstance(usage, Usage) and bool(usage.raw_usage)),
+                ("usage input tokens", usage is not None and usage.input_tokens is not None),
                 ("raw_body", response.raw_body is not None),
             )
             if not held
         ]
         expect(not absent, f"the {kind} wire response leaves out {absent}")
+        if usage is not None and usage.output_tokens is None:
+            unreported.add("output token count")
+        if response.request_id is None:
+            unreported.add("request id")
+        else:
+            expect(bool(response.request_id), f"the {kind} wire response's request id is empty")
+    if unreported:
+        return (
+            f"the wire responses carry no {' and no '.join(sorted(unreported))}, right only "
+            "for a leaf whose wire or runtime gives none"
+        )
     return None
 
 

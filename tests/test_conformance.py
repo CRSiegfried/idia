@@ -40,6 +40,7 @@ from idia import (
     Router,
     Rule,
     RuleFailure,
+    Usage,
     WireRequest,
     WireResponse,
 )
@@ -1589,3 +1590,69 @@ def test_l25_is_not_applicable_where_no_extraction_answer_is_expected() -> None:
     harness = ScriptedHarness(replace(CAPABILITIES, returns_refusal=True), cases=cases)
     l25 = _check(leaf_checks(lambda: harness), "L25")
     assert l25 == Verdict("L25", "not_applicable", "the harness expects no extraction answer")
+
+
+# ----------------------------------------------------------------------------------------
+# L26 for a leaf whose wire or runtime gives no request id or output count
+# ----------------------------------------------------------------------------------------
+
+
+class Strips:
+    """Wraps a leaf and replaces fields of each wire response it returns."""
+
+    def __init__(self, inner: Leaf, **fields: object) -> None:
+        self._inner = inner
+        self._fields = fields
+        self.name, self.model = inner.name, inner.model
+        self.capabilities, self.estimator = inner.capabilities, inner.estimator
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        response = await self._inner.call(wire_request, deadline)
+        return replace(response, **self._fields)  # pyright: ignore[reportArgumentType]
+
+
+def _stripped(**fields: object) -> Callable[[], LeafHarness]:
+    class Harness(ScriptedHarness):
+        def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Leaf:
+            return Strips(super()._build(capabilities, script), **fields)
+
+    return Harness
+
+
+def test_l26_passes_a_leaf_with_no_request_id_or_output_count_with_a_note() -> None:
+    usage = Usage(input_tokens=12, output_tokens=None, raw_usage={"input_tokens": 12})
+    l26 = _check(leaf_checks(_stripped(request_id=None, usage=usage)), "L26")
+    assert l26 == Verdict(
+        "L26",
+        "pass",
+        "the wire responses carry no output token count and no request id, right only for a "
+        "leaf whose wire or runtime gives none",
+    )
+
+
+def test_l26_fails_a_leaf_with_no_input_count() -> None:
+    usage = Usage(input_tokens=None, output_tokens=0, raw_usage={"output_tokens": 0})
+    l26 = _check(leaf_checks(_stripped(usage=usage)), "L26")
+    assert l26.result == "fail"
+    assert l26.reason is not None
+    assert "usage input tokens" in l26.reason
+
+
+def test_l26_fails_an_empty_request_id() -> None:
+    l26 = _check(leaf_checks(_stripped(request_id="")), "L26")
+    assert l26.result == "fail"
+    assert l26.reason is not None
+    assert "request id is empty" in l26.reason
+
+
+def test_p8_passes_an_outcome_with_no_request_id_with_a_note() -> None:
+    class NoIds(ScriptedProviders):
+        def _wrap(self, leaf: Scripted) -> Leaf:
+            return Strips(leaf, request_id=None)
+
+    p8 = _check(provider_checks(lambda: NoIds("leaf", [CAPABILITIES], CAPABILITIES)), "P8")
+    assert p8 == Verdict(
+        "P8",
+        "pass",
+        "an outcome carries no request id, right only for a leaf whose wire or runtime gives none",
+    )

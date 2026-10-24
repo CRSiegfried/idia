@@ -56,6 +56,8 @@ Each dispatcher it builds has a zero-delay retry policy.
 A check passes, fails with an `AssertionError`, or raises `CheckNotApplicable(reason)` when the harness cannot drive it: a leaf with no SDK has no SDK retries.
 A harness's `make` raises it for an exchange its transport cannot make.
 Where a check has several drivers and the harness can make only some, it runs those and passes with a note naming what was not run: P12, for one, runs whichever of its moved-sum and unreadable-body drivers the harness can make, the moved-sum driver only where the request holds a question whose sum can move; L8 and P19 do the same.
+L26 passes a wire response with no `request_id`, or with `usage.output_tokens` `None`, with a note naming what was missing, since a model run in process has no wire to assign an id and writes no output tokens; a leaf never invents either, and the input token count, the runtime's own count of what it encoded where there is no wire, is still required.
+P8 passes an outcome with no `request_id` the same way, with a note.
 L25, where no expected extraction has a null `value` and a `guess`, checks only that each extraction answer's `value` and `guess` are those expected, so the leaf fills no guess, and notes that it did not check a guess being kept as given and not moved into `value`; with no expected extraction answer at all it is not applicable.
 
 `await run_checks(checks)` runs the checks one at a time and returns one `Verdict(id, result, reason)` each, `result` being `"pass"`, `"fail"` or `"not_applicable"`; a `CheckNotApplicable` gives `not_applicable`; any other `Exception` is a failure; a `BaseException` that is not an `Exception`, such as cancellation, propagates.

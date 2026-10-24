@@ -277,6 +277,7 @@ async def _p8(harness: ProviderHarness) -> str | None:
     response = await _answer(harness, _answering(harness, request), request)
     expect(not hasattr(response, "provenance"), "the Response has a provenance attribute")
     members = set(harness.member_names())
+    unidentified = False
     for outcome in response.outcomes:
         absent = [
             name
@@ -289,16 +290,22 @@ async def _p8(harness: ProviderHarness) -> str | None:
                 ("usage", outcome.usage is not None),
                 ("latency", outcome.latency >= 0),
                 ("started_at", outcome.started_at > 0),
-                ("request_id", outcome.request_id is not None),
             )
             if not held
         ]
         expect(not absent, f"the outcome for {outcome.keys} leaves out {absent}")
+        if outcome.request_id is None:
+            unidentified = True
         named = (outcome.provider, outcome.model_requested)
         expect(named in members, f"the outcome names {named}, which is no member's leaf")
         held = [f.name for f in dataclasses.fields(outcome)]
         raw = [name for name in held if isinstance(getattr(outcome, name), bytes | bytearray)]
         expect("raw_body" not in held and not raw, f"the outcome carries a raw body: {raw}")
+    if unidentified:
+        return (
+            "an outcome carries no request id, right only for a leaf whose wire or runtime "
+            "gives none"
+        )
     return None
 
 
