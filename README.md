@@ -172,8 +172,8 @@ Any question may instead come back as a `Refusal`, where the provider declined i
 `Fault`, where its answer was missing, could not be read, or broke a rule; or with no answer,
 when the wire request carrying it failed, its outcome saying why. A fault is scoped to its
 question, and its siblings stand. A request idia cannot split to fit (a kind the provider
-lacks, too many labels on one question, an input too long for one call) raises `DoesNotFit`
-before any call; it is never truncated. When no wire request answers, `answer` raises
+lacks, too many labels on one question, an input too long for one call, a wording form its
+record does not carry) raises `DoesNotFit` before any call; it is never truncated. When no wire request answers, `answer` raises
 `RequestFailed`, which carries the response and its outcomes.
 
 Each provider is registered under a name that `idia.provider(name)` builds, from the

@@ -75,9 +75,12 @@ async def main(messages: list[str]) -> None:
 - `Refusal` in `answers`: the provider declined that question.
 - `Fault` in `answers`: that question's answer was missing, unreadable or broke a rule; the
   other answers stand.
+- A `chosen-below-max` warning on an outcome: that question's chosen label, kept as the
+  provider gave it, is one rounding step below the highest probability.
 - A key absent from `answers`: the call carrying it failed, and its outcome says why.
 - `DoesNotFit`, raised before any call: the request does not fit the provider's declared
-  capabilities (a kind it lacks, or a limit no split can meet).
+  capabilities (a kind it lacks, a limit no split can meet, or a wording form it does not
+  carry).
 - `RequestFailed`, raised when no call answered, sent or not: its `response` carries every
   outcome, each with its `error`.
 
