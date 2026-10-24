@@ -39,6 +39,7 @@ from idia import (
     WireRequest,
     WireResponse,
 )
+from idia.conformance._base import profile_problems
 from idia.providers.recorded import Recorded
 from idia.providers.scripted import Reply, Scripted
 from tests._support import capabilities, choice, noul, request
@@ -441,7 +442,6 @@ def _bare(**fields: Any) -> Reply:
 def test_upgrading_a_wire_leafs_log_gives_the_reasons_the_leaf_gives_today(
     tmp_path: Path,
 ) -> None:
-    from idia.conformance._base import profile_problems  # pyright: ignore[reportPrivateUsage]
     from idia.providers.recorded import upgrade_log
 
     usage = Usage(input_tokens=3, output_tokens=0, raw_usage={"input_tokens": 3})
@@ -519,6 +519,7 @@ def test_a_gliner_log_takes_its_versions_from_the_raw_body_and_claims(tmp_path: 
         "usage.passes": "not-reported",
     }
     assert response.claimed == {"model_reported", "snapshot"}
+    assert profile_problems(response) == []
     (entries,) = json.loads(log.read_text(encoding="utf-8"))["calls"].values()
     assert entries[0]["response"]["raw_body"] == raw_body
 
@@ -551,6 +552,7 @@ def test_an_unknown_leaf_is_upgraded_with_the_reasons_its_caller_gives(tmp_path:
     assert upgrade_log(log, reasons={"versions": "not-applicable", "usage.passes": "hidden"}) == 1
     (response,) = _replayed(log)
     assert dict(response.unreported) == {"versions": "not-applicable", "usage.passes": "hidden"}
+    assert profile_problems(response) == []
 
 
 def test_a_pass_count_only_the_raw_usage_holds_is_not_exposed_and_stays_as_recorded(
@@ -566,3 +568,42 @@ def test_a_pass_count_only_the_raw_usage_holds_is_not_exposed_and_stays_as_recor
     assert response.usage is not None
     assert response.usage.passes is None
     assert response.usage.raw_usage["passes"] == 2
+
+
+def test_a_callers_snapshot_reason_other_than_not_pinned_is_refused(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "someone-else", _bare(pinned=False))
+    with pytest.raises(ValueError, match="reason is not-pinned"):
+        upgrade_log(log, reasons={"snapshot": "hidden", "versions": "not-applicable"})
+
+
+def test_a_response_recording_an_empty_request_id_is_refused(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "system-one", _bare())
+    document = json.loads(log.read_text(encoding="utf-8"))
+    (entries,) = document["calls"].values()
+    entries[0]["response"]["request_id"] = ""
+    log.write_text(json.dumps(document), encoding="utf-8")
+    before = log.read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match="empty request id"):
+        upgrade_log(log)
+    assert log.read_text(encoding="utf-8") == before
+
+
+def test_a_callers_not_sent_is_refused_since_only_the_dispatcher_gives_it(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "someone-else", _bare())
+    with pytest.raises(ValueError, match="not-sent is the dispatcher's"):
+        upgrade_log(log, reasons={"usage.passes": "not-sent", "versions": "not-applicable"})
+
+
+def test_a_response_whose_elicitation_has_a_reason_is_refused(tmp_path: Path) -> None:
+    from idia.providers.recorded import _upgraded  # pyright: ignore[reportPrivateUsage]
+
+    # A log cannot even decode one: this guards the rule behind that refusal.
+    response = _response(elicitation=None, snapshot="v1", unreported={"elicitation": "hidden"})
+    with pytest.raises(ValueError, match="always a value"):
+        _upgraded(response, "system-one", None, tmp_path / "log.json")

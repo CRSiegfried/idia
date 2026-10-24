@@ -333,10 +333,12 @@ def upgrade_log(
     Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
     reason, claim or version a response already holds stays. Error entries are left as they
     are. The log is refused with ``ValueError``, and nothing written, when a leaf has no
-    rules and no ``reasons`` are given, a ``gliner`` log records no versions, a missing
-    snapshot has no ``no-snapshot`` warning, or a detail would be left with neither a value
-    nor a reason. The log keeps its format and keys, and is rewritten only if a response
-    changed.
+    rules and no ``reasons`` are given, ``reasons`` give ``not-sent`` or a missing snapshot
+    a reason other than ``not-pinned``, a ``gliner`` log records no versions, a missing
+    snapshot has no ``no-snapshot`` warning, a response records an empty request id, its
+    ``elicitation`` or ``calibrated`` holds no value or has a reason, or a detail would be
+    left with neither a value nor a reason. The log keeps its format and keys, and is
+    rewritten only if a response changed.
     """
     held = _load(log)
     document = cast(dict[str, object], json.loads(log.read_text(encoding="utf-8")))
@@ -385,21 +387,30 @@ def _upgraded(
         claimed |= {"snapshot"} if response.snapshot is not None else set()
     elif reasons is not None:
         rules = dict(reasons)
+        if "not-sent" in rules.values():
+            raise ValueError(f"{log}: not-sent is the dispatcher's, never a recorded response's")
     else:
         raise ValueError(
             f"{log}: no upgrade rules for the leaf {name!r}; pass the reasons it gives"
         )
+    if rules.get("snapshot", "not-pinned") != "not-pinned":
+        raise ValueError(
+            f"{log}: a missing snapshot's reason is not-pinned, not {rules['snapshot']}"
+        )
+    if response.request_id == "":
+        raise ValueError(f"{log}: a response records an empty request id")
     warned = any(w.code == WARNING_NO_SNAPSHOT for w in response.warnings)
     if response.snapshot is None and not warned and "snapshot" not in response.unreported:
         raise ValueError(f"{log}: a response has no snapshot and no no-snapshot warning")
     filled = replace(response, versions=versions, client_versions=client_versions)
     values = _held(filled)
     unreported = dict(response.unreported)
+    for detail in sorted(_ALWAYS):
+        if not values[detail] or detail in unreported:
+            raise ValueError(f"{log}: a response leaves out {detail}, which is always a value")
     for detail in sorted(DETAILS):
         if values[detail] or detail in unreported:
             continue
-        if detail in _ALWAYS:
-            raise ValueError(f"{log}: a response leaves out {detail}, which is always a value")
         if detail == "snapshot":
             unreported[detail] = "not-pinned"
         elif detail == "usage.passes" and _raw_passes(filled):
