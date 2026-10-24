@@ -36,10 +36,10 @@ from idia.core import (
     Deadline,
     JsonValue,
     MappedAnswer,
+    Notice,
     ProviderError,
     TokenEstimator,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
     unknown_options,
@@ -82,7 +82,7 @@ class Reply:
     model_reported: str | None = None
     pinned: bool = True
     usage: Usage | None = None
-    warnings: tuple[Warning, ...] = ()
+    warnings: tuple[Notice, ...] = ()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -186,7 +186,7 @@ class Scripted:
             snapshot = model_reported
         else:
             warnings += (
-                Warning(
+                Notice(
                     code=WARNING_NO_SNAPSHOT,
                     message=f"{model_reported} is not a pinned version; no snapshot exists",
                     field="snapshot",

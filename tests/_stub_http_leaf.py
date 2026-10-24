@@ -25,12 +25,12 @@ from idia.core import (
     Deadline,
     Fault,
     MappedAnswer,
+    Notice,
     ProviderError,
     Rule,
     RuleFailure,
     TokenEstimator,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
     unknown_options,
@@ -111,9 +111,7 @@ class StubHttpLeaf:
         model_reported = cast(str, body["model"])
         snapshot = model_reported if self.capabilities.snapshot_pinnable else None
         if snapshot is None:
-            warnings += (
-                Warning(code=WARNING_NO_SNAPSHOT, message="no snapshot", field="snapshot"),
-            )
+            warnings += (Notice(code=WARNING_NO_SNAPSHOT, message="no snapshot", field="snapshot"),)
         usage = cast(Mapping[str, object], body.get("usage", {}))
         return WireResponse(
             answers=answers,

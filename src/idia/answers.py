@@ -22,6 +22,7 @@ from idia.core import (
     Fault,
     LabelAnswer,
     MappedAnswer,
+    Notice,
     NoulAnswer,
     Question,
     Refusal,
@@ -29,7 +30,6 @@ from idia.core import (
     Rule,
     RuleFailure,
     Value,
-    Warning,
 )
 
 
@@ -59,7 +59,7 @@ def validate_answers(
     questions: Sequence[Question],
     mapped: Mapping[str, MappedAnswer],
     rounding: Rounding,
-) -> tuple[Mapping[str, Answer | Fault], tuple[Warning, ...]]:
+) -> tuple[Mapping[str, Answer | Fault], tuple[Notice, ...]]:
     """Validate a map of answers against the questions asked.
 
     A question whose key is absent is a fault; a key with no question is dropped with an
@@ -78,7 +78,7 @@ def validate_answers(
             answers[question.key] = validate(question, answer, rounding)
     asked = {question.key for question in questions}
     warnings = tuple(
-        Warning(
+        Notice(
             code=WARNING_EXTRA_ANSWER_KEY,
             message=f"answer key {key!r} matches no question and was dropped",
             field=key,
@@ -94,7 +94,7 @@ def validate_answers(
     return MappingProxyType(answers), below + warnings
 
 
-def _chosen_below_max(key: str, answer: Answer | Fault) -> Warning | None:
+def _chosen_below_max(key: str, answer: Answer | Fault) -> Notice | None:
     """The warning for a label answer that stands with its chosen label below the highest
     probability, which the chosen-label rule tolerates by one rounding step."""
     if not isinstance(answer, LabelAnswer) or answer.chosen is None:
@@ -105,7 +105,7 @@ def _chosen_below_max(key: str, answer: Answer | Fault) -> Warning | None:
     if chosen is None or chosen >= highest:
         return None
     top = next(name for name, probability in answer.probabilities if probability == highest)
-    return Warning(
+    return Notice(
         code=WARNING_CHOSEN_BELOW_MAX,
         message=(
             f"question {key!r}: the chosen label {answer.chosen!r} at {chosen} is below "

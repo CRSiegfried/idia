@@ -1143,7 +1143,7 @@ fault or refusal the leaf built itself."""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Warning:
+class Notice:
     """Something the caller should know that is not a fault."""
 
     code: str
@@ -1151,14 +1151,14 @@ class Warning:
     field: str | None = None
 
 
-def unknown_options(options: Mapping[str, JsonValue], known: frozenset[str]) -> tuple[Warning, ...]:
+def unknown_options(options: Mapping[str, JsonValue], known: frozenset[str]) -> tuple[Notice, ...]:
     """The one ``unknown-option`` warning naming every key of ``options`` outside
     ``known``, or none. Every leaf puts it on its wire response."""
     unknown = sorted(set(options) - known)
     if not unknown:
         return ()
     return (
-        Warning(
+        Notice(
             code=WARNING_UNKNOWN_OPTION,
             message=f"options this leaf does not know were ignored: {', '.join(unknown)}",
             field="options",
@@ -1220,7 +1220,7 @@ class WireResponse:
     usage: Usage | None = None
     request_id: str | None = None
     raw_body: JsonValue | bytes | None = None
-    warnings: tuple[Warning, ...] = ()
+    warnings: tuple[Notice, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "answers", MappingProxyType(dict(self.answers)))
@@ -1254,7 +1254,7 @@ class Outcome:
     started_at: float
     request_id: str | None
     failed_attempts: tuple[FailedAttempt, ...]
-    warnings: tuple[Warning, ...]
+    warnings: tuple[Notice, ...]
 
     def __post_init__(self) -> None:
         if isinstance(self.prompt_sent, Mapping):
@@ -1275,7 +1275,7 @@ class Response:
 
     answers: Mapping[str, Answer]
     outcomes: tuple[Outcome, ...]
-    warnings: tuple[Warning, ...] = ()
+    warnings: tuple[Notice, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "answers", MappingProxyType(dict(self.answers)))

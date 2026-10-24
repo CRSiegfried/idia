@@ -32,6 +32,7 @@ from idia.core import (
     JsonValue,
     Label,
     LabelAnswer,
+    Notice,
     NoulAnswer,
     Question,
     Refusal,
@@ -42,7 +43,6 @@ from idia.core import (
     TextPart,
     TokenEstimate,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
 )
@@ -75,7 +75,7 @@ _DECODABLE: Final[frozenset[object]] = frozenset(
         RuleFailure,
         Box,
         Span,
-        Warning,
+        Notice,
         Usage,
         WireResponse,
         WireRequest,
@@ -124,8 +124,9 @@ def encode(value: object) -> JsonValue:
     other type raises :class:`TypeError`.
 
     The recorded leaf's logs and the HTTP harness's cassettes are written in this
-    rendering: a change to it bumps the recorded leaf's ``_FORMAT`` and the cassettes'
-    ``FORMAT``, and the golden tests in ``tests/test_canon.py`` with them.
+    rendering: a change to it bumps the format of each that holds what changed, the
+    recorded leaf's ``_FORMAT`` or the cassettes' ``FORMAT``, and the golden tests in
+    ``tests/test_canon.py`` with them.
     """
     if value is None or isinstance(value, bool | str):
         return value

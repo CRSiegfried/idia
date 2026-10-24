@@ -20,6 +20,7 @@ from idia.core import (
     Capabilities,
     Deadline,
     MappedAnswer,
+    Notice,
     Provider,
     ProviderError,
     Request,
@@ -28,7 +29,6 @@ from idia.core import (
     TokenEstimate,
     TokenEstimator,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
     unknown_options,
@@ -84,7 +84,7 @@ class OwnRules:
         )
         snapshot = self.model if self.capabilities.snapshot_pinnable else None
         if snapshot is None:
-            warnings += (Warning(code=WARNING_NO_SNAPSHOT, message="no snapshot"),)
+            warnings += (Notice(code=WARNING_NO_SNAPSHOT, message="no snapshot"),)
         return WireResponse(
             answers=answers,
             elicitation="passthrough",

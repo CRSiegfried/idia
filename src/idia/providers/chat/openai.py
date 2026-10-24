@@ -43,6 +43,7 @@ from idia.core import (
     JsonValue,
     LabelAnswer,
     MappedAnswer,
+    Notice,
     NoulAnswer,
     ProviderError,
     Question,
@@ -51,7 +52,6 @@ from idia.core import (
     RuleFailure,
     State,
     TextPart,
-    Warning,
     WireRequest,
     WireResponse,
     check_elicitation,
@@ -269,7 +269,7 @@ class OpenAIChat(OpenAILeafBase):
         snapshot = model_reported if _SNAPSHOT.search(model_reported) else None
         if snapshot is None:
             warnings += (
-                Warning(
+                Notice(
                     code=WARNING_NO_SNAPSHOT,
                     message=f"the wire reported {model_reported!r}, not a dated snapshot",
                     field="snapshot",
@@ -446,7 +446,7 @@ def _read(
     letters: Sequence[tuple[str, str]],
     top: tuple[JsonValue, ...] | str | None,
     bound: float | None,
-) -> tuple[MappedAnswer, tuple[Warning, ...]]:
+) -> tuple[MappedAnswer, tuple[Notice, ...]]:
     """The answer the protocol reads from the first token's top logprobs, or its fault,
     with a warning where some letters were outside the top-k and read as zero mass."""
     if top is None:
@@ -472,10 +472,10 @@ def _read(
             for letter, _ in absent
         ]
         return _fault(question, failures, None), ()
-    warnings: tuple[Warning, ...] = ()
+    warnings: tuple[Notice, ...] = ()
     if absent:
         warnings = (
-            Warning(
+            Notice(
                 code=WARNING_LABEL_ABSENT_FROM_LOGPROBS,
                 message=f"{', '.join(f'{name} ({letter})' for letter, name in absent)} not in "
                 f"the top {len(top)} logprobs, read as zero mass; each at most {ceiling:.3g}, "

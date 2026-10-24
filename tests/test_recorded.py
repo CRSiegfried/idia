@@ -76,7 +76,7 @@ def test_once_records_then_none_replays_without_calling_the_leaf(tmp_path: Path)
     assert replayed.raw_body == recorded.raw_body
     document = _read(log)
     assert (document["format"], document["name"], document["model"]) == (
-        1,
+        2,
         "scripted",
         "scripted-1",
     )
@@ -286,8 +286,8 @@ def test_a_log_recorded_from_another_leaf_or_format_is_refused(tmp_path: Path) -
     with pytest.raises(ValueError, match="not scripted/scripted-2 with"):
         Recorded(_scripted(model="scripted-2"), log, "none")
     document = _read(log)
-    log.write_text(json.dumps({**document, "format": 2}))
-    with pytest.raises(ValueError, match="format 2; this reads 1"):
+    log.write_text(json.dumps({**document, "format": 1}))
+    with pytest.raises(ValueError, match="format 1; this reads 2"):
         Recorded(_scripted(), log, "none")
     log.write_text("[]")
     with pytest.raises(ValueError, match="not a recorded leaf's log"):

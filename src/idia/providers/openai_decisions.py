@@ -34,6 +34,7 @@ from idia.core import (
     Kind,
     LabelAnswer,
     MappedAnswer,
+    Notice,
     NoulAnswer,
     ProviderError,
     Question,
@@ -43,7 +44,6 @@ from idia.core import (
     RuleFailure,
     State,
     TextPart,
-    Warning,
     WireRequest,
     WireResponse,
     _declared_media_type,  # pyright: ignore[reportPrivateUsage]
@@ -206,7 +206,7 @@ class OpenAIDecisions(OpenAILeafBase):
         warnings = (
             *dropped,
             *warnings,
-            Warning(
+            Notice(
                 code=WARNING_NO_SNAPSHOT,
                 message=f"the wire reported {model_reported!r}, an alias with no snapshot; "
                 "drift behind it cannot be detected from the response",
@@ -366,7 +366,7 @@ def _list(value: JsonValue) -> tuple[JsonValue, ...]:
 
 def _map_answers(
     questions: Sequence[Question], answers: Sequence[JsonValue]
-) -> tuple[dict[str, MappedAnswer], tuple[Warning, ...]]:
+) -> tuple[dict[str, MappedAnswer], tuple[Notice, ...]]:
     """Each wire answer mapped to its kind's shape, keyed by the question its echoed name
     was assigned to.
 
@@ -377,7 +377,7 @@ def _map_answers(
     """
     by_name = {_name(i): question for i, question in enumerate(questions)}
     mapped: dict[str, MappedAnswer] = {}
-    dropped: list[Warning] = []
+    dropped: list[Notice] = []
     for position, answer in enumerate(answers):
         name = (
             cast(Mapping[str, JsonValue], answer).get("name")
@@ -387,7 +387,7 @@ def _map_answers(
         question = by_name.get(name) if isinstance(name, str) else None
         if question is not None and question.key in mapped:
             dropped.append(
-                Warning(
+                Notice(
                     code=WARNING_EXTRA_ANSWER_KEY,
                     message=f"answer {position} repeats the name {name!r}; dropped",
                     field=question.key,
@@ -396,7 +396,7 @@ def _map_answers(
             continue
         if question is None:
             dropped.append(
-                Warning(
+                Notice(
                     code=WARNING_EXTRA_ANSWER_KEY,
                     message=f"answer {position} is named {name!r}, no question's name; dropped",
                     field=name if isinstance(name, str) else None,

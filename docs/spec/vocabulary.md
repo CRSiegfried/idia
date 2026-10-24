@@ -112,7 +112,7 @@ For a range rule `observed` is the value and `bound` the limit crossed; for a to
   For Clef asked `q:match/intent` and `q:match/tone`, which its id pattern refuses, `outcome.prompt_sent["questions"]` holds `q0` and `q1`, and `q1` is `outcome.keys[1]`, `"q:match/tone"`; `Response.answers` and a `Fault`'s key are always the caller's.
 - `Response(answers, outcomes, warnings=())`.
   It has no provenance of its own; the outcomes hold it.
-- `Warning(code, message, field=None)`.
+- `Notice(code, message, field=None)`: something the caller should know that is not a fault, held in `warnings`.
   The codes the core raises are published as constants: `WARNING_EXTRA_ANSWER_KEY` (`extra-answer-key`), `WARNING_UNCHECKED_LIMIT` (`unchecked-limit`), `WARNING_OVERFLOW_POLICY` (`overflow-policy`), `WARNING_PROVIDER_TRUNCATED` (`provider-truncated`, a leaf's report that the wire truncated the state), `WARNING_UNKNOWN_OPTION` (`unknown-option`, field `options`), `WARNING_NO_SNAPSHOT` (`no-snapshot`) and `WARNING_LABEL_ABSENT_FROM_LOGPROBS` (`label-absent-from-logprobs`), raised by a chat leaf, and `WARNING_CHOSEN_BELOW_MAX` (`chosen-below-max`, field the question's key).
 - `FailedAttempt(provider, model_requested, error, request_id, started_at, duration, usage=None)`.
 

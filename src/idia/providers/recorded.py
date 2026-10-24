@@ -62,7 +62,7 @@ __all__ = [
 _Mode: TypeAlias = Literal["none", "once", "new"]
 """How the recorded leaf treats a call: replay only, record a fresh log, or add to one."""
 
-_FORMAT: Final = 1
+_FORMAT: Final = 2
 """The log format this module reads and writes. A change to ``_canon``'s rendering, which
 the log is written in, bumps it."""
 

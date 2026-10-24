@@ -44,6 +44,7 @@ from idia.core import (
     Leaf,
     Limit,
     Modality,
+    Notice,
     Outcome,
     Provider,
     ProviderError,
@@ -53,7 +54,6 @@ from idia.core import (
     Response,
     Rounding,
     TokenEstimator,
-    Warning,
     WireRequest,
     WireResponse,
 )
@@ -271,7 +271,7 @@ class Dispatcher:
         return again
 
     def _unsent(
-        self, wire_request: WireRequest, error: ProviderError, warnings: tuple[Warning, ...]
+        self, wire_request: WireRequest, error: ProviderError, warnings: tuple[Notice, ...]
     ) -> _Result:
         """The outcome of a wire request left unsent after a credential error: that error,
         no attempts and no request id, as for one never sent because the deadline passed."""
@@ -298,7 +298,7 @@ class Dispatcher:
         latency: float,
         request_id: str | None,
         failed: tuple[FailedAttempt, ...],
-        warnings: tuple[Warning, ...],
+        warnings: tuple[Notice, ...],
     ) -> Outcome:
         """A failed wire request's outcome: no wire response, so no provenance from one."""
         return Outcome(
@@ -320,7 +320,7 @@ class Dispatcher:
         )
 
     async def _send(
-        self, wire_request: WireRequest, deadline: Deadline, warnings: tuple[Warning, ...]
+        self, wire_request: WireRequest, deadline: Deadline, warnings: tuple[Notice, ...]
     ) -> _Result:
         """Send one wire request with its retries and build its outcome."""
         started_at = time.time()
@@ -539,7 +539,7 @@ class Router:
             raise failures.exceptions[0] from None
         answers: dict[str, Answer] = {}
         outcomes: tuple[Outcome, ...] = ()
-        warnings: tuple[Warning, ...] = ()
+        warnings: tuple[Notice, ...] = ()
         answered = False
         for task in tasks:
             response, ok = task.result()

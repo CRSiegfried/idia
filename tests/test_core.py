@@ -804,7 +804,7 @@ def test_every_published_shape_is_a_frozen_slotted_dataclass() -> None:
         WireResponse,
         Outcome,
         Response,
-        core.Warning,
+        core.Notice,
         Capabilities,
         core.Rounding,
         Deadline,

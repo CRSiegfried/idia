@@ -21,6 +21,7 @@ from idia import (
     LabelAnswer,
     Leaf,
     MappedAnswer,
+    Notice,
     NoulAnswer,
     Provider,
     ProviderError,
@@ -30,7 +31,6 @@ from idia import (
     State,
     TextPart,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
 )
@@ -170,7 +170,7 @@ def test_scripted_leaf_fills_provenance() -> None:
 
 def test_scripted_reply_varies_the_provenance_and_warns_of_an_extra_key() -> None:
     usage = Usage(input_tokens=5, output_tokens=1)
-    note = Warning(code="scripted", message="from the test")
+    note = Notice(code="scripted", message="from the test")
     leaf = Scripted(
         capabilities=capabilities(),
         script=[

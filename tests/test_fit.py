@@ -22,6 +22,7 @@ from idia import (
     ImagePart,
     JsonPart,
     Label,
+    Notice,
     NoulAnswer,
     Outcome,
     OverflowPolicy,
@@ -32,7 +33,6 @@ from idia import (
     TextPart,
     TokenEstimate,
     TokenEstimator,
-    Warning,
 )
 from idia.fit import FitPlan, _check_composite, _merge, _preflight
 from idia.providers.scripted import Scripted
@@ -97,7 +97,7 @@ def _keys(plan: FitPlan) -> list[tuple[str, ...]]:
     return [tuple(q.key for q in wire.questions) for wire in plan.wire_requests]
 
 
-def _fields(warnings: tuple[Warning, ...]) -> list[str | None]:
+def _fields(warnings: tuple[Notice, ...]) -> list[str | None]:
     return [warning.field for warning in warnings]
 
 
@@ -387,12 +387,12 @@ def test_unknown_limit_passes_preflight_with_an_unchecked_limit_warning() -> Non
     plan = _plan(_request(noul()), max_input_tokens=None, max_questions=None)
     assert plan.outcome_warnings == (
         (
-            Warning(
+            Notice(
                 code=WARNING_UNCHECKED_LIMIT,
                 message="max_input_tokens is unknown, so it was not checked",
                 field="max_input_tokens",
             ),
-            Warning(
+            Notice(
                 code=WARNING_UNCHECKED_LIMIT,
                 message="max_questions is unknown, so it was not checked",
                 field="max_questions",
@@ -595,7 +595,7 @@ def test_named_overflow_policy_is_applied_with_a_warning() -> None:
     assert policy.applied == [100]
     assert all(wire.state == text_state("x" * 30) for wire in plan.wire_requests)
     assert plan.response_warnings == (
-        Warning(
+        Notice(
             code=WARNING_OVERFLOW_POLICY,
             message="the state overflowed max_input_tokens; policy 'shorten' applied",
             field="max_input_tokens",

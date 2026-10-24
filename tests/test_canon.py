@@ -21,6 +21,7 @@ from idia import (
     JsonPart,
     Label,
     LabelAnswer,
+    Notice,
     NoulAnswer,
     Question,
     Refusal,
@@ -30,7 +31,6 @@ from idia import (
     State,
     TextPart,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
 )
@@ -148,8 +148,8 @@ def test_raw_usage_comes_back_thawed_as_a_raw_body_does() -> None:
     assert dict(back.raw_usage) == thaw(json.loads(json.dumps({"n": [1, [2]], "o": {"p": [3]}})))
 
 
-# A change to the rendering bumps the recorded leaf's _FORMAT and the cassettes' FORMAT in
-# tests/_http.py, and these two literals with them.
+# A change to the rendering bumps the format of each that holds what changed, the recorded
+# leaf's _FORMAT or the cassettes' FORMAT in tests/_http.py, and these two literals with it.
 GOLDEN_HASH = "a1f1018fb225317e97aafb2340362885def243874265f4a63d19ea1bb80b0a25"
 GOLDEN_RESPONSE = (
     '{"answers":{"f":{"failures":[{"bound":null,"observed":{"type":"float","value":"inf"},'
@@ -159,7 +159,7 @@ GOLDEN_RESPONSE = (
     '"model_reported":"m-1","prompt_sent":null,"raw_body":null,"request_id":"r-1",'
     '"snapshot":null,"type":"WireResponse","usage":{"input_tokens":1,"output_tokens":2,'
     '"raw_usage":{"n":[1]},"type":"Usage"},"warnings":[{"code":"no-snapshot","field":null,'
-    '"message":"none","type":"Warning"}]}'
+    '"message":"none","type":"Notice"}]}'
 )
 
 
@@ -183,7 +183,7 @@ def test_the_rendering_is_pinned() -> None:
         model_reported="m-1",
         usage=Usage(input_tokens=1, output_tokens=2, raw_usage={"n": (1,)}),
         request_id="r-1",
-        warnings=(Warning(code="no-snapshot", message="none"),),
+        warnings=(Notice(code="no-snapshot", message="none"),),
     )
     assert json_bytes(encode(response)).decode() == GOLDEN_RESPONSE
     assert decode(json.loads(GOLDEN_RESPONSE), WireResponse) == response
@@ -202,7 +202,7 @@ def test_a_wire_response_round_trips() -> None:
         ),
         request_id="req-1",
         raw_body=None,
-        warnings=(Warning(code="no-snapshot", message="none", field="snapshot"),),
+        warnings=(Notice(code="no-snapshot", message="none", field="snapshot"),),
     )
     assert _through_json(response, WireResponse) == response
     texted = WireResponse(answers={}, elicitation="logprobs", calibrated=False, prompt_sent="hi")

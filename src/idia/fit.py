@@ -43,6 +43,7 @@ from idia.core import (
     JsonValue,
     Limit,
     Modality,
+    Notice,
     Outcome,
     Question,
     Request,
@@ -50,7 +51,6 @@ from idia.core import (
     TextPart,
     TokenEstimate,
     TokenEstimator,
-    Warning,
     WireRequest,
     _declared_media_type,  # pyright: ignore[reportPrivateUsage]
     _image_media_type,  # pyright: ignore[reportPrivateUsage]
@@ -120,8 +120,8 @@ class FitPlan:
     """
 
     wire_requests: tuple[WireRequest, ...]
-    outcome_warnings: tuple[tuple[Warning, ...], ...]
-    response_warnings: tuple[Warning, ...] = ()
+    outcome_warnings: tuple[tuple[Notice, ...], ...]
+    response_warnings: tuple[Notice, ...] = ()
 
     def __post_init__(self) -> None:
         if len(self.outcome_warnings) != len(self.wire_requests):
@@ -176,13 +176,13 @@ def _preflight(  # pyright: ignore[reportUnusedFunction]
     checker.wording(questions)
 
     state = request.state
-    response_warnings: tuple[Warning, ...] = ()
+    response_warnings: tuple[Notice, ...] = ()
     over = checker.state_overflow(state, estimator)
     if over is not None:
         # A policy that returns at all is a named one: Fail always raises.
         state = checker.apply(overflow, state, over, estimator)
         response_warnings = (
-            Warning(
+            Notice(
                 code=WARNING_OVERFLOW_POLICY,
                 message=f"the state overflowed {over[0]}; policy {overflow.name!r} applied",
                 field=over[0],
@@ -577,7 +577,7 @@ def _unchecked(
     state: State,
     chunk: tuple[Question, ...],
     unread: list[int] | None = None,
-) -> tuple[Warning, ...]:
+) -> tuple[Notice, ...]:
     """One ``unchecked-limit`` warning per unknown limit that bears on this wire request,
     and one naming the images whose size could not be read against a known minimum side.
     ``unread`` is those images' indexes when the caller has read them already."""
@@ -600,7 +600,7 @@ def _unchecked(
         "max_total_options": any(_options(question) for question in chunk),
     }
     warnings = [
-        Warning(
+        Notice(
             code=WARNING_UNCHECKED_LIMIT,
             message=f"{name} is unknown, so it was not checked",
             field=name,
@@ -612,7 +612,7 @@ def _unchecked(
         unread = _unreadable_sizes(capabilities, state)
     if unread:
         warnings.append(
-            Warning(
+            Notice(
                 code=WARNING_UNCHECKED_LIMIT,
                 message=(
                     f"the {'size' if len(unread) == 1 else 'sizes'} of "

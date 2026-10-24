@@ -42,6 +42,7 @@ from idia.core import (
     JsonValue,
     LabelAnswer,
     MappedAnswer,
+    Notice,
     NoulAnswer,
     ProviderError,
     Question,
@@ -54,7 +55,6 @@ from idia.core import (
     TokenEstimate,
     Usage,
     Value,
-    Warning,
     WireRequest,
     WireResponse,
     _image_media_type,  # pyright: ignore[reportPrivateUsage]
@@ -369,10 +369,10 @@ class _CloudflareLeaf(HttpLeaf):
         usage: Usage,
         prompt_sent: Mapping[str, JsonValue],
         known: frozenset[str],
-        warnings: tuple[Warning, ...] = (),
+        warnings: tuple[Notice, ...] = (),
     ) -> WireResponse:
         answers, validated = validate_answers(wire_request.questions, mapped, capabilities.rounding)
-        snapshot = Warning(
+        snapshot = Notice(
             code=WARNING_NO_SNAPSHOT,
             message=f"the wire reported the short name {model_reported!r}, with no version: "
             "alias drift cannot be detected from the response",
@@ -531,7 +531,7 @@ class Clairic(_CloudflareLeaf):
         mapped, warnings = _map_answers(sent, answers, read)
         if result.get("truncated") is True:
             warnings += (
-                Warning(
+                Notice(
                     code=WARNING_PROVIDER_TRUNCATED,
                     message="Clairic reported that it truncated the state; the answers are "
                     "read from what it kept",
@@ -821,7 +821,7 @@ def _map_answers(
     sent: Mapping[str, Question],
     answers: Mapping[str, JsonValue],
     read: Callable[[Question, Mapping[str, JsonValue]], MappedAnswer],
-) -> tuple[dict[str, MappedAnswer], tuple[Warning, ...]]:
+) -> tuple[dict[str, MappedAnswer], tuple[Notice, ...]]:
     """Each wire answer mapped to its kind's shape, keyed by the caller's key of the
     question its id was sent for.
 
@@ -830,12 +830,12 @@ def _map_answers(
     not send. An answer whose wire type or shape is not its question's becomes that
     question's fault."""
     mapped: dict[str, MappedAnswer] = {}
-    dropped: list[Warning] = []
+    dropped: list[Notice] = []
     for wire_id, answer in answers.items():
         question = sent.get(wire_id)
         if question is None:
             dropped.append(
-                Warning(
+                Notice(
                     code=WARNING_EXTRA_ANSWER_KEY,
                     message=f"answer key {wire_id!r} matches no question and was dropped",
                     field=wire_id,

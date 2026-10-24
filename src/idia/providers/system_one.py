@@ -39,6 +39,7 @@ from idia.core import (
     Kind,
     LabelAnswer,
     MappedAnswer,
+    Notice,
     NoulAnswer,
     Part,
     ProviderError,
@@ -50,7 +51,6 @@ from idia.core import (
     TextPart,
     TokenEstimate,
     Usage,
-    Warning,
     WireRequest,
     WireResponse,
     _image_media_type,  # pyright: ignore[reportPrivateUsage]
@@ -270,7 +270,7 @@ class SystemOne(HttpLeaf):
         snapshot = model_reported if _SNAPSHOT.fullmatch(model_reported) else None
         if snapshot is None:
             warnings += (
-                Warning(
+                Notice(
                     code=WARNING_NO_SNAPSHOT,
                     message=f"the wire reported {model_reported!r}, not a pinned version",
                     field="snapshot",
