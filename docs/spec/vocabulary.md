@@ -79,6 +79,7 @@ Nothing in it was computed by idia.
 
 A leaf calls `validate_answers(questions, mapped, rounding)` after mapping and before the answers enter its wire response.
 A question whose key is absent gets a `Fault` with `Rule.missing_key`; a key with no question is dropped with a `WARNING_EXTRA_ANSWER_KEY` warning; every other entry goes through `validate(question, mapped, rounding)` once.
+A label answer that stands with its chosen label below the maximum adds a `WARNING_CHOSEN_BELOW_MAX` (`chosen-below-max`) warning whose field is the question's key, before any `extra-answer-key` warning.
 A `Fault` or `Refusal` the leaf built passes through as it is; a fault keyed to another question is a leaf bug and raises `ValueError`.
 
 `validate` runs every rule for the kind.
@@ -86,7 +87,7 @@ An answer that passes comes back as the same object; one that fails becomes a `F
 Nothing is renormalized, rounded or corrected.
 
 - **Shape**: the answer has the kind's shape (`kind_shape`).
-- **`choice` and `score`**: the label names are those asked, in order, none added or repeated (`labels_mismatch`); an echo equals the names asked, or the descriptions asked with a label's name standing in where it has no description (`echo_mismatch`); every probability is finite (`not_finite`) and in [0, 1] (`probability_range`); the sum lies within `1e-6 + n · 0.5 · 10^-d` of 1 for `n` labels asked and `d` probability decimals, the second term zero when unrounded (`sum_tolerance`); a reported `chosen` has the maximum probability, ties allowed (`chosen_not_max`).
+- **`choice` and `score`**: the label names are those asked, in order, none added or repeated (`labels_mismatch`); an echo equals the names asked, or the descriptions asked with a label's name standing in where it has no description (`echo_mismatch`); every probability is finite (`not_finite`) and in [0, 1] (`probability_range`); the sum lies within `1e-6 + n · 0.5 · 10^-d` of 1 for `n` labels asked and `d` probability decimals, the second term zero when unrounded (`sum_tolerance`); a reported `chosen` has the maximum probability, ties allowed, or lies below it by at most one step of the declared probability decimals, `10^-d + 1e-6`, or `1e-6` when unrounded (`chosen_not_max`), since a provider may round after it chooses; the chosen label is kept as given.
 - **`score` expected level**, where reported: within `1e-6 + 0.5 · 10^-s + 0.5 · 10^-d · n(n-1)/2` of the sum of each level index times its probability, for `s` score decimals, each term zero when its decimals are `None` (`expected_level`).
 - **`noul`**: the probability is finite and in [0, 1] (`probability_range`).
 - **`extraction`**: `value` and `guess` have the declared type or are `None`, every item for a list (`value_type`); `p_null`, where given, is in [0, 1] (`p_null_range`).
@@ -112,7 +113,7 @@ For a range rule `observed` is the value and `bound` the limit crossed; for a to
 - `Response(answers, outcomes, warnings=())`.
   It has no provenance of its own; the outcomes hold it.
 - `Warning(code, message, field=None)`.
-  The codes the core raises are published as constants: `WARNING_EXTRA_ANSWER_KEY` (`extra-answer-key`), `WARNING_UNCHECKED_LIMIT` (`unchecked-limit`), `WARNING_OVERFLOW_POLICY` (`overflow-policy`), `WARNING_PROVIDER_TRUNCATED` (`provider-truncated`, a leaf's report that the wire truncated the state), `WARNING_UNKNOWN_OPTION` (`unknown-option`, field `options`), `WARNING_NO_SNAPSHOT` (`no-snapshot`) and `WARNING_LABEL_ABSENT_FROM_LOGPROBS` (`label-absent-from-logprobs`), the last raised by a chat leaf.
+  The codes the core raises are published as constants: `WARNING_EXTRA_ANSWER_KEY` (`extra-answer-key`), `WARNING_UNCHECKED_LIMIT` (`unchecked-limit`), `WARNING_OVERFLOW_POLICY` (`overflow-policy`), `WARNING_PROVIDER_TRUNCATED` (`provider-truncated`, a leaf's report that the wire truncated the state), `WARNING_UNKNOWN_OPTION` (`unknown-option`, field `options`), `WARNING_NO_SNAPSHOT` (`no-snapshot`) and `WARNING_LABEL_ABSENT_FROM_LOGPROBS` (`label-absent-from-logprobs`), raised by a chat leaf, and `WARNING_CHOSEN_BELOW_MAX` (`chosen-below-max`, field the question's key).
 - `FailedAttempt(provider, model_requested, error, request_id, started_at, duration, usage=None)`.
 
 ### Usage

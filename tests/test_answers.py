@@ -5,11 +5,12 @@ from __future__ import annotations
 import datetime
 import math
 from types import MappingProxyType
-from typing import cast
+from typing import Final, cast
 
 import pytest
 
 from idia import (
+    WARNING_CHOSEN_BELOW_MAX,
     WARNING_EXTRA_ANSWER_KEY,
     Box,
     BoxAnswer,
@@ -174,6 +175,76 @@ def test_chosen_label_that_is_not_the_max_is_a_fault() -> None:
     assert failure.bound == 0.6
     unknown = LabelAnswer(probabilities=(("red", 0.6), ("green", 0.3), ("blue", 0.1)), chosen="x")
     assert _failure(validate(choice(), unknown, TWO_DECIMALS), Rule.chosen_not_max).observed == "x"
+
+
+MOOD: Final = Question(
+    key="c_verb_mood",
+    kind="choice",
+    instruction="What is the mood of the main verb?",
+    labels=tuple(Label(name=name) for name in ("imperative", "question", "statement", "other")),
+)
+"""The question of a recorded System One answer whose chosen label was one step below the
+highest probability."""
+
+
+def test_a_chosen_label_one_rounding_step_below_the_max_stands_with_a_warning() -> None:
+    recorded = LabelAnswer(
+        probabilities=(
+            ("imperative", 0.49),
+            ("question", 0.5),
+            ("statement", 0.0),
+            ("other", 0.01),
+        ),
+        confidence=0.33,
+        chosen="imperative",
+    )
+    answers, warnings = validate_answers((MOOD,), {"c_verb_mood": recorded}, TWO_DECIMALS)
+    assert answers["c_verb_mood"] is recorded
+    assert recorded.chosen == "imperative"
+    [warning] = warnings
+    assert (warning.code, warning.field) == (WARNING_CHOSEN_BELOW_MAX, "c_verb_mood")
+    assert "'imperative' at 0.49 is below 'question' at 0.5" in warning.message
+
+
+def test_a_float_one_step_gap_is_within_the_step() -> None:
+    """A recorded maximum of 0.47000000000000003 lies 0.010000000000000009 above 0.46."""
+    question = choice(names=("emails", "drafts", "other"))
+    answer = LabelAnswer(
+        probabilities=(("emails", 0.47000000000000003), ("drafts", 0.46), ("other", 0.07)),
+        chosen="drafts",
+    )
+    assert validate(question, answer, TWO_DECIMALS) is answer
+
+
+def test_a_chosen_label_two_steps_below_the_max_is_a_fault() -> None:
+    answer = LabelAnswer(
+        probabilities=(("red", 0.5), ("green", 0.48), ("blue", 0.02)), chosen="green"
+    )
+    result = validate(choice(), answer, TWO_DECIMALS)
+    assert _rules(result) == [Rule.chosen_not_max]
+    assert (
+        _failure(result, Rule.chosen_not_max).observed,
+        _failure(result, Rule.chosen_not_max).bound,
+    ) == (0.48, 0.5)
+
+
+def test_an_unrounded_chosen_label_has_no_step() -> None:
+    answer = LabelAnswer(
+        probabilities=(("red", 0.5), ("green", 0.499), ("blue", 0.001)), chosen="green"
+    )
+    assert _rules(validate(choice(), answer, UNROUNDED)) == [Rule.chosen_not_max]
+    tied = LabelAnswer(
+        probabilities=(("red", 0.5), ("green", 0.5 - 1e-9), ("blue", 1e-9)), chosen="green"
+    )
+    assert validate(choice(), tied, UNROUNDED) is tied
+
+
+def test_a_chosen_label_at_the_max_adds_no_warning() -> None:
+    answer = LabelAnswer(
+        probabilities=(("red", 0.4), ("green", 0.4), ("blue", 0.2)), chosen="green"
+    )
+    _, warnings = validate_answers((choice(),), {"q": answer}, TWO_DECIMALS)
+    assert warnings == ()
 
 
 def test_label_answer_with_labels_out_of_order_is_a_fault() -> None:
@@ -506,3 +577,24 @@ def test_fault_keyed_to_another_question_is_a_leaf_bug() -> None:
 def test_extra_answer_key_warning_uses_the_published_code() -> None:
     _, warnings = validate_answers([noul("a")], {"a": Refusal(), "b": Refusal()}, UNROUNDED)
     assert warnings[0].code == WARNING_EXTRA_ANSWER_KEY
+
+
+def test_a_scripted_near_tie_stands_with_the_warning_on_its_outcome() -> None:
+    import asyncio
+
+    from idia import Dispatcher
+    from idia.providers.scripted import Scripted
+    from tests._support import capabilities, request
+
+    near_tie = LabelAnswer(
+        probabilities=(("red", 0.49), ("green", 0.5), ("blue", 0.01)), chosen="red"
+    )
+    leaf = Scripted(capabilities=capabilities(rounding=TWO_DECIMALS), script=[{"q": near_tie}])
+    response = asyncio.run(Dispatcher(leaf).answer(request(choice())))
+    answer = response.answers["q"]
+    assert isinstance(answer, LabelAnswer)
+    assert answer.chosen == "red"
+    [outcome] = response.outcomes
+    assert [(w.code, w.field) for w in outcome.warnings if w.code == WARNING_CHOSEN_BELOW_MAX] == [
+        (WARNING_CHOSEN_BELOW_MAX, "q")
+    ]

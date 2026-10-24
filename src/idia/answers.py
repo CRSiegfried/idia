@@ -14,6 +14,7 @@ from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 
 from idia.core import (
+    WARNING_CHOSEN_BELOW_MAX,
     WARNING_EXTRA_ANSWER_KEY,
     Answer,
     BoxAnswer,
@@ -62,8 +63,10 @@ def validate_answers(
     """Validate a map of answers against the questions asked.
 
     A question whose key is absent is a fault; a key with no question is dropped with an
-    ``extra-answer-key`` warning; every other entry goes through :func:`validate` once.
-    The answers come back keyed in question order.
+    ``extra-answer-key`` warning; every other entry goes through :func:`validate` once. A
+    label answer that stands with its chosen label below the highest probability, by at most
+    one rounding step, adds a ``chosen-below-max`` warning naming the key. The answers come
+    back keyed in question order.
     """
     answers: dict[str, Answer | Fault] = {}
     for question in questions:
@@ -83,7 +86,34 @@ def validate_answers(
         for key in mapped
         if key not in asked
     )
-    return MappingProxyType(answers), warnings
+    below = tuple(
+        warning
+        for key, answer in answers.items()
+        if (warning := _chosen_below_max(key, answer)) is not None
+    )
+    return MappingProxyType(answers), below + warnings
+
+
+def _chosen_below_max(key: str, answer: Answer | Fault) -> Warning | None:
+    """The warning for a label answer that stands with its chosen label below the highest
+    probability, which the chosen-label rule tolerates by one rounding step."""
+    if not isinstance(answer, LabelAnswer) or answer.chosen is None:
+        return None
+    by_name = dict(answer.probabilities)
+    highest = max(by_name.values(), default=0.0)
+    chosen = by_name.get(answer.chosen)
+    if chosen is None or chosen >= highest:
+        return None
+    top = next(name for name, probability in answer.probabilities if probability == highest)
+    return Warning(
+        code=WARNING_CHOSEN_BELOW_MAX,
+        message=(
+            f"question {key!r}: the chosen label {answer.chosen!r} at {chosen} is below "
+            f"{top!r} at {highest}, "
+            "within one rounding step; the chosen label stands as given"
+        ),
+        field=key,
+    )
 
 
 # ----------------------------------------------------------------------------------------
@@ -160,6 +190,12 @@ def _noul_failures(answer: NoulAnswer) -> list[RuleFailure]:
     )
 
 
+def _step(decimals: int | None) -> float:
+    """How far below the highest probability a chosen label may lie: one rounding step,
+    since a provider may round after it chooses, plus the float slack the sum allows."""
+    return 1e-6 + (10.0**-decimals if decimals is not None else 0.0)
+
+
 def _sum_tolerance(n: int, decimals: int | None) -> float:
     return 1e-6 + (n * 0.5 * 10.0**-decimals if decimals is not None else 0.0)
 
@@ -219,7 +255,7 @@ def _label_failures(
             failures.append(
                 RuleFailure(rule=Rule.chosen_not_max, observed=answer.chosen, bound=highest)
             )
-        elif by_name[answer.chosen] != highest:
+        elif highest - by_name[answer.chosen] > _step(rounding.probability_decimals):
             failures.append(
                 RuleFailure(
                     rule=Rule.chosen_not_max, observed=by_name[answer.chosen], bound=highest

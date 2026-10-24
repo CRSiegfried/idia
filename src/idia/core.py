@@ -85,6 +85,11 @@ WARNING_UNKNOWN_OPTION: Final = "unknown-option"
 """Warning code: the request carried options the leaf does not know; it ignored them, and
 the message names them. The field is ``options``."""
 
+WARNING_CHOSEN_BELOW_MAX: Final = "chosen-below-max"
+"""Warning code: a provider's chosen label is below the highest probability by at most one
+step of its declared rounding, so the answer stands, its chosen label as given; the field
+is the question's key."""
+
 WARNING_OVERFLOW_POLICY: Final = "overflow-policy"
 """Warning code: the state overflowed and a named overflow policy, named in the message,
 changed it before any call."""
