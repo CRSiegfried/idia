@@ -26,7 +26,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TypeAlias, cast
 
 from idia.answers import validate_answers
@@ -37,8 +37,10 @@ from idia.core import (
     JsonValue,
     MappedAnswer,
     Notice,
+    ProvenanceDetail,
     ProviderError,
     TokenEstimator,
+    UnreportedReason,
     Usage,
     WireRequest,
     WireResponse,
@@ -68,6 +70,10 @@ class ScriptExhausted(AssertionError):
     """
 
 
+def _no_versions() -> dict[str, str]:
+    return {}
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Reply:
     """One scripted answer to a call: the mapped answers and the provenance a test varies.
@@ -76,6 +82,12 @@ class Reply:
     ``warnings`` are added to the wire response's own. ``pinned`` false says the reported
     model is an alias, not a pinned version, so no snapshot exists even on a record whose
     ``snapshot_pinnable`` is true.
+
+    ``versions``, ``client_versions`` and ``claimed`` go on the wire response as given.
+    ``unreported`` left ``None`` is derived so the response states a passing profile: the
+    snapshot ``not-pinned`` when there is none, each usage figure it has none of
+    ``not-reported`` and empty ``versions`` ``not-applicable``; given, even empty, it is
+    used as written, so a test can script a profile that breaks the rule.
     """
 
     answers: Mapping[str, MappedAnswer]
@@ -83,6 +95,10 @@ class Reply:
     pinned: bool = True
     usage: Usage | None = None
     warnings: tuple[Notice, ...] = ()
+    versions: Mapping[str, str] = field(default_factory=_no_versions)
+    client_versions: Mapping[str, str] = field(default_factory=_no_versions)
+    unreported: Mapping[ProvenanceDetail, UnreportedReason] | None = None
+    claimed: frozenset[ProvenanceDetail] = frozenset()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -202,6 +218,9 @@ class Scripted:
                 output_tokens=output_tokens,
                 raw_usage={"input_tokens": estimate.tokens, "output_tokens": output_tokens},
             )
+        unreported = reply.unreported
+        if unreported is None:
+            unreported = _derived(snapshot, usage, reply.versions)
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -213,4 +232,26 @@ class Scripted:
             request_id=f"{self.name}-{n}",
             raw_body=raw_body,
             warnings=warnings + reply.warnings + unknown_options(wire_request.options, frozenset()),
+            versions=reply.versions,
+            client_versions=reply.client_versions,
+            unreported=unreported,
+            claimed=reply.claimed,
         )
+
+
+def _derived(
+    snapshot: str | None, usage: Usage, versions: Mapping[str, str]
+) -> dict[ProvenanceDetail, UnreportedReason]:
+    """The reasons a scripted reply gets by default: those that make its profile pass."""
+    reasons: dict[ProvenanceDetail, UnreportedReason] = {}
+    if snapshot is None:
+        reasons["snapshot"] = "not-pinned"
+    if not versions:
+        reasons["versions"] = "not-applicable"
+    figures: dict[ProvenanceDetail, int | None] = {
+        "usage.input_tokens": usage.input_tokens,
+        "usage.output_tokens": usage.output_tokens,
+        "usage.passes": usage.passes,
+    }
+    reasons.update({detail: "not-reported" for detail, held in figures.items() if held is None})
+    return reasons

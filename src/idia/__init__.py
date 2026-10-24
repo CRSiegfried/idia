@@ -10,6 +10,8 @@ from idia.answers import validate, validate_answers
 from idia.core import (
     CANDIDATE_ELICITATIONS,
     CANDIDATE_KINDS,
+    DETAILS,
+    REASONS,
     UNBOUNDED,
     WARNING_CHOSEN_BELOW_MAX,
     WARNING_EXTRA_ANSWER_KEY,
@@ -48,6 +50,7 @@ from idia.core import (
     NoulAnswer,
     Outcome,
     Part,
+    ProvenanceDetail,
     Provider,
     ProviderError,
     Question,
@@ -64,6 +67,7 @@ from idia.core import (
     TokenEstimate,
     TokenEstimator,
     Unbounded,
+    UnreportedReason,
     Usage,
     Value,
     ValueType,
@@ -73,17 +77,18 @@ from idia.core import (
     noul_complement,
     unknown_options,
 )
+from idia.core import VERSION as __version__  # noqa: F401
 from idia.dispatch import Dispatcher, Fallback, Router
 from idia.fit import Fail, FitPlan, OverflowPolicy
 from idia.limits import ConcurrencyLimit, RateLimiter
 from idia.providers import ProviderNotFound
 from idia.retry import RetryPolicy
 
-__version__ = "0.1.0"
-
 __all__ = [
     "CANDIDATE_ELICITATIONS",
     "CANDIDATE_KINDS",
+    "DETAILS",
+    "REASONS",
     "UNBOUNDED",
     "WARNING_CHOSEN_BELOW_MAX",
     "WARNING_EXTRA_ANSWER_KEY",
@@ -128,6 +133,7 @@ __all__ = [
     "Outcome",
     "OverflowPolicy",
     "Part",
+    "ProvenanceDetail",
     "Provider",
     "ProviderError",
     "ProviderNotFound",
@@ -148,6 +154,7 @@ __all__ = [
     "TokenEstimate",
     "TokenEstimator",
     "Unbounded",
+    "UnreportedReason",
     "Usage",
     "Value",
     "ValueType",

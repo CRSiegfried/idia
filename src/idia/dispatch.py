@@ -32,7 +32,9 @@ from types import TracebackType
 from typing import Final, Self, TypeAlias
 
 from idia.core import (
+    DETAILS,
     UNBOUNDED,
+    VERSION,
     Answer,
     Capabilities,
     Deadline,
@@ -46,6 +48,7 @@ from idia.core import (
     Modality,
     Notice,
     Outcome,
+    ProvenanceDetail,
     Provider,
     ProviderError,
     Question,
@@ -54,6 +57,7 @@ from idia.core import (
     Response,
     Rounding,
     TokenEstimator,
+    UnreportedReason,
     WireRequest,
     WireResponse,
 )
@@ -300,7 +304,11 @@ class Dispatcher:
         failed: tuple[FailedAttempt, ...],
         warnings: tuple[Notice, ...],
     ) -> Outcome:
-        """A failed wire request's outcome: no wire response, so no provenance from one."""
+        """A failed wire request's outcome: no wire response, so no provenance from one, and
+        ``not-sent`` for each detail with no value; the request id the error carries stays."""
+        sent: dict[ProvenanceDetail, UnreportedReason] = dict.fromkeys(DETAILS, "not-sent")
+        if request_id is not None:
+            del sent["request_id"]
         return Outcome(
             keys=keys,
             error=error,
@@ -317,6 +325,9 @@ class Dispatcher:
             request_id=request_id,
             failed_attempts=failed,
             warnings=warnings,
+            rounding=self._leaf.capabilities.rounding,
+            client_versions={"idia": VERSION},
+            unreported=sent,
         )
 
     async def _send(
@@ -361,6 +372,11 @@ class Dispatcher:
             request_id=result.request_id,
             failed_attempts=tuple(failed),
             warnings=result.warnings + warnings,
+            rounding=leaf.capabilities.rounding,
+            versions=result.versions,
+            client_versions={**result.client_versions, "idia": VERSION},
+            unreported=result.unreported,
+            claimed=result.claimed,
         )
         return outcome, result.answers
 

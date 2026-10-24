@@ -29,6 +29,7 @@ from idia import (
     ProviderError,
     Question,
     Request,
+    Rounding,
     State,
     TextPart,
     TokenEstimate,
@@ -103,6 +104,7 @@ def _fields(warnings: tuple[Notice, ...]) -> list[str | None]:
 
 def _outcome(*keys: str, error: ProviderError | None = None) -> Outcome:
     return Outcome(
+        rounding=Rounding(probability_decimals=2, score_decimals=2),
         keys=keys,
         error=error,
         provider="scripted",

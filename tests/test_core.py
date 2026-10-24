@@ -46,6 +46,7 @@ from idia import (
     Request,
     RequestFailed,
     Response,
+    Rounding,
     Rule,
     RuleFailure,
     State,
@@ -699,6 +700,7 @@ def _outcome(error: ProviderError | None, failed: int = 0) -> Outcome:
         for _ in range(failed)
     )
     return Outcome(
+        rounding=Rounding(probability_decimals=2, score_decimals=2),
         keys=("q",),
         error=error,
         provider="fake",
@@ -1121,6 +1123,7 @@ def test_a_provider_error_text_never_carries_a_key_shaped_substring(text: str) -
 def test_a_request_failed_message_carries_no_key_shaped_substring() -> None:
     error = ProviderError(f"HTTP 401: invalid key {_KEY}", status_code=401)
     outcome = Outcome(
+        rounding=Rounding(probability_decimals=2, score_decimals=2),
         keys=("q",),
         error=error,
         provider="p",

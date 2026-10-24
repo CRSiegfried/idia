@@ -94,6 +94,41 @@ WARNING_OVERFLOW_POLICY: Final = "overflow-policy"
 """Warning code: the state overflowed and a named overflow policy, named in the message,
 changed it before any call."""
 
+VERSION: Final = "0.1.0"
+"""idia's own version, which ``idia.__version__`` re-exports and every outcome's
+``client_versions`` records."""
+
+ProvenanceDetail: TypeAlias = Literal[
+    "model_reported",
+    "snapshot",
+    "versions",
+    "elicitation",
+    "calibrated",
+    "prompt_sent",
+    "usage.input_tokens",
+    "usage.output_tokens",
+    "usage.passes",
+    "request_id",
+]
+"""A detail of an outcome's provenance profile: each is a value, or has a reason in
+``unreported`` saying why it is not. ``provider`` and ``model_requested`` are always filled,
+latency, start time and warnings are the loop's, and precision is the outcome's
+``rounding``, so none of them is a detail here."""
+
+UnreportedReason: TypeAlias = Literal[
+    "not-reported", "not-pinned", "not-sent", "hidden", "not-applicable", "not-exposed"
+]
+"""Why a provenance detail holds no value: the source gives none; no fixed version was asked
+for or resolved; the wire request failed, sent or not; the provider's service withholds
+it; the detail has no meaning for this source or this kind of model; or a library between
+the provider and the caller has it but does not make it public."""
+
+DETAILS: Final[frozenset[ProvenanceDetail]] = frozenset(get_args(ProvenanceDetail))
+"""Every provenance detail an outcome states, as a value or a reason."""
+
+REASONS: Final[frozenset[UnreportedReason]] = frozenset(get_args(UnreportedReason))
+"""Every reason code a detail with no value may carry."""
+
 _KINDS: Final[frozenset[str]] = frozenset(get_args(Kind))
 _VALUE_TYPES: Final[frozenset[str]] = frozenset(get_args(ValueType))
 _CANDIDATE_VALUE_TYPES: Final[frozenset[str]] = frozenset({"estimate", "forecast"})
@@ -1170,6 +1205,108 @@ def _no_raw_usage() -> dict[str, JsonValue]:
     return {}
 
 
+def _no_versions() -> dict[str, str]:
+    return {}
+
+
+def _no_unreported() -> dict[ProvenanceDetail, UnreportedReason]:
+    return {}
+
+
+class _Provenance(Protocol):
+    """What :func:`_held` reads of a wire response or an outcome."""
+
+    @property
+    def model_reported(self) -> str | None: ...
+    @property
+    def snapshot(self) -> str | None: ...
+    @property
+    def versions(self) -> Mapping[str, str]: ...
+    @property
+    def elicitation(self) -> Elicitation | None: ...
+    @property
+    def calibrated(self) -> bool | None: ...
+    @property
+    def prompt_sent(self) -> str | Mapping[str, JsonValue] | None: ...
+    @property
+    def usage(self) -> Usage | None: ...
+    @property
+    def request_id(self) -> str | None: ...
+
+
+def _held(record: _Provenance) -> dict[ProvenanceDetail, bool]:
+    """Whether each provenance detail holds a value: ``None``, an empty ``versions`` and a
+    missing ``usage`` hold none."""
+    usage = record.usage
+    return {
+        "model_reported": record.model_reported is not None,
+        "snapshot": record.snapshot is not None,
+        "versions": bool(record.versions),
+        "elicitation": record.elicitation is not None,
+        "calibrated": record.calibrated is not None,
+        "prompt_sent": record.prompt_sent is not None,
+        "usage.input_tokens": usage is not None and usage.input_tokens is not None,
+        "usage.output_tokens": usage is not None and usage.output_tokens is not None,
+        "usage.passes": usage is not None and usage.passes is not None,
+        "request_id": record.request_id is not None,
+    }
+
+
+def _versions(owner: str, name: str, versions: object) -> MappingProxyType[str, str]:
+    """``versions`` as a read-only map of package to version, refusing any other shape."""
+    if not isinstance(versions, Mapping):
+        raise TypeError(f"{owner}.{name} must be a mapping, got {type(versions).__name__}")
+    held = cast(Mapping[object, object], versions)
+    for package, version in held.items():
+        if not isinstance(package, str) or not isinstance(version, str):
+            raise TypeError(f"{owner}.{name} maps a package name to a version, both str")
+    return MappingProxyType(cast(dict[str, str], dict(held)))
+
+
+def _freeze_provenance(
+    record: object,
+    owner: str,
+    held: Mapping[ProvenanceDetail, bool],
+    versions: object,
+    client_versions: object,
+    unreported: object,
+    claimed: object,
+) -> None:
+    """Freeze ``versions``, ``client_versions``, ``unreported`` and ``claimed`` on
+    ``record``, refusing a detail or reason outside the closed sets, a detail both unreported
+    and claimed, an unreported detail that holds a value and a claimed one that holds none."""
+    object.__setattr__(record, "versions", _versions(owner, "versions", versions))
+    object.__setattr__(
+        record, "client_versions", _versions(owner, "client_versions", client_versions)
+    )
+    if not isinstance(unreported, Mapping):
+        kind = type(unreported).__name__
+        raise TypeError(f"{owner}.unreported must be a mapping, got {kind}")
+    reasons = dict(cast(Mapping[object, object], unreported))
+    if isinstance(claimed, str) or not isinstance(claimed, set | frozenset):
+        kind = type(claimed).__name__
+        raise TypeError(f"{owner}.claimed must be a set, got {kind}")
+    claims = frozenset(cast(frozenset[object], claimed))
+    for detail in sorted(map(str, (*reasons, *claims))):
+        if detail not in DETAILS:
+            raise ValueError(f"{owner} names {detail!r}, which is not a provenance detail")
+    for detail, reason in reasons.items():
+        if reason not in REASONS:
+            raise ValueError(f"{owner}.unreported gives {detail!r} the unknown reason {reason!r}")
+    named = cast(dict[ProvenanceDetail, UnreportedReason], reasons)
+    claimed_details = cast(frozenset[ProvenanceDetail], claims)
+    for detail in sorted(set(named) & claimed_details):
+        raise ValueError(f"{owner}: {detail!r} is both unreported and claimed")
+    for detail in sorted(named):
+        if held[detail]:
+            raise ValueError(f"{owner}: {detail!r} holds a value, so it has no reason")
+    for detail in sorted(claimed_details):
+        if not held[detail]:
+            raise ValueError(f"{owner}: {detail!r} is claimed but holds no value")
+    object.__setattr__(record, "unreported", MappingProxyType(named))
+    object.__setattr__(record, "claimed", claimed_details)
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Usage:
     """Token counts and passes as the leaf normalizes them from the wire; each 0 is a
@@ -1221,11 +1358,24 @@ class WireResponse:
     request_id: str | None = None
     raw_body: JsonValue | bytes | None = None
     warnings: tuple[Notice, ...] = ()
+    versions: Mapping[str, str] = field(default_factory=_no_versions)
+    client_versions: Mapping[str, str] = field(default_factory=_no_versions)
+    unreported: Mapping[ProvenanceDetail, UnreportedReason] = field(default_factory=_no_unreported)
+    claimed: frozenset[ProvenanceDetail] = frozenset()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "answers", MappingProxyType(dict(self.answers)))
         if isinstance(self.prompt_sent, Mapping):
             object.__setattr__(self, "prompt_sent", MappingProxyType(dict(self.prompt_sent)))
+        _freeze_provenance(
+            self,
+            "WireResponse",
+            _held(self),
+            self.versions,
+            self.client_versions,
+            self.unreported,
+            self.claimed,
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -1255,10 +1405,24 @@ class Outcome:
     request_id: str | None
     failed_attempts: tuple[FailedAttempt, ...]
     warnings: tuple[Notice, ...]
+    rounding: Rounding
+    versions: Mapping[str, str] = field(default_factory=_no_versions)
+    client_versions: Mapping[str, str] = field(default_factory=_no_versions)
+    unreported: Mapping[ProvenanceDetail, UnreportedReason] = field(default_factory=_no_unreported)
+    claimed: frozenset[ProvenanceDetail] = frozenset()
 
     def __post_init__(self) -> None:
         if isinstance(self.prompt_sent, Mapping):
             object.__setattr__(self, "prompt_sent", MappingProxyType(dict(self.prompt_sent)))
+        _freeze_provenance(
+            self,
+            "Outcome",
+            _held(self),
+            self.versions,
+            self.client_versions,
+            self.unreported,
+            self.claimed,
+        )
 
     @property
     def attempts(self) -> int:
