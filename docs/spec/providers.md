@@ -70,6 +70,7 @@ Its `name` is `system-one` and its `model` the one it was built for.
   The 16 MiB per image and 32 MiB for all images are declared and checked on the raw bytes; the documented maximum side, 1,568, is checked by no one, so the wire refuses or resizes a larger image.
 - **The questions**, keyed as asked and in request order: a `noul` and a `box` send `{type, instructions}`, a described `noul` adding `criteria`, `true` for its `yes` description and `false` for its `no`, an undescribed side left out; a `choice` adds `criteria`, each label's name to its description or `null`, in label order; a `score` adds `criteria`, the list of each level's description or, lacking one, its name.
   `instructions` is the question's instruction as it is, a string or a JSON object or array; the recorded `wording` cassette on each model holds a described `noul` and an object instruction.
+  A JSON part and a structured instruction are sent with their keys in the value's own order and unsorted, at every depth, so two equal values whose keys stand in different orders send different bodies.
 
 **Reading the response.** The body must hold a non-empty string `model`, an object `usage` and an object `answers`, or the call raises a non-retryable `ProviderError`.
 Each answer is mapped to its kind's shape, then `validate_answers` runs over them all with the record's rounding.
@@ -195,6 +196,7 @@ A request's options reach every member, so a mixed request carrying `reference_d
 The state is built as System One builds it with the images taken out, and is the empty string when only images remain; the questions and the reading per kind are System One's (a `choice`'s probabilities in label order with `chosen` and `confidence`; a `score`'s by index with `expected_level` and the legend echoed as descriptions; a `noul`'s probability).
 Clef sends the questions, as Clairic sends its fields, in the wire request's order and never reorders them.
 A described `noul`'s `criteria` and a structured instruction are sent as System One sends them.
+A JSON part and a structured instruction are sent with their keys in the value's own order and unsorted, at every depth, as System One sends them.
 Through `cloudflare()`, a structured instruction on a label kind reaches Clef and is sent; the router's derived `carries_structured_instructions` is false, since Clairic's is, and a composite's own check does not read it, so each member's record decides.
 The wire has no refusal.
 No record field holds Clef's 16 MP per image; the wire refuses a larger image.
