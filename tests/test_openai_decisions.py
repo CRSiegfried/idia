@@ -140,10 +140,10 @@ def test_a_kind_the_leaf_does_not_answer_is_a_provider_error_not_a_key_error() -
     assert "does not answer 'extraction'" in error.message
 
 
-def test_a_json_part_nested_too_deeply_to_encode_is_a_provider_error() -> None:
-    state = State(parts=(JsonPart(value=_deep(100_000)),))
-    error = _raised(_answering([]).leaf(), _one(_NOUL, state))
-    assert "cannot be sent as JSON" in error.message
+def test_a_json_part_nested_too_deeply_never_reaches_the_wire() -> None:
+    # A value nested too deep never reaches the wire: it is refused when the part is built.
+    with pytest.raises(ValueError, match=r"^JsonPart\.value nests too deep$"):
+        JsonPart(value=_deep(100_000))
 
 
 _CHOICE = TEXT_QUESTIONS["choice"][0]  # rain (described), sun, snow (described)

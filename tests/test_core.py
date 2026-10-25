@@ -998,24 +998,31 @@ def test_a_json_part_is_held_read_only_in_the_order_given() -> None:
     assert core.JsonPart(value="text").value == "text"
 
 
-def test_a_json_part_holds_any_depth_and_a_cycle_as_given() -> None:
+def test_a_value_that_contains_itself_or_nests_too_deep_is_refused_at_build() -> None:
+    loop: list[Any] = [1]
+    loop.append({"again": loop})
+    with pytest.raises(ValueError, match=r"^JsonPart\.value contains itself$"):
+        core.JsonPart(value=cast(Any, loop))
+    looped: dict[str, Any] = {"a": 1}
+    looped["self"] = (looped,)
+    with pytest.raises(ValueError, match=r"^Question\.instruction contains itself$"):
+        Question(key="q", kind="noul", instruction=looped)
+    state, asked = State(parts=()), (Question(key="q", kind="noul", instruction="?"),)
+    options = cast(Any, {"k": loop})
+    with pytest.raises(ValueError, match=r"^Request\.options\['k'\] contains itself$"):
+        Request(state=state, questions=asked, deadline=Deadline.after(1), options=options)
+    with pytest.raises(ValueError, match=r"^WireRequest\.options\['k'\] contains itself$"):
+        idia.WireRequest(state=state, questions=asked, options=options)
     deep: Any = 1
     for _ in range(100_000):
         deep = [{"k": deep}]
-    held: Any = core.JsonPart(value=deep).value
-    for _ in range(100_000):
-        assert isinstance(held, tuple)
-        assert isinstance(held[0], MappingProxyType)
-        held = cast(Any, held[0]["k"])
-    assert held == 1
-    loop: list[Any] = [1]
-    loop.append({"again": loop})
-    cyclic = cast(tuple[Any, ...], core.JsonPart(value=cast(Any, loop)).value)
-    assert cyclic[0] == 1
-    assert cyclic[1]["again"] is loop  # met again inside itself: held as given, for the leaf
+    with pytest.raises(ValueError, match=r"^JsonPart\.value nests too deep$"):
+        core.JsonPart(value=deep)
+    with pytest.raises(ValueError, match=r"^Question\.instruction nests too deep$"):
+        Question(key="q", kind="noul", instruction={"k": deep})
     shared = {"b": 1}
     twice = cast(tuple[Any, ...], core.JsonPart(value=cast(Any, [shared, shared])).value)
-    assert all(isinstance(item, MappingProxyType) for item in twice)
+    assert all(isinstance(item, MappingProxyType) for item in twice)  # shared, not a cycle
 
 
 def test_options_are_held_read_only_in_the_order_given() -> None:

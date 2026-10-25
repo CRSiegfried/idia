@@ -130,12 +130,13 @@ def _answering(answers: Mapping[str, object], model: str = "jev-1.14.0") -> Wire
     return Wire({"model": model, "answers": answers, "usage": {"input_tokens": 9}})
 
 
-def test_a_json_part_nested_too_deeply_to_encode_is_a_provider_error() -> None:
+def test_a_json_part_nested_too_deeply_never_reaches_the_wire() -> None:
     value: JsonValue = 1
     for _ in range(100_000):
         value = (value,)
-    error = _raised(_answering({}).leaf(), _one(_NOUL, State(parts=(JsonPart(value=value),))))
-    assert "cannot be sent as JSON" in error.message
+    # A value nested too deep never reaches the wire: it is refused when the part is built.
+    with pytest.raises(ValueError, match=r"^JsonPart\.value nests too deep$"):
+        JsonPart(value=value)
 
 
 def test_a_state_with_a_lone_surrogate_is_refused_as_a_provider_error() -> None:
