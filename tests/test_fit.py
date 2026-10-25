@@ -877,7 +877,9 @@ def test_every_wire_request_carries_the_state_and_instructions_as_given() -> Non
     questions = tuple(
         Question(key=f"q{index}", kind="noul", instruction=STRUCTURED) for index in range(5)
     )
-    request = _request(*questions, state=state)
+    options = {"zeta": 1, "alpha": {"y": 2, "b": 3}}
+    request = Request(state=state, questions=questions, deadline=DEADLINE, options=options)
+    assert _ordered(request.options) == [("zeta", 1), ("alpha", [("y", 2), ("b", 3)])]
     plan = _plan(request, max_questions=2, modalities=frozenset({"text", "json"}))
     assert len(plan.wire_requests) == 3
     sent = [question for wire in plan.wire_requests for question in wire.questions]
@@ -885,6 +887,7 @@ def test_every_wire_request_carries_the_state_and_instructions_as_given() -> Non
     assert all(given is planned for given, planned in zip(questions, sent, strict=True))
     for wire in plan.wire_requests:
         assert wire.state is request.state
+        assert _ordered(wire.options) == _ordered(request.options)
         part = wire.state.parts[1]
         assert isinstance(part, JsonPart)
         assert _ordered(part.value) == _ordered(NESTED)

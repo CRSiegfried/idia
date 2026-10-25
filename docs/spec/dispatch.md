@@ -73,7 +73,7 @@ The leaf's `call` is then awaited concurrently, so the leaf must allow that.
 ## The outcome
 
 One outcome per wire request, in plan order.
-It carries the keys the wire request held, the leaf's `name` and `model`, and the wire response's provenance as the leaf gave it: the model reported, the snapshot, the elicitation, `calibrated`, the prompt sent, usage and the request id.
+It carries the keys the wire request held, the leaf's `name` and `model`, and the wire response's provenance as the leaf gave it: the model reported, the snapshot, the elicitation, `calibrated`, the prompt sent, its keys in the order the leaf gave them, usage and the request id.
 The raw body goes no further than the wire response.
 The dispatcher adds `started_at` (wall clock), `latency` (monotonic, over the whole wire request, waits and retries included) and `failed_attempts`, one per `ProviderError` with the leaf's name and model, the error, its request id, the attempt's start and duration.
 `attempts` is derived: the failed attempts plus one when the request answered.

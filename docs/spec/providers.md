@@ -59,7 +59,7 @@ Its `name` is `system-one` and its `model` the one it was built for.
   `capabilities` replaces the declared record for a caller who knows better; it must agree with the feature flags, which alone decide the headers sent.
 - **The request** is `POST /v1/systemone` with `Authorization: Bearer <key>`, uncompressed JSON whose keys are `model`, `state`, `questions` and, with an image, `assets`, in that order, built the same way every time.
   `long_context` adds `TypeSafe-Danger-Zone-Long-Context: true`; `images` adds `TypeSafe-Danger-Zone-Images: true`.
-- **The state**: one part is its own value (text as a string, JSON as its value); several are an array in order.
+- **The state**: one part is its own value (text as a string, JSON as its value); several are an array in order. A JSON part is sent with its keys in the value's own order, at every depth, so two equal values whose keys stand in different orders send different bodies.
   An image becomes the text `<image-N>`, numbered from 0, and `assets` maps that text to `{type: "image", format, data_base64}`.
   The format is `png` or `jpeg`, the type Fit judged: the declared media type, lower-cased with `image/jpg` read as `image/jpeg`, when PNG or JPEG, else the type the bytes show; a leaf called directly with another image sends its declared type with `image/` removed, else the type its bytes show, else an empty format, and the wire refuses it.
   The leaf refuses before sending, with a non-retryable `ProviderError`, a state that cannot be written as JSON (a non-finite number, a value JSON has no form for) and a state with more than one image under a `box` question, since a box answers about one image: no record field says either.
@@ -70,7 +70,7 @@ Its `name` is `system-one` and its `model` the one it was built for.
   The 16 MiB per image and 32 MiB for all images are declared and checked on the raw bytes; the documented maximum side, 1,568, is checked by no one, so the wire refuses or resizes a larger image.
 - **The questions**, keyed as asked and in request order: a `noul` and a `box` send `{type, instructions}`, a described `noul` adding `criteria`, `true` for its `yes` description and `false` for its `no`, an undescribed side left out; a `choice` adds `criteria`, each label's name to its description or `null`, in label order; a `score` adds `criteria`, the list of each level's description or, lacking one, its name.
   `instructions` is the question's instruction as it is, a string or a JSON object or array; the recorded `wording` cassette on each model holds a described `noul` and an object instruction.
-  A JSON part and a structured instruction are sent with their keys in the value's own order and unsorted, at every depth, so two equal values whose keys stand in different orders send different bodies.
+  A structured instruction is sent with its keys in the value's own order, at every depth.
 
 **Reading the response.** The body must hold a non-empty string `model`, an object `usage` and an object `answers`, or the call raises a non-retryable `ProviderError`.
 Each answer is mapped to its kind's shape, then `validate_answers` runs over them all with the record's rounding.
@@ -83,7 +83,7 @@ Each answer is mapped to its kind's shape, then `validate_answers` runs over the
   An answer whose `type` is not its question's, or whose fields are not the kind's wire shape (a number too large for a float included), is that question's `Fault` with `Rule.kind_shape`.
   A key with no question is dropped with a warning.
 
-**Provenance.** `elicitation="passthrough"`; `calibrated` from the record; `model_reported` the body's `model`, which is also the `snapshot` when it has the form `jev-<major>.<minor>.<patch>`, otherwise no snapshot and a `no-snapshot` warning; `usage` the integer `input_tokens` and `output_tokens` with the body's `usage` as `raw_usage`; `request_id` from `x-typesafe-request-id`; `raw_body` the parsed body; `prompt_sent` the body sent with each asset's `data_base64` replaced by `bytes`, its size; `versions` empty and `not-applicable`; `client_versions` `httpx2`'s; the snapshot `not-pinned` when there is none, `usage.passes` `not-reported`, and a token count or request id the wire leaves out `not-reported`; nothing claimed.
+**Provenance.** `elicitation="passthrough"`; `calibrated` from the record; `model_reported` the body's `model`, which is also the `snapshot` when it has the form `jev-<major>.<minor>.<patch>`, otherwise no snapshot and a `no-snapshot` warning; `usage` the integer `input_tokens` and `output_tokens` with the body's `usage` as `raw_usage`; `request_id` from `x-typesafe-request-id`; `raw_body` the parsed body; `prompt_sent` the body sent, in its order, with each asset's `data_base64` replaced by `bytes`, its size; `versions` empty and `not-applicable`; `client_versions` `httpx2`'s; the snapshot `not-pinned` when there is none, `usage.passes` `not-reported`, and a token count or request id the wire leaves out `not-reported`; nothing claimed.
 
 **The record**, per model and feature:
 
@@ -185,7 +185,7 @@ A request's options reach every member, so a mixed request carrying `reference_d
   The request id is `cf-ai-req-id`, the id the wire also writes into its error messages.
 - **Images** go in a top-level `images` array as `{content_type, base64}`, with the type Fit judged: the declared media type when it is PNG, JPEG or WebP (`image/jpg` read as `image/jpeg`), otherwise the type the bytes' signature shows.
   The records declare the image limits (table below), so Fit refuses before any call more than four images, an image over 4 MiB, images over 8 MiB in all, or another type; a leaf called directly with such an image sends it, with its declared type or else `application/octet-stream`, and the wire refuses it.
-  `min_image_side` is unknown, so every outcome of a request whose state has an image carries an `unchecked-limit` warning naming it; `prompt_sent` replaces each `base64` with `bytes`, its size.
+  `min_image_side` is unknown, so every outcome of a request whose state has an image carries an `unchecked-limit` warning naming it; `prompt_sent` is the body sent, in its order, with each `base64` replaced by `bytes`, its size.
 - **Question ids.** The wire takes a Clef question id matching `[A-Za-z0-9_.-]{1,100}` and a Clairic field name matching `[A-Za-z_][A-Za-z0-9_.\-]{0,63}`, and refuses others (Clef's `match:intent`, on `clef`, with 422 and code 3030, the cassette `question-id-probe`; Clairic's `1bad` with 422 and code 3030, the cassette `field-name-probe`).
   When every key of a wire request matches, the keys are sent as given; when any does not, every question of that wire request is sent as `q0..qN` (Clef) or `f0..fN` (Clairic), by position, and the answers are mapped back to the caller's keys.
   So `key_patterns` is empty and Fit checks no key.
@@ -195,8 +195,7 @@ A request's options reach every member, so a mixed request carrying `reference_d
 **Clef** sends `model, state, questions[, images]`, compact and the same every time.
 The state is built as System One builds it with the images taken out, and is the empty string when only images remain; the questions and the reading per kind are System One's (a `choice`'s probabilities in label order with `chosen` and `confidence`; a `score`'s by index with `expected_level` and the legend echoed as descriptions; a `noul`'s probability).
 Clef sends the questions, as Clairic sends its fields, in the wire request's order and never reorders them.
-A described `noul`'s `criteria` and a structured instruction are sent as System One sends them.
-A JSON part and a structured instruction are sent with their keys in the value's own order and unsorted, at every depth, as System One sends them.
+A described `noul`'s `criteria`, a JSON part and a structured instruction are sent as System One sends them, every key in the value's own order at every depth.
 Through `cloudflare()`, a structured instruction on a label kind reaches Clef and is sent; the router's derived `carries_structured_instructions` is false, since Clairic's is, and a composite's own check does not read it, so each member's record decides.
 The wire has no refusal.
 No record field holds Clef's 16 MP per image; the wire refuses a larger image.
