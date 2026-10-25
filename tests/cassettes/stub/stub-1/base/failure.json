@@ -1,7 +1,7 @@
 {
   "expected": null,
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "stub",
   "model": "stub-1",
   "request": {
@@ -68,35 +68,35 @@
     "status": 400
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "Is it so?",
-        "is_list": false,
-        "key": "noul_a",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "Is it not?",
-        "is_list": false,
-        "key": "noul_b",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The state every conformance question is about.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The state every conformance question is about."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "noul_a",
+        "kind": "noul",
+        "instruction": "Is it so?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "noul_b",
+        "kind": "noul",
+        "instruction": "Is it not?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

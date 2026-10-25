@@ -1,21 +1,21 @@
 {
   "expected": {
     "venue": {
-      "confidence": 0.9999980926513672,
+      "type": "ExtractionAnswer",
+      "value": "Northgate Park",
       "guess": "Northgate Park",
+      "confidence": 0.9999980926513672,
       "p_null": 5.386176781030372e-05,
       "span": {
-        "end": 58,
+        "type": "Span",
         "part": 0,
         "start": 44,
-        "type": "Span"
-      },
-      "type": "ExtractionAnswer",
-      "value": "Northgate Park"
+        "end": 58
+      }
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clairic",
   "model": "clairic",
   "request": {
@@ -89,29 +89,29 @@
     "status": 200
   },
   "wire_request": {
-    "options": {
-      "reference_date": "2026-10-21"
+    "type": "WireRequest",
+    "state": {
+      "type": "State",
+      "parts": [
+        {
+          "type": "TextPart",
+          "text": "\ud83c\udf27\ufe0f Storm warning \ud83c\udf27\ufe0f: the final was moved to Northgate Park, \ud83c\udfdf\ufe0f gates at noon."
+        }
+      ]
     },
     "questions": [
       {
-        "instruction": "The new venue.",
-        "is_list": false,
+        "type": "Question",
         "key": "venue",
         "kind": "extraction",
+        "instruction": "The new venue.",
         "labels": [],
-        "type": "Question",
-        "value_type": "text"
+        "value_type": "text",
+        "is_list": false
       }
     ],
-    "state": {
-      "parts": [
-        {
-          "text": "\ud83c\udf27\ufe0f Storm warning \ud83c\udf27\ufe0f: the final was moved to Northgate Park, \ud83c\udfdf\ufe0f gates at noon.",
-          "type": "TextPart"
-        }
-      ],
-      "type": "State"
-    },
-    "type": "WireRequest"
+    "options": {
+      "reference_date": "2026-10-21"
+    }
   }
 }

@@ -1,32 +1,32 @@
 {
   "expected": {
     "box_blue": {
-      "confidence": 0.18,
+      "type": "BoxAnswer",
       "region": {
-        "bottom": 0.57,
-        "left": 0.64,
-        "right": 0.87,
+        "type": "Box",
         "top": 0.35,
-        "type": "Box"
+        "left": 0.64,
+        "bottom": 0.57,
+        "right": 0.87
       },
-      "type": "BoxAnswer"
+      "confidence": 0.18
     },
     "box_red": {
-      "confidence": 0.3,
+      "type": "BoxAnswer",
       "region": {
-        "bottom": 0.54,
-        "left": 0.19,
-        "right": 0.33,
+        "type": "Box",
         "top": 0.22,
-        "type": "Box"
+        "left": 0.19,
+        "bottom": 0.54,
+        "right": 0.33
       },
-      "type": "BoxAnswer"
+      "confidence": 0.3
     }
   },
   "features": [
     "images"
   ],
-  "format": 1,
+  "format": 2,
   "leaf": "system-one",
   "model": "jev-1.14.0",
   "request": {
@@ -113,40 +113,40 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The red square.",
-        "is_list": false,
-        "key": "box_red",
-        "kind": "box",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "The blue square.",
-        "is_list": false,
-        "key": "box_blue",
-        "kind": "box",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A test card: a white field with two coloured squares.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A test card: a white field with two coloured squares."
         },
         {
+          "type": "ImagePart",
           "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
-          "media_type": "image/png",
-          "type": "ImagePart"
+          "media_type": "image/png"
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "box_red",
+        "kind": "box",
+        "instruction": "The red square.",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "box_blue",
+        "kind": "box",
+        "instruction": "The blue square.",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

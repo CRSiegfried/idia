@@ -1,89 +1,89 @@
 {
   "expected": {
     "attendance": {
-      "confidence": 0.03599526404472994,
-      "guess": 300,
-      "p_null": 0.9999998807907104,
-      "span": null,
       "type": "ExtractionAnswer",
-      "value": null
+      "value": null,
+      "guess": 300,
+      "confidence": 0.03599526404472994,
+      "p_null": 0.9999998807907104,
+      "span": null
     },
     "home_team": {
-      "confidence": 0.6441899538040161,
+      "type": "ExtractionAnswer",
+      "value": null,
       "guess": "Riverside Rovers",
+      "confidence": 0.6441899538040161,
       "p_null": 0.6884178519248962,
       "span": {
-        "end": 16,
+        "type": "Span",
         "part": 0,
         "start": 0,
-        "type": "Span"
-      },
-      "type": "ExtractionAnswer",
-      "value": null
+        "end": 16
+      }
     },
     "inspection": {
-      "confidence": 0.9999336034224678,
-      "guess": {
-        "type": "timedelta",
-        "value": 2700.0
-      },
-      "p_null": 6.279661874941667e-07,
-      "span": null,
       "type": "ExtractionAnswer",
       "value": {
         "type": "timedelta",
         "value": 2700.0
-      }
+      },
+      "guess": {
+        "type": "timedelta",
+        "value": 2700.0
+      },
+      "confidence": 0.9999336034224678,
+      "p_null": 6.279661874941667e-07,
+      "span": null
     },
     "match_date": {
-      "confidence": 0.9989451495480582,
-      "guess": {
-        "type": "date",
-        "value": "2026-10-17"
-      },
-      "p_null": 0.0005334904417395592,
-      "span": null,
       "type": "ExtractionAnswer",
       "value": {
         "type": "date",
         "value": "2026-10-17"
-      }
+      },
+      "guess": {
+        "type": "date",
+        "value": "2026-10-17"
+      },
+      "confidence": 0.9989451495480582,
+      "p_null": 0.0005334904417395592,
+      "span": null
     },
     "referees": {
-      "confidence": 0.9987507230500803,
-      "guess": null,
-      "p_null": null,
-      "span": [
-        {
-          "end": 240,
-          "part": 0,
-          "start": 232,
-          "type": "Span"
-        },
-        {
-          "end": 253,
-          "part": 0,
-          "start": 245,
-          "type": "Span"
-        }
-      ],
       "type": "ExtractionAnswer",
       "value": [
         "Ana Ruiz",
         "Tom Bell"
+      ],
+      "guess": null,
+      "confidence": 0.9987507230500803,
+      "p_null": null,
+      "span": [
+        {
+          "type": "Span",
+          "part": 0,
+          "start": 232,
+          "end": 240
+        },
+        {
+          "type": "Span",
+          "part": 0,
+          "start": 245,
+          "end": 253
+        }
       ]
     },
     "refunds": {
-      "confidence": 0.9999946356095605,
-      "guess": 4250.5,
-      "p_null": 1.6672748870405485e-06,
-      "span": null,
       "type": "ExtractionAnswer",
-      "value": 4250.5
+      "value": 4250.5,
+      "guess": 4250.5,
+      "confidence": 0.9999946356095605,
+      "p_null": 1.6672748870405485e-06,
+      "span": null
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clairic",
   "model": "clairic",
   "request": {
@@ -225,74 +225,74 @@
     "status": 200
   },
   "wire_request": {
-    "options": {
-      "reference_date": "2026-10-21"
+    "type": "WireRequest",
+    "state": {
+      "type": "State",
+      "parts": [
+        {
+          "type": "TextPart",
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes."
+        }
+      ]
     },
     "questions": [
       {
-        "instruction": "The home team.",
-        "is_list": false,
+        "type": "Question",
         "key": "home_team",
         "kind": "extraction",
+        "instruction": "The home team.",
         "labels": [],
-        "type": "Question",
-        "value_type": "text"
+        "value_type": "text",
+        "is_list": false
       },
       {
-        "instruction": "The ticket refunds, in pounds, to two decimals.",
-        "is_list": false,
+        "type": "Question",
         "key": "refunds",
         "kind": "extraction",
+        "instruction": "The ticket refunds, in pounds, to two decimals.",
         "labels": [],
-        "type": "Question",
-        "value_type": "number"
+        "value_type": "number",
+        "is_list": false
       },
       {
-        "instruction": "The date the match was due to be played.",
-        "is_list": false,
+        "type": "Question",
         "key": "match_date",
         "kind": "extraction",
+        "instruction": "The date the match was due to be played.",
         "labels": [],
-        "type": "Question",
-        "value_type": "date"
+        "value_type": "date",
+        "is_list": false
       },
       {
-        "instruction": "The referees' names.",
-        "is_list": true,
+        "type": "Question",
         "key": "referees",
         "kind": "extraction",
+        "instruction": "The referees' names.",
         "labels": [],
-        "type": "Question",
-        "value_type": "text"
+        "value_type": "text",
+        "is_list": true
       },
       {
-        "instruction": "How long the pitch inspection took.",
-        "is_list": false,
+        "type": "Question",
         "key": "inspection",
         "kind": "extraction",
+        "instruction": "How long the pitch inspection took.",
         "labels": [],
-        "type": "Question",
-        "value_type": "duration"
+        "value_type": "duration",
+        "is_list": false
       },
       {
-        "instruction": "The number of spectators at the ground.",
-        "is_list": false,
+        "type": "Question",
         "key": "attendance",
         "kind": "extraction",
+        "instruction": "The number of spectators at the ground.",
         "labels": [],
-        "type": "Question",
-        "value_type": "number"
+        "value_type": "number",
+        "is_list": false
       }
     ],
-    "state": {
-      "parts": [
-        {
-          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
-          "type": "TextPart"
-        }
-      ],
-      "type": "State"
-    },
-    "type": "WireRequest"
+    "options": {
+      "reference_date": "2026-10-21"
+    }
   }
 }

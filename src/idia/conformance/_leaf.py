@@ -1,17 +1,19 @@
-"""The leaf half: L1 to L31, run against a leaf a harness builds."""
+"""The leaf half: L1 to L32, run against a leaf a harness builds."""
 
 from __future__ import annotations
 
 import asyncio
 import dataclasses
 import inspect
+import json
 import time
 from collections import Counter
-from collections.abc import Awaitable, Callable, Coroutine
-from typing import Any, Final, TypeVar
+from collections.abc import Awaitable, Callable, Coroutine, Mapping, Sequence
+from typing import Any, Final, TypeVar, cast
 
 from idia.conformance import _review
 from idia.conformance._base import (
+    AnyBody,
     CandidateShape,
     Check,
     CheckNotApplicable,
@@ -41,6 +43,8 @@ from idia.core import (
     Deadline,
     ExtractionAnswer,
     Fault,
+    JsonPart,
+    JsonValue,
     Kind,
     LabelAnswer,
     Leaf,
@@ -49,7 +53,9 @@ from idia.core import (
     ProviderError,
     Refusal,
     Rule,
+    State,
     TokenEstimator,
+    WireRequest,
     WireResponse,
 )
 from idia.dispatch import Dispatcher
@@ -726,6 +732,102 @@ async def _l31(harness: LeafHarness) -> str | None:
     return None
 
 
+_ORDERED_PART: Final[JsonValue] = {
+    "l32-zulu": {"l32-yankee": 1, "l32-xray": ({"l32-victor": "v", "l32-whiskey": "w"},)},
+    "l32-alpha": "a",
+}
+"""L32's JSON part, nested: its outer objects' keys descend and its innermost object's
+ascend, so a leaf that sorts every object either way, or reverses each, changes the order."""
+
+_ORDERED_DETAIL: Final[JsonValue] = {"l32-mike": "m", "l32-lima": "l"}
+"""What L32 adds to its structured instruction, after the question, keys not sorted."""
+
+
+def _key_order(value: object) -> list[str]:
+    """Every object key in ``value``, depth first, in the order held."""
+    if isinstance(value, Mapping):
+        keys: list[str] = []
+        for key, item in cast(Mapping[str, object], value).items():
+            keys += [key, *_key_order(item)]
+        return keys
+    if isinstance(value, tuple | list):
+        return [key for item in cast(Sequence[object], value) for key in _key_order(item)]
+    return []
+
+
+def _plain(value: object) -> object:
+    """A JSON value as :mod:`json` writes it: read-only mappings as dicts, tuples as lists."""
+    if isinstance(value, Mapping):
+        return {k: _plain(v) for k, v in cast(Mapping[str, object], value).items()}
+    if isinstance(value, tuple | list):
+        return [_plain(item) for item in cast(Sequence[object], value)]
+    return value
+
+
+def _in_order(text: str, given: Mapping[str, list[str]], where: str) -> None:
+    """Fail unless every key of each given value appears in ``text`` in the order given;
+    the keys are unique names, so they are found even inside a value sent as a string."""
+    for what, keys in given.items():
+        found = [text.find(key) for key in keys]
+        missing = [key for key, at in zip(keys, found, strict=True) if at < 0]
+        expect(not missing, f"the {what} did not reach {where}: {missing} missing")
+        order = [key for _, key in sorted(zip(found, keys, strict=True))]
+        expect(order == keys, f"{where} holds the {what}'s keys in the order {order}, not {keys}")
+
+
+async def _l32(harness: LeafHarness) -> str | None:
+    record = harness.capabilities
+    carries_json = "json" in record.modalities
+    structured = record.carries_structured_instructions
+    if not carries_json and not structured:
+        raise CheckNotApplicable(
+            "the record carries neither a JSON part nor a structured instruction"
+        )
+    kind = _claimed(harness)[0]
+    asked = harness.wire_request(kind)
+    given: dict[str, list[str]] = {}
+    state = asked.state
+    questions = asked.questions
+    if carries_json:
+        state = State(parts=(*state.parts, JsonPart(value=_ORDERED_PART)))
+        given["JSON part"] = _key_order(_ORDERED_PART)
+    if structured:
+        first = questions[0]
+        held = first.instruction
+        question = held if isinstance(held, str) else json.dumps(_plain(held))
+        instruction: JsonValue = {"l32-question": question, "l32-detail": _ORDERED_DETAIL}
+        questions = (dataclasses.replace(first, instruction=instruction), *questions[1:])
+        given["structured instruction"] = _key_order(instruction)
+    request = WireRequest(state=state, questions=questions, options=asked.options)
+    leaf = harness.make([AnyBody(kind)])
+    response = await _outcome(leaf.call(request, Deadline.after(_SECONDS)))
+    expect(
+        isinstance(response, WireResponse),
+        f"a {kind} request holding ordered JSON ended in {response!r}",
+    )
+    assert isinstance(response, WireResponse)
+    notes: list[str] = []
+    body_sent = cast(Callable[[], bytes] | None, getattr(harness, "body_sent", None))
+    try:
+        if body_sent is None:
+            raise CheckNotApplicable("the harness reads no body")
+        body = body_sent()
+    except CheckNotApplicable as not_applicable:
+        notes.append(f"the body was not checked: {not_applicable.reason}")
+    else:
+        _in_order(body.decode("utf-8", errors="replace"), given, "the body sent")
+    sent = response.prompt_sent
+    if sent is None and harness.prompt_hidden:
+        notes.append("prompt_sent was not checked: the wire hides the prompt")
+    else:
+        expect(sent is not None, "prompt_sent is None, yet the wire does not hide the prompt")
+        text = sent if isinstance(sent, str) else json.dumps(_plain(sent), ensure_ascii=False)
+        _in_order(text, given, "prompt_sent")
+    if len(notes) == 2:
+        raise CheckNotApplicable("; ".join(notes))
+    return "; ".join(notes) or None
+
+
 _LeafCheck = Callable[[LeafHarness], Awaitable[str | None]]
 
 _CHECKS: Final[tuple[tuple[str, str, _LeafCheck], ...]] = (
@@ -782,11 +884,17 @@ _CHECKS: Final[tuple[tuple[str, str, _LeafCheck], ...]] = (
         "images; 0, 0, 0 and no types, or unknown, or its image feature's values, where not.",
         _l31,
     ),
+    (
+        "L32",
+        "Each multi-key, nested JSON part and structured instruction the record carries "
+        "reaches the body sent and prompt_sent in the order given, at every depth.",
+        _l32,
+    ),
 )
 
 
 def leaf_checks(make_harness: Callable[[], LeafHarness]) -> tuple[Check, ...]:
-    """The leaf half, L1 to L31, each run against a fresh harness from ``make_harness``."""
+    """The leaf half, L1 to L32, each run against a fresh harness from ``make_harness``."""
 
     def bind(check: _LeafCheck) -> Callable[[], Coroutine[Any, Any, str | None]]:
         async def run() -> str | None:

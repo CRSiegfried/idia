@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import inspect
+import json
 from collections.abc import Mapping
 from dataclasses import replace
 from types import ModuleType
@@ -33,8 +34,9 @@ from idia.core import (
     WireResponse,
     unknown_options,
 )
+from idia.providers._canon import encode, json_bytes, render_wire_request
 from idia.providers.http import wire_unreported
-from idia.providers.scripted import Reply, ScriptFunction
+from idia.providers.scripted import Reply, Scripted, ScriptFunction
 
 
 def _rules_copy() -> ModuleType:
@@ -94,7 +96,7 @@ class OwnRules:
             calibrated=self.capabilities.calibrated,
             model_reported=self.model,
             snapshot=snapshot,
-            prompt_sent="the prompt",
+            prompt_sent=render_wire_request(wire_request),
             usage=usage,
             request_id=request_id,
             raw_body={"answers": "as recorded"},
@@ -152,3 +154,20 @@ class InventsAnUnsentOutcome:
                 request_id=None,
             )
             raise RequestFailed(replace(failed.response, outcomes=(*earlier, invented))) from None
+
+
+class SortsKeys(Scripted):
+    """A scripted leaf whose ``prompt_sent`` sorts every object's keys, as a leaf that sorts
+    a caller's JSON before sending would."""
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        response = await super().call(wire_request, deadline)
+        rendered = json.dumps(json.loads(json_bytes(encode(wire_request))), sort_keys=True)
+        return replace(response, prompt_sent=rendered)
+
+
+class SortsKeysHarness(ScriptedHarness):
+    """The scripted wire behind a leaf that sorts the keys of what it sends."""
+
+    def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Scripted:
+        return SortsKeys(capabilities=capabilities, script=script, name=self.name, model=self.model)

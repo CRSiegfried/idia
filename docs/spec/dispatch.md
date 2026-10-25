@@ -73,7 +73,7 @@ The leaf's `call` is then awaited concurrently, so the leaf must allow that.
 ## The outcome
 
 One outcome per wire request, in plan order.
-It carries the keys the wire request held, the leaf's `name` and `model`, and the wire response's provenance as the leaf gave it: the model reported, the snapshot, the elicitation, `calibrated`, the prompt sent, usage and the request id.
+It carries the keys the wire request held, the leaf's `name` and `model`, and the wire response's provenance as the leaf gave it: the model reported, the snapshot, the elicitation, `calibrated`, the prompt sent, its keys in the order the leaf gave them, usage and the request id.
 The raw body goes no further than the wire response.
 The dispatcher adds `started_at` (wall clock), `latency` (monotonic, over the whole wire request, waits and retries included) and `failed_attempts`, one per `ProviderError` with the leaf's name and model, the error, its request id, the attempt's start and duration.
 `attempts` is derived: the failed attempts plus one when the request answered.
@@ -93,7 +93,7 @@ Warnings: an outcome's are the wire response's followed by preflight's `unchecke
 
 ## The re-ask
 
-With `reask=True`, each plan wire request whose answers hold a `Fault` is sent once more, with the same state and only the faulted questions, through the same loop under the same deadline.
+With `reask=True`, each plan wire request whose answers hold a `Fault` is sent once more, with the same state and options, in their order, and only the faulted questions, through the same loop under the same deadline.
 A `Refusal` is not re-asked.
 The re-ask's outcome is appended after the plan's outcomes, and only the keys its answers hold override the first answers.
 A re-ask that fails leaves the plan's fault standing in `answers`, with the failed re-ask outcome beside the plan's.
@@ -107,7 +107,7 @@ A composite has no `plan`; its members' checks run inside `answer`.
 `Router(members: Mapping[Kind, Provider])` refuses at build a kind routed to a member whose record lacks it, with a `ValueError` naming the member, a dispatcher by its leaf's name and model, and the kinds its record has.
 An empty `members` raises `ValueError` at build, as an empty `Fallback` does.
 A mapping held in a variable is annotated, as `routes: dict[Kind, Provider] = {"noul": decisions, "extraction": clairic}`, because a type checker infers an unannotated dict literal's keys as `str` and its values as the members' own type, and `Mapping` is invariant in its key, so a strict checker refuses `Router(routes)`; a literal written in the call itself needs no annotation.
-Each member gets the questions of its kinds as one request of its own, with the request's state, deadline and options unchanged, the members in the mapping's order of first appearance; a member with no questions is not called.
+Each member gets the questions of its kinds as one request of its own, with the request's state, deadline and options unchanged, their keys in the order built, the members in the mapping's order of first appearance; a member with no questions is not called.
 Members run concurrently, so a credential error stops only the plan of the dispatcher it came from: every other member with questions still makes its first call.
 The outcomes are concatenated in member order, the answers are the union, and the response warnings are the members' concatenated.
 A member's `RequestFailed` joins the others' responses; when every member fails, `RequestFailed` carries them all.

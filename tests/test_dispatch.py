@@ -7,6 +7,7 @@ from __future__ import annotations
 import ast
 import asyncio
 import time
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,7 @@ from idia import (
     DoesNotFit,
     Fail,
     Fault,
+    JsonPart,
     LabelAnswer,
     Leaf,
     MappedAnswer,
@@ -39,6 +41,8 @@ from idia import (
     RetryPolicy,
     Router,
     Rule,
+    State,
+    TextPart,
     WireRequest,
 )
 from idia.providers.scripted import Item, Reply, Script, Scripted
@@ -607,6 +611,34 @@ def test_reask_outcome_follows_the_plan_outcomes_and_its_answer_stands() -> None
     assert again.wire_request.state == request_.state
     assert again.deadline == request_.deadline
     assert response.outcomes[1].error is None
+
+
+def test_a_reask_carries_the_plans_state_and_options_in_order() -> None:
+    state = State(parts=(TextPart(text="lead"), JsonPart(value={"z": {"y": 1, "b": 2}, "a": 0})))
+    leaf = _leaf(
+        [{"a": _yes("a")["a"], "b": _off_sum()}, {"b": _good()}],
+        modalities=frozenset({"text", "json"}),
+    )
+    request_ = Request(
+        state=state,
+        questions=(noul("a"), choice("b")),
+        deadline=Deadline.after(60),
+        options={"z": 1, "a": 2},
+    )
+    _answer(Dispatcher(leaf, reask=True), request_)
+    plan, again = (call.wire_request for call in leaf.calls)
+    assert again.questions == (choice("b"),)
+    assert plan.state is request_.state
+    assert again.state is plan.state
+    assert list(again.options.items()) == [("z", 1), ("a", 2)]
+    part = again.state.parts[1]
+    assert isinstance(part, JsonPart)
+    nested = part.value
+    assert isinstance(nested, Mapping)
+    assert list(nested) == ["z", "a"]
+    inner = nested["z"]
+    assert isinstance(inner, Mapping)
+    assert list(inner.items()) == [("y", 1), ("b", 2)]
 
 
 def test_failed_reask_leaves_the_fault_standing() -> None:

@@ -1,7 +1,7 @@
 {
   "expected": null,
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clef",
   "model": "clef",
   "request": {
@@ -58,42 +58,42 @@
     "status": 422
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The weather?",
-        "is_list": false,
-        "key": "match:intent",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": "It rained.",
-            "name": "rain",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "sun",
-            "type": "Label"
-          },
-          {
-            "description": "It snowed.",
-            "name": "snow",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "match:intent",
+        "kind": "choice",
+        "instruction": "The weather?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "rain",
+            "description": "It rained."
+          },
+          {
+            "type": "Label",
+            "name": "sun",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "snow",
+            "description": "It snowed."
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

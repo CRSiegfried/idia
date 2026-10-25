@@ -1,16 +1,7 @@
 {
   "expected": {
     "score_rain": {
-      "chosen": "heavy",
-      "confidence": null,
-      "derived": [
-        "chosen",
-        "expected_level"
-      ],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": 1.9999999999999998,
-      "off_label_mass": 0.0,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "none",
@@ -25,11 +16,20 @@
           0.9999999999999998
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": null,
+      "chosen": "heavy",
+      "expected_level": 1.9999999999999998,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": 0.0,
+      "derived": [
+        "chosen",
+        "expected_level"
+      ]
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-chat",
   "model": "gpt-4.1",
   "request": {
@@ -313,42 +313,42 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How hard?",
-        "is_list": false,
-        "key": "score_rain",
-        "kind": "score",
-        "labels": [
-          {
-            "description": "No rain",
-            "name": "none",
-            "type": "Label"
-          },
-          {
-            "description": "Light rain",
-            "name": "light",
-            "type": "Label"
-          },
-          {
-            "description": "Heavy rain",
-            "name": "heavy",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_rain",
+        "kind": "score",
+        "instruction": "How hard?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "none",
+            "description": "No rain"
+          },
+          {
+            "type": "Label",
+            "name": "light",
+            "description": "Light rain"
+          },
+          {
+            "type": "Label",
+            "name": "heavy",
+            "description": "Heavy rain"
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

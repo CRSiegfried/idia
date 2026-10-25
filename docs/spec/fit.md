@@ -81,6 +81,7 @@ A wire request takes the next question while `max_questions`, `max_total_options
 Otherwise a new wire request starts.
 Each candidate is estimated whole, `estimate(state, chunk)`, never as a sum over its questions.
 Every wire request repeats the state, and every key lands in exactly one, in question order.
+The state, each question and the options are carried as given, a JSON part's or a structured instruction's keys in the order built at every depth.
 A question that does not fit alone with the state raises `DoesNotFit` naming the field.
 The plan is deterministic, the same questions in the same order always packing the same way, but which questions share a wire request depends on their order and on where a limit splits them, so adding, removing or reordering a question can move others into a different wire request, and on a provider whose answers depend on the other questions sent with them, change those answers.
 
@@ -89,7 +90,7 @@ The plan is deterministic, the same questions in the same order always packing t
 The state overflows when its own estimate exceeds `max_input_tokens` or `max_question_tokens`, or its own bytes exceed `max_body_bytes`.
 A token overflow goes to the overflow policy, `apply(state, limit, estimator)`, where `limit` is the tighter limit the state is over.
 The default, `Fail`, raises `DoesNotFit` with `state_overflow` true.
-A named policy returns a new state, which is checked again from the state checks on.
+A named policy returns a new state, which is checked again from the state checks on, and which every wire request of the plan carries exactly as returned, its keys in the order the policy gave them; a policy should keep the order of whatever it keeps.
 If it still overflows, `DoesNotFit` is raised; the policy is applied once.
 When the policy's state fits, the response carries an `overflow-policy` warning whose `field` is the limit the state was over and whose message reads "the state overflowed <field>; policy '<name>' applied".
 A body overflow of the state always raises, whatever the policy: a named policy applies to token overflow only.

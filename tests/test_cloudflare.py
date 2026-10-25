@@ -407,9 +407,10 @@ def test_clef_refuses_a_state_json_cannot_hold_and_a_kind_it_does_not_answer() -
     deep: Any = 1
     for _ in range(100_000):
         deep = (deep,)
-    nested = State(parts=(JsonPart(value=deep),))
-    error = _raises(_clef(wire), WireRequest(state=nested, questions=CLEF_QUESTIONS["noul"]))
-    assert "cannot be sent as JSON" in error.message
+    # A value nested too deep never reaches the wire: Core refuses its depth when the part is
+    # built, so the leaf's own guard is never reached by it.
+    with pytest.raises(ValueError, match=r"^JsonPart\.value nests too deep$"):
+        JsonPart(value=deep)
     error = _raises(_clef(wire), EXTRACTION)
     assert "does not answer 'extraction'" in error.message
     assert wire.requests == []
@@ -1457,10 +1458,8 @@ def test_the_clef_wording_cassette_sends_criteria_and_the_structured_instruction
     """The recorded described ``noul`` and structured instruction, through the harness's
     replay, which asserts the body sent against the cassette."""
     cassette = load_cassette(harness.cassette_dir / f"{WORDING}.json")
-    # The cassette's wire request is stored with sorted keys, as every canonical form is,
-    # so the call is the request as asked, its instruction's keys in the order sent.
-    wire_request = wording_request()
-    assert cassette.wire_request == wire_request
+    wire_request = cassette.wire_request
+    assert wire_request == wording_request()
     leaf = harness.make([Success()])
     result = asyncio.run(leaf.call(wire_request, Deadline.after(5.0)))
     assert harness.requests_sent() == 1
@@ -1473,6 +1472,9 @@ def test_the_clef_wording_cassette_sends_criteria_and_the_structured_instruction
         "false": described.labels[1].description,
     }
     assert sent["structured"]["instructions"] == structured.instruction
+    asked = cast(Mapping[str, object], wording_request().questions[1].instruction)
+    assert list(cast(Mapping[str, object], structured.instruction).items()) == list(asked.items())
+    assert list(sent["structured"]["instructions"].items()) == list(asked.items())
     estimate = leaf.estimator.estimate(wire_request.state, wire_request.questions)
     used = cassette.response["body"]["result"]["usage"]["input_tokens"]
     assert used <= estimate.tokens * (1 + estimate.margin)

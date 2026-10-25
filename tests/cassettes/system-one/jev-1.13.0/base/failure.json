@@ -1,7 +1,7 @@
 {
   "expected": null,
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "system-one",
   "model": "jev-1.13.0",
   "request": {
@@ -89,82 +89,82 @@
     "status": 422
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How much rain, from 0 to 10?",
-        "is_list": false,
-        "key": "score_eleven",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "0",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "1",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "2",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "3",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "4",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "5",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "6",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "7",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "8",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "9",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "10",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_eleven",
+        "kind": "score",
+        "instruction": "How much rain, from 0 to 10?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "0",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "1",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "2",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "3",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "4",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "5",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "6",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "7",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "8",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "9",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "10",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

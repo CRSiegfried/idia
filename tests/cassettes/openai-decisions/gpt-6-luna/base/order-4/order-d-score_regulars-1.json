@@ -1,17 +1,7 @@
 {
   "expected": {
     "score_regulars": {
-      "chosen": null,
-      "confidence": 0.63,
-      "derived": [],
-      "echo": [
-        "low",
-        "mid",
-        "high"
-      ],
-      "echo_of": "names",
-      "expected_level": 0.75,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -26,11 +16,21 @@
           0.0
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.63,
+      "chosen": null,
+      "expected_level": 0.75,
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "names",
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-6-luna",
   "request": {
@@ -147,42 +147,42 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How satisfied are the regulars overall?",
-        "is_list": false,
-        "key": "score_regulars",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "mid",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A small bakery moved its opening from six to eight last month. Some regulars say the bread is better now; others miss buying it before work. Sales rose in the first week, then fell back to where they were. The owner has said only that the new hours are under review.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A small bakery moved its opening from six to eight last month. Some regulars say the bread is better now; others miss buying it before work. Sales rose in the first week, then fell back to where they were. The owner has said only that the new hours are under review."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_regulars",
+        "kind": "score",
+        "instruction": "How satisfied are the regulars overall?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "mid",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

@@ -313,7 +313,7 @@ def test_scripted_leaf_passes_the_leaf_half(check: Check) -> None:
 
 def test_scripted_leaf_not_applicable_set_is_exactly_what_a_script_cannot_reach() -> None:
     verdicts = _verdicts(leaf_checks(ScriptedHarness))
-    assert list(verdicts) == [f"L{n}" for n in range(1, 32)]
+    assert list(verdicts) == [f"L{n}" for n in range(1, 33)]
     assert _ids(verdicts, "not_applicable") == SCRIPTED_NOT_APPLICABLE
     assert _ids(verdicts, "fail") == set()
 
@@ -430,6 +430,32 @@ def test_p19_fails_a_replay_that_does_not_reproduce_the_recording() -> None:
     assert "recorded from member-0/model-0 with features [], not someone-else/model-0" in (
         p19.reason
     )
+
+
+def test_p19_fails_a_replay_that_reorders_what_it_recorded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A replay that hands back the raw usage it recorded with its keys reversed is equal by
+    ``==`` to what was recorded, and still fails P19."""
+    from idia.providers import recorded
+
+    honest = recorded._replay  # pyright: ignore[reportPrivateUsage]
+
+    def reordering(entry: dict[str, object]) -> WireResponse:
+        response = honest(entry)
+        usage = response.usage
+        assert usage is not None
+        assert len(usage.raw_usage) >= 2
+        reversed_usage = dict(reversed(list(usage.raw_usage.items())))
+        return replace(response, usage=replace(usage, raw_usage=reversed_usage))
+
+    monkeypatch.setattr(recorded, "_replay", reordering)
+    verdicts = _verdicts(
+        provider_checks(lambda: ScriptedProviders("leaf", [CAPABILITIES], CAPABILITIES))
+    )
+    p19 = verdicts["P19"]
+    assert p19.result == "fail"
+    assert "the replay of an answer gave" in (p19.reason or "")
 
 
 def test_p19_compares_errors_by_their_fields() -> None:
@@ -634,6 +660,7 @@ def _refusing() -> ScriptedHarness:
     [
         pytest.param(_dishonest_retry.RetryingHarness, {"L8", "L10"}, id="retries-inside-call"),
         pytest.param(_dishonest.OwnRulesHarness, {"L16"}, id="skips-validate"),
+        pytest.param(_dishonest.SortsKeysHarness, {"L32"}, id="sorts-keys"),
         pytest.param(_wrong_box, {"L5", "L17"}, id="claims-a-kind-it-cannot-answer"),
         pytest.param(_refusing, {"L23"}, id="refuses-without-returns-refusal"),
     ],
@@ -1834,3 +1861,83 @@ def test_p19_fails_a_replay_that_loses_the_provenance_it_recorded(
     assert p19.result == "fail"
     assert p19.reason is not None
     assert "not what was recorded" in p19.reason
+
+
+# ----------------------------------------------------------------------------------------
+# L32: key order reaches the body and the prompt
+# ----------------------------------------------------------------------------------------
+
+
+def _l32(make: Callable[[], ScriptedHarness]) -> Verdict:
+    [check] = [check for check in leaf_checks(make) if check.id == "L32"]
+    [verdict] = asyncio.run(run_checks([check]))
+    return verdict
+
+
+def test_l32_checks_the_scripted_prompt_and_notes_the_body() -> None:
+    verdict = _l32(ScriptedHarness)
+    assert verdict.result == "pass"
+    assert verdict.reason == "the body was not checked: the scripted leaf sends no body"
+
+
+def test_l32_is_not_applicable_to_a_record_that_carries_no_ordered_json() -> None:
+    record = replace(CAPABILITIES, carries_structured_instructions=False)
+    verdict = _l32(lambda: ScriptedHarness(record))
+    assert verdict.result == "not_applicable"
+    assert verdict.reason == "the record carries neither a JSON part nor a structured instruction"
+
+
+class _HidesThePrompt(ScriptedHarness):
+    """A wire that hides the prompt, behind a leaf that sends no body."""
+
+    prompt_hidden = True
+
+    def _build(self, capabilities: Capabilities, script: ScriptFunction) -> Leaf:
+        inner = super()._build(capabilities, script)
+
+        class Hidden(Scripted):
+            async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+                response = await inner.call(wire_request, deadline)
+                return replace(
+                    response,
+                    prompt_sent=None,
+                    unreported={**response.unreported, "prompt_sent": "hidden"},
+                )
+
+        return Hidden(capabilities=capabilities, script=[])
+
+
+def test_l32_with_neither_a_body_nor_a_prompt_to_read_is_not_applicable() -> None:
+    verdict = _l32(_HidesThePrompt)
+    assert verdict.result == "not_applicable"
+    assert "the wire hides the prompt" in (verdict.reason or "")
+
+
+def test_l32_fails_a_prompt_with_a_key_missing() -> None:
+    from idia.conformance._leaf import _in_order  # pyright: ignore[reportPrivateUsage]
+
+    with pytest.raises(AssertionError, match=r"did not reach prompt_sent: \['b'\]"):
+        _in_order('{"a": 1}', {"JSON part": ["a", "b"]}, "prompt_sent")
+    with pytest.raises(AssertionError, match=r"in the order \['a', 'b'\], not \['b', 'a'\]"):
+        _in_order('{"a": 1, "b": 2}', {"JSON part": ["b", "a"]}, "prompt_sent")
+
+
+def test_p19_compares_a_replay_in_an_order_aware_rendering() -> None:
+    """Two responses equal by ``==`` whose ``prompt_sent`` differs in key order are two
+    renderings, so a replay that reorders what was recorded fails P19."""
+    from idia.conformance._provider import (  # pyright: ignore[reportPrivateUsage]
+        _rendered,
+        _replayable,
+    )
+
+    leaf = Scripted(capabilities=CAPABILITIES, script=[{"noul_a": CASES["noul"][0][1]}])
+    request = Request(state=STATE, questions=(CASES["noul"][0][0],), deadline=Deadline.after(30))
+    response = asyncio.run(Dispatcher(leaf).answer(request))
+    [outcome] = response.outcomes
+    responses = [
+        replace(response, outcomes=(replace(outcome, prompt_sent=sent),))
+        for sent in ({"b": 1, "a": 2}, {"a": 2, "b": 1})
+    ]
+    assert _replayable(responses[0]) == _replayable(responses[1])
+    assert _rendered(responses[0]) != _rendered(responses[1])
+    assert _rendered(response) == _rendered(replace(response))

@@ -52,6 +52,7 @@ from idia.core import (
     WireRequest,
 )
 from idia.dispatch import Dispatcher
+from idia.providers._canon import encode, json_bytes  # pyright: ignore[reportPrivateUsage]
 from idia.providers.recorded import Recorded
 from idia.retry import RetryPolicy
 
@@ -651,6 +652,13 @@ def _replayable(result: Response | Exception) -> object:
     )
 
 
+def _rendered(result: Response | Exception) -> bytes:
+    """What a replay must reproduce, rendered as the recorded leaf renders a request: every
+    mapping in the order held, so a ``prompt_sent``, raw usage or answer map replayed in
+    another order differs, as ``==`` would not see."""
+    return json_bytes(encode(_replayable(result)))
+
+
 def _error_fields(error: ProviderError | None) -> object:
     if error is None:
         return None
@@ -699,7 +707,7 @@ async def _p19(harness: ProviderHarness) -> str | None:
             sent = harness.requests_sent()
             expect(sent == 0, f"the replay of {label} sent {sent} wire requests")
             expect(
-                _replayable(replayed) == _replayable(recorded),
+                _rendered(replayed) == _rendered(recorded),
                 f"the replay of {label} gave {replayed!r}, not what was recorded",
             )
     if len(skipped) == len(runs):

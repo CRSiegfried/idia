@@ -1,17 +1,7 @@
 {
   "expected": {
     "score_mood": {
-      "chosen": null,
-      "confidence": 0.88,
-      "derived": [],
-      "echo": [
-        "low",
-        "mid",
-        "high"
-      ],
-      "echo_of": "names",
-      "expected_level": 0.08,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -26,20 +16,20 @@
           0.01
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "score_rain": {
+      "confidence": 0.88,
       "chosen": null,
-      "confidence": 1.0,
-      "derived": [],
+      "expected_level": 0.08,
       "echo": [
-        "none",
-        "light",
-        "heavy"
+        "low",
+        "mid",
+        "high"
       ],
       "echo_of": "names",
-      "expected_level": 2.0,
       "off_label_mass": null,
+      "derived": []
+    },
+    "score_rain": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "none",
@@ -54,11 +44,21 @@
           1.0
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 1.0,
+      "chosen": null,
+      "expected_level": 2.0,
+      "echo": [
+        "none",
+        "light",
+        "heavy"
+      ],
+      "echo_of": "names",
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-6-luna",
   "request": {
@@ -217,67 +217,67 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How hard?",
-        "is_list": false,
-        "key": "score_rain",
-        "kind": "score",
-        "labels": [
-          {
-            "description": "No rain",
-            "name": "none",
-            "type": "Label"
-          },
-          {
-            "description": "Light rain",
-            "name": "light",
-            "type": "Label"
-          },
-          {
-            "description": "Heavy rain",
-            "name": "heavy",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "The mood?",
-        "is_list": false,
-        "key": "score_mood",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "mid",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_rain",
+        "kind": "score",
+        "instruction": "How hard?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "none",
+            "description": "No rain"
+          },
+          {
+            "type": "Label",
+            "name": "light",
+            "description": "Light rain"
+          },
+          {
+            "type": "Label",
+            "name": "heavy",
+            "description": "Heavy rain"
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "score_mood",
+        "kind": "score",
+        "instruction": "The mood?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "mid",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

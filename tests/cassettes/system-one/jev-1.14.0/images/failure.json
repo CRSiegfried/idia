@@ -3,7 +3,7 @@
   "features": [
     "images"
   ],
-  "format": 1,
+  "format": 2,
   "leaf": "system-one",
   "model": "jev-1.14.0",
   "request": {
@@ -102,87 +102,87 @@
     "status": 422
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How much rain, from 0 to 10?",
-        "is_list": false,
-        "key": "score_eleven",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "0",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "1",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "2",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "3",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "4",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "5",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "6",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "7",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "8",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "9",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "10",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A test card: a white field with two coloured squares.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A test card: a white field with two coloured squares."
         },
         {
+          "type": "ImagePart",
           "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
-          "media_type": "image/png",
-          "type": "ImagePart"
+          "media_type": "image/png"
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_eleven",
+        "kind": "score",
+        "instruction": "How much rain, from 0 to 10?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "0",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "1",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "2",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "3",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "4",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "5",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "6",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "7",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "8",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "9",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "10",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

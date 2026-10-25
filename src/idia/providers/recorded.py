@@ -2,7 +2,9 @@
 
 :class:`Recorded` satisfies :class:`~idia.core.Leaf` structurally, with no base class. It
 files each call under the hash of the canonical wire request, the leaf's name and model, the
-state, the questions in order and the request's options when there are any, and keeps that
+state, the questions in order and the request's options when there are any, every mapping
+in the order built, so two requests that differ only in a mapping's key order are filed
+apart. It keeps, under each key, the canonical request the key was computed from and that
 key's calls in order, each a wire response with its raw body or a provider error. A replay
 returns them in order and never calls the wrapped leaf. A leaf's construction options are
 not in the key, so a test keeps one log per leaf configuration and names it.
@@ -16,7 +18,11 @@ The modes:
 - ``new`` replays a call that has a recording, records one that has none, and appends a
   call past its key's recorded count.
 
-The log is one JSON file, rewritten whole after each recorded call. A replayed error is a
+The log is one JSON file, rewritten whole after each recorded call. It holds the caller's
+state and instructions as written, image bytes included: secrets are filtered from a wire's
+headers and bodies by the leaves that record them, never from a caller's own content. A log
+of another format is refused when the leaf is built; a format-2 log, keyed before the key
+kept key order, is re-keyed offline by :func:`upgrade_log`. A replayed error is a
 plain :class:`~idia.core.ProviderError` carrying the recorded fields. A replay runs
 through the call loop like any call, so the attempts, outcomes and ``RequestFailed`` are
 the loop's, made again; pass the dispatcher a zero-delay retry policy so a recorded retry
@@ -33,6 +39,7 @@ import os
 import secrets
 import stat
 import typing
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Final, Literal, TypeAlias, cast, get_args
@@ -42,6 +49,8 @@ from idia.core import (
     WARNING_NO_SNAPSHOT,
     Capabilities,
     Deadline,
+    JsonPart,
+    JsonValue,
     Leaf,
     ProvenanceDetail,
     ProviderError,
@@ -54,8 +63,12 @@ from idia.core import (
 from idia.providers._canon import (
     CharacterEstimator,
     canonical_hash,
+    canonical_request,
     decode,
     encode,
+    format_2_hash,
+    hash_of,
+    json_bytes,
     plain,
     thaw,
 )
@@ -70,9 +83,13 @@ __all__ = [
 _Mode: TypeAlias = Literal["none", "once", "new"]
 """How the recorded leaf treats a call: replay only, record a fresh log, or add to one."""
 
-_FORMAT: Final = 2
+_FORMAT: Final = 3
 """The log format this module reads and writes. A change to ``_canon``'s rendering, which
 the log is written in, bumps it."""
+
+_OLD_FORMAT: Final = 2
+"""The one older format :func:`upgrade_log` reads: calls keyed on the canonical request
+written with sorted keys, and no request stored."""
 
 _MODES: Final = frozenset(get_args(_Mode))
 
@@ -152,6 +169,7 @@ class Recorded:
         self._leaf = leaf
         self._log = log
         self._recorded: dict[str, list[_Entry]] = header.calls if header is not None else {}
+        self._requests: dict[str, object] = header.requests if header is not None else {}
         self._fresh = mode == "once" and not exists
         self._records = self._fresh or mode == "new"
         self._seen: dict[str, int] = {}
@@ -176,44 +194,72 @@ class Recorded:
         self, key: str, wire_request: WireRequest, deadline: Deadline
     ) -> WireResponse:
         assert self._leaf is not None
+        request = plain(canonical_request(self.name, self.model, wire_request))
         try:
             response = await self._leaf.call(wire_request, deadline)
         except ProviderError as error:
-            self._store(key, _error(error))
+            self._store(key, request, _error(error))
             raise
-        self._store(key, _response(response))
+        self._store(key, request, _response(response))
         return response
 
-    def _store(self, key: str, entry: _Entry) -> None:
-        """Append ``entry`` under ``key`` and rewrite the whole log through a temporary
-        file, so a reader never sees half a log. An entry the write refuses is not kept."""
+    def _store(self, key: str, request: object, entry: _Entry) -> None:
+        """Append ``entry`` under ``key``, its canonical request beside it, and rewrite the
+        whole log through a temporary file, so a reader never sees half a log. An entry the
+        write refuses is not kept."""
         entries = self._recorded.setdefault(key, [])
         entries.append(entry)
-        document = {
-            "format": _FORMAT,
-            "name": self.name,
-            "model": self.model,
-            "enabled_features": sorted(self.capabilities.enabled_features),
-            "calls": self._recorded,
-        }
+        self._requests.setdefault(key, request)
+        document = _document(
+            self.name,
+            self.model,
+            self.capabilities.enabled_features,
+            self._requests,
+            self._recorded,
+        )
         try:
             _write(self._log, document)
         except BaseException:
             entries.pop()
             if not entries:
                 del self._recorded[key]
+                del self._requests[key]
             raise
 
 
+def _document(
+    name: str,
+    model: str,
+    features: frozenset[str],
+    requests: typing.Mapping[str, object],
+    calls: typing.Mapping[str, list[_Entry]],
+) -> dict[str, object]:
+    """A format-3 log: its header in a fixed order, then each key's canonical request and
+    calls, the keys sorted."""
+    return {
+        "format": _FORMAT,
+        "name": name,
+        "model": model,
+        "enabled_features": sorted(features),
+        "calls": {key: {"request": requests[key], "entries": calls[key]} for key in sorted(calls)},
+    }
+
+
 def _write(log: Path, document: typing.Mapping[str, object]) -> None:
-    """Write ``document`` to ``log`` whole, sorted and indented, in UTF-8 with LF line
-    endings, through a temporary file replaced in one step, so a reader never sees half a
-    log. A log that exists keeps its permission bits, set before anything is written, and
-    one that is a link is written where it points; a link to nothing is refused with
+    """Write ``document`` to ``log`` whole, indented, in UTF-8 with LF line endings, through
+    a temporary file replaced in one step, so a reader never sees half a log.
+
+    Every value is written in the order held, the request, ``prompt_sent``, the raw body
+    and the raw usage as recorded, with two sorts, of what no model saw: the keys of
+    ``calls``, so the bytes are the same whatever order the calls arrived in, and each set,
+    such as the enabled features, sorted by :func:`encode` or by :func:`_document`.
+
+    A log that exists keeps its permission bits, set before anything is written, and one
+    that is a link is written where it points; a link to nothing is refused with
     ``ValueError``, and a new log takes the mode the process's umask gives a new file. On
     Windows, which will not replace a read-only file, a read-only log is refused with the
     ``PermissionError`` the replace raises."""
-    text = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    text = json.dumps(document, indent=2, allow_nan=False) + "\n"
     if log.is_symlink() and not log.exists():
         raise ValueError(f"{log} is a link to nothing; a log is written only where it points")
     log = log.resolve()
@@ -244,18 +290,20 @@ def _write(log: Path, document: typing.Mapping[str, object]) -> None:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _Log:
     """A log as read: the configuration it was recorded under, the leaf's name, model and
-    enabled features, and the recorded calls by key."""
+    enabled features, the recorded calls by key and, in format 3, each key's canonical
+    request."""
 
     name: str
     model: str
     features: frozenset[str]
     calls: dict[str, list[_Entry]]
-    document: dict[str, object]
+    requests: dict[str, object]
 
 
-def _load(log: Path) -> _Log:
-    """Read ``log``, refusing with ``ValueError`` a format this module does not write and a
-    document that is not a recorded leaf's log, each entry read as a replay would read it."""
+def _load(log: Path, *, version: int = _FORMAT) -> _Log:
+    """Read ``log``, refusing with ``ValueError`` a log not in format ``version`` and a
+    document that is not a recorded leaf's log, each entry read as a replay would read it
+    and, in format 3, each stored request checked against its key."""
     text = log.read_text(encoding="utf-8")
     try:
         document: object = json.loads(text, parse_constant=_no_constant)
@@ -266,15 +314,24 @@ def _load(log: Path) -> _Log:
     if not isinstance(document, dict):
         raise ValueError(f"{log} is not a recorded leaf's log")
     held = cast(dict[str, object], document)
-    if held.get("format") != _FORMAT:
-        raise ValueError(f"{log} is in format {held.get('format')!r}; this reads {_FORMAT}")
+    found = held.get("format")
+    if type(found) is not int or found != version:
+        if version == _OLD_FORMAT:
+            raise ValueError(f"{log} is in format {found!r}; upgrade_log reads only format 2")
+        raise ValueError(
+            f"{log} is in format {found!r}; this reads {_FORMAT}: re-key a format-2 log with "
+            "upgrade_log, or record it again"
+        )
     try:
+        calls, requests = (
+            _old_calls(held["calls"]) if version == _OLD_FORMAT else _calls(held["calls"])
+        )
         loaded = _Log(
             name=_string(held["name"]),
             model=_string(held["model"]),
             features=frozenset(_string(f) for f in cast(list[object], held["enabled_features"])),
-            calls=_calls(held["calls"]),
-            document=held,
+            calls=calls,
+            requests=requests,
         )
     except (
         KeyError,
@@ -302,25 +359,51 @@ def _string(value: object) -> str:
     return value
 
 
-def _calls(value: object) -> dict[str, list[_Entry]]:
-    """The recorded calls, each entry checked by reading it as a replay does."""
+def _calls(value: object) -> tuple[dict[str, list[_Entry]], dict[str, object]]:
+    """A format-3 log's calls and requests by key, each request checked to hash to its key
+    and each entry checked by reading it as a replay does."""
     if not isinstance(value, dict):
         raise TypeError("the calls are not a mapping")
-    calls = cast(dict[object, object], value)
-    for key, entries in calls.items():
-        if not isinstance(key, str) or not isinstance(entries, list):
-            raise TypeError(f"the calls under {key!r} are not a list")
-        for entry in cast(list[object], entries):
-            if not isinstance(entry, dict):
-                raise TypeError(f"an entry under {key!r} is not a mapping")
-            checked = cast(_Entry, entry)
-            if ("error" in checked) == ("response" in checked):
-                raise TypeError(f"an entry under {key!r} holds not exactly one of error, response")
-            if "error" in checked:
-                _recorded_error(checked)
-            else:
-                _replay(checked)
-    return cast(dict[str, list[_Entry]], calls)
+    calls: dict[str, list[_Entry]] = {}
+    requests: dict[str, object] = {}
+    for key, held in cast(dict[str, object], value).items():
+        if not isinstance(held, dict) or set(cast(dict[str, object], held)) != {
+            "request",
+            "entries",
+        }:
+            raise TypeError(f"the calls under {key!r} are not a request and its entries")
+        call = cast(dict[str, object], held)
+        if hash_of(cast(JsonValue, call["request"])) != key:
+            raise ValueError(f"the request stored under {key!r} does not hash to its key")
+        requests[key] = call["request"]
+        calls[key] = _entries(key, call["entries"])
+    return calls, requests
+
+
+def _old_calls(value: object) -> tuple[dict[str, list[_Entry]], dict[str, object]]:
+    """A format-2 log's calls by key, each entry checked by reading it as a replay does;
+    such a log stores no request."""
+    if not isinstance(value, dict):
+        raise TypeError("the calls are not a mapping")
+    calls = cast(dict[str, object], value)
+    return {key: _entries(key, entries) for key, entries in calls.items()}, {}
+
+
+def _entries(key: str, entries: object) -> list[_Entry]:
+    """The entries under ``key``, each checked by reading it as a replay does."""
+    if not isinstance(entries, list):
+        raise TypeError(f"the calls under {key!r} are not a list")
+    for entry in cast(list[object], entries):
+        if not isinstance(entry, dict):
+            raise TypeError(f"an entry under {key!r} is not a mapping")
+        checked = cast(_Entry, entry)
+        if ("error" in checked) == ("response" in checked):
+            raise TypeError(f"an entry under {key!r} holds not exactly one of error, response")
+        if "error" in checked:
+            _recorded_error(checked)
+        else:
+            _replay(checked)
+    return cast(list[_Entry], entries)
 
 
 def _missing(log: Path) -> FileNotFoundError:
@@ -420,13 +503,30 @@ _PROVENANCE_KEYS: Final = frozenset({"versions", "client_versions", "unreported"
 
 
 def upgrade_log(
-    log: Path, *, reasons: typing.Mapping[ProvenanceDetail, UnreportedReason] | None = None
+    log: Path,
+    *,
+    requests: Iterable[WireRequest],
+    reasons: typing.Mapping[ProvenanceDetail, UnreportedReason] | None = None,
 ) -> int:
-    """Bring a log written before the provenance profile up to it, offline, and return how
-    many responses changed; a second run changes none.
+    """Re-key a format-2 log into format 3, offline, for the wire requests its leaf
+    received, and return how many entries it left out.
 
-    Each recorded response gets a reason for every profile detail that holds no value, by
-    the rules its leaf, the log's ``name``, states: for a wire leaf (System One, OpenAI's
+    A format-2 log filed each call under its canonical request written with sorted keys,
+    and stored no request, so the order a call was recorded in is gone. Pass ``requests``,
+    each as the recorded leaf's ``call`` would see it, a plan's, a re-ask's and a router
+    member's alike; each is keyed as the log's header names the leaf and model. A request
+    whose old key the log holds is re-keyed only when no mapping its caller built, a JSON
+    part's value, a structured instruction or the options, has two or more keys at any
+    depth, since only then is its order the one it was recorded in: every entry under that
+    key, response or error, moves in order to its new key, its request stored beside it. A
+    request with such a mapping whose old key the log holds is refused with
+    ``ValueError`` and nothing is written; to upgrade the rest, leave it out and record its
+    calls again. A request whose old key the log does not hold is ignored, and an entry no
+    request re-keys is left out of the upgraded log and counted, so replaying it later is a
+    :class:`ReplayMiss`.
+
+    Each response kept is also given a reason for every profile detail that holds no value,
+    by the rules its leaf, the log's ``name``, states: for a wire leaf (System One, OpenAI's
     two, Cloudflare's two) and the scripted leaf, ``versions`` ``not-applicable``, the
     snapshot ``not-pinned`` beside its ``no-snapshot`` warning, and every other missing
     detail ``not-reported``, but the passes ``not-exposed`` where the raw usage holds a pass
@@ -438,35 +538,77 @@ def upgrade_log(
     gives none of.
 
     Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
-    reason, claim or version a response already holds stays. Error entries are left as they
-    are. The log is refused with ``ValueError``, and nothing written, when a leaf has no
-    rules and no ``reasons`` are given, ``reasons`` are given for a leaf with rules, give
-    ``not-sent`` or give a missing snapshot a reason other than ``not-pinned``, a ``gliner``
-    log records no runtime version, a missing
-    snapshot has no ``no-snapshot`` warning, a response records an empty request id, its
-    ``elicitation`` or ``calibrated`` holds no value or has a reason, or a detail would be
-    left with neither a value nor a reason. The log keeps its format and keys, and is
-    rewritten only if a response changed.
+    reason, claim or version a response already holds stays. A re-keyed response keeps the
+    ``prompt_sent`` and raw body its old log holds, with their keys sorted; only a call
+    recorded again holds them in the order sent. The old log is replaced, so keep a copy, or
+    its committed version, until the requests given are complete. The log is refused with
+    ``ValueError``, and nothing written, when it is not in format 2 (a format-3 log included),
+    when a request is refused as above, when a leaf has no rules and no ``reasons`` are
+    given, ``reasons`` are given for a leaf with rules, give ``not-sent`` or give a missing
+    snapshot a reason other than ``not-pinned``, a ``gliner`` log records no runtime
+    version, a missing snapshot has no ``no-snapshot`` warning, a response records an empty
+    request id, its ``elicitation`` or ``calibrated`` holds no value or has a reason, or a
+    detail would be left with neither a value nor a reason.
     """
-    held = _load(log)
-    document = held.document
-    changed = 0
-    for entries in held.calls.values():
-        for index, entry in enumerate(entries):
-            if "response" not in entry:
-                continue
-            before = _replay(entry)
-            after = _upgraded(before, held.name, reasons, log)
-            if after == before:
-                continue
-            upgraded = _response(after)
-            _expect_only_provenance_added(entry, upgraded, log)
-            entries[index] = upgraded
-            changed += 1
-    if changed:
-        document["calls"] = held.calls
-        _write(log, document)
-    return changed
+    held = _load(log, version=_OLD_FORMAT)
+    calls: dict[str, list[_Entry]] = {}
+    stored: dict[str, object] = {}
+    moved: set[str] = set()
+    for wire_request in requests:
+        old = format_2_hash(held.name, held.model, wire_request)
+        if old not in held.calls:
+            continue
+        if _has_an_order(wire_request):
+            raise ValueError(
+                f"{log}: a request whose JSON part, structured instruction or options hold "
+                "a mapping of two or more keys cannot be re-keyed, since the log keeps no "
+                "evidence of the order it was recorded in; leave it out and record it again"
+            )
+        key = canonical_hash(held.name, held.model, wire_request)
+        if key in calls:
+            continue
+        moved.add(old)
+        stored[key] = plain(canonical_request(held.name, held.model, wire_request))
+        calls[key] = [_upgraded_entry(entry, held.name, reasons, log) for entry in held.calls[old]]
+    left_out = sum(len(entries) for old, entries in held.calls.items() if old not in moved)
+    _write(log, _document(held.name, held.model, held.features, stored, calls))
+    return left_out
+
+
+def _has_an_order(wire_request: WireRequest) -> bool:
+    """Whether a mapping the caller built in ``wire_request``, a JSON part's value, a
+    structured instruction or the options, has two or more keys at any depth."""
+    held: list[object] = [
+        part.value for part in wire_request.state.parts if isinstance(part, JsonPart)
+    ]
+    held += [q.instruction for q in wire_request.questions if not isinstance(q.instruction, str)]
+    held.append(wire_request.options)
+    return any(_ordered(value) for value in held)
+
+
+def _ordered(value: object) -> bool:
+    if isinstance(value, typing.Mapping):
+        mapping = cast(typing.Mapping[object, object], value)
+        return len(mapping) >= 2 or any(_ordered(item) for item in mapping.values())
+    if isinstance(value, tuple | list):
+        return any(_ordered(item) for item in cast(Iterable[object], value))
+    return False
+
+
+def _upgraded_entry(
+    entry: _Entry,
+    name: str,
+    reasons: typing.Mapping[ProvenanceDetail, UnreportedReason] | None,
+    log: Path,
+) -> _Entry:
+    """A format-2 entry as format 3 writes it: an error as recorded, a response with the
+    reasons, versions and claims its leaf's rules give it."""
+    if "response" not in entry:
+        return _error(_recorded_error(entry))
+    before = _replay(entry)
+    upgraded = _response(_upgraded(before, name, reasons, log))
+    _expect_only_provenance_added(entry, _response(before), upgraded, log)
+    return upgraded
 
 
 def _upgraded(
@@ -558,10 +700,17 @@ def _recorded_versions(raw_body: object) -> dict[str, str] | None:
     }
 
 
-def _expect_only_provenance_added(before: _Entry, after: _Entry, log: Path) -> None:
-    """Refuse an upgrade that would change anything the log recorded."""
-    old = cast(dict[str, object], before["response"])
-    new = cast(dict[str, object], after["response"])
-    kept = {key: value for key, value in new.items() if key not in _PROVENANCE_KEYS}
-    if kept != {key: value for key, value in old.items() if key not in _PROVENANCE_KEYS}:
+def _expect_only_provenance_added(stored: _Entry, before: _Entry, after: _Entry, log: Path) -> None:
+    """Refuse an upgrade that would change anything the log recorded: ``after`` must hold
+    what ``stored`` holds, and, compared in the order held, what ``before``, the stored
+    entry read and written again, holds, but for the provenance fields."""
+
+    def kept(entry: _Entry) -> dict[str, object]:
+        held = cast(dict[str, object], entry["response"])
+        return {key: value for key, value in held.items() if key not in _PROVENANCE_KEYS}
+
+    same = kept(after) == kept(stored)
+    if not same or json_bytes(cast(JsonValue, kept(after))) != json_bytes(
+        cast(JsonValue, kept(before))
+    ):
         raise ValueError(f"{log}: upgrading a response would change what it recorded")

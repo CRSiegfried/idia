@@ -1,22 +1,22 @@
 {
   "expected": {
     "noul_green": {
-      "confidence": null,
-      "derived": [],
-      "off_label_mass": null,
+      "type": "NoulAnswer",
       "probability": 0.39,
-      "type": "NoulAnswer"
+      "confidence": null,
+      "off_label_mass": null,
+      "derived": []
     },
     "noul_red": {
-      "confidence": null,
-      "derived": [],
-      "off_label_mass": null,
+      "type": "NoulAnswer",
       "probability": 0.52,
-      "type": "NoulAnswer"
+      "confidence": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "system-one",
   "model": "jev-1.14.0",
   "request": {
@@ -80,35 +80,35 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "Is there a red square?",
-        "is_list": false,
-        "key": "noul_red",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "Is there a green square?",
-        "is_list": false,
-        "key": "noul_green",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A test card: a white field with two coloured squares.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A test card: a white field with two coloured squares."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "noul_red",
+        "kind": "noul",
+        "instruction": "Is there a red square?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "noul_green",
+        "kind": "noul",
+        "instruction": "Is there a green square?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

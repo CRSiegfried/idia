@@ -1,7 +1,7 @@
 {
   "expected": null,
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-5.6-luna",
   "request": {
@@ -80,35 +80,35 @@
     "status": 404
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "Did it rain?",
-        "is_list": false,
-        "key": "noul_rain",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "Did the sun come out?",
-        "is_list": false,
-        "key": "noul_sun",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "noul_rain",
+        "kind": "noul",
+        "instruction": "Did it rain?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "noul_sun",
+        "kind": "noul",
+        "instruction": "Did the sun come out?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

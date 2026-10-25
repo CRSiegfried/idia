@@ -12,7 +12,7 @@ import json
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import httpx2
 import pytest
@@ -30,7 +30,6 @@ from idia import (
     Fault,
     ImagePart,
     JsonPart,
-    JsonValue,
     Label,
     LabelAnswer,
     Leaf,
@@ -127,23 +126,20 @@ def _one(question: Question, state: State = TEXT) -> WireRequest:
 _NOUL = Question(key="n", kind="noul", instruction="Did it rain?")
 
 
-def _deep(levels: int) -> JsonValue:
-    value: JsonValue = 1
-    for _ in range(levels):
-        value = (value,)
-    return value
-
-
 def test_a_kind_the_leaf_does_not_answer_is_a_provider_error_not_a_key_error() -> None:
     extraction = Question(key="x", kind="extraction", instruction="Who?", value_type="text")
     error = _raised(_answering([]).leaf(), _one(extraction))
     assert "does not answer 'extraction'" in error.message
 
 
-def test_a_json_part_nested_too_deeply_to_encode_is_a_provider_error() -> None:
-    state = State(parts=(JsonPart(value=_deep(100_000)),))
-    error = _raised(_answering([]).leaf(), _one(_NOUL, state))
+@pytest.mark.parametrize("value", [float("nan"), {1, 2}], ids=["nan", "set"])
+def test_a_json_part_json_cannot_encode_is_refused_before_sending(value: object) -> None:
+    wire = _answering([])
+    state = State(parts=(JsonPart(value=cast(Any, value)),))
+    error = _raised(wire.leaf(), _one(_NOUL, state))
     assert "cannot be sent as JSON" in error.message
+    assert not error.is_retryable
+    assert wire.sent == []
 
 
 _CHOICE = TEXT_QUESTIONS["choice"][0]  # rain (described), sun, snow (described)
@@ -704,7 +700,7 @@ def test_an_unknown_model_is_sent_as_given_and_its_404_is_not_retried() -> None:
     assert error.request_id == response["headers"]["x-request-id"]
     assert error.message.startswith("HTTP 404: ")
     assert "model_not_found" in error.message
-    assert wire.body_sent == cassette["request"]["body"]
+    assert body_key(wire.body_sent) == body_key(cassette["request"]["body"])
     assert wire.body_sent["model"] == UNKNOWN_MODEL_NAME
     assert cassette["expected"] is None
     assert cassette["request"]["headers"]["authorization"] == "<filtered>"

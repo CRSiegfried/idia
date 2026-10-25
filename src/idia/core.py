@@ -61,7 +61,7 @@ content part beside the text."""
 JsonValue: TypeAlias = (
     "bool | int | float | str | tuple[JsonValue, ...] | Mapping[str, JsonValue] | None"
 )
-"""A JSON value as Python data, with arrays as tuples, so it can be hashed and logged."""
+"""A JSON value as Python data, with arrays as tuples, so a value can be held read-only."""
 
 WARNING_EXTRA_ANSWER_KEY: Final = "extra-answer-key"
 """Warning code: an answer key matched no question and was dropped."""
@@ -414,9 +414,21 @@ class TextPart:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class JsonPart:
-    """A structured part of a state: a JSON value as Python data."""
+    """A structured part of a state: a JSON value as Python data.
 
-    value: JsonValue
+    The value is held read-only all the way down in the order given: each object a
+    read-only mapping keeping its keys in the order built, each list or tuple a tuple, so a
+    later change to the caller's own object reaches nothing. Its contents are not checked
+    here, except that a value that contains itself, or is nested too deep, is refused with
+    ``ValueError``. It is left out of the object's ``hash()``, so a state hashes whatever it
+    holds; ``==`` compares mappings without regard to key order, so two equal parts may be
+    two prompts.
+    """
+
+    value: JsonValue = field(hash=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "value", _frozen_json(self.value, "JsonPart.value"))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -588,7 +600,9 @@ class Question:
         _check_type("Question", "kind", self.kind, str, "a str")
         _check_instruction(self.instruction)
         if not isinstance(self.instruction, str):
-            object.__setattr__(self, "instruction", _frozen_json(self.instruction))
+            object.__setattr__(
+                self, "instruction", _frozen_json(self.instruction, "Question.instruction")
+            )
         _check_items("Question", "labels", self.labels, Label, "a Label")
         _check_type("Question", "is_list", self.is_list, bool, "a bool")
         if self.value_type is not None:
@@ -638,15 +652,37 @@ _NOUL_LABELS: Final = ("yes", "no")
 """The names a ``noul``'s labels take, in order, when it describes them."""
 
 
-def _frozen_json(value: object) -> JsonValue:
-    """``value`` read-only all the way down: every object a read-only mapping, every list or
-    tuple a tuple, as ``JsonValue`` types them, so ``json.loads`` output can be passed."""
+def _frozen_json(value: object, field: str) -> JsonValue:
+    """``value`` read-only all the way down in the order given: every object a read-only
+    mapping keeping its keys in the order built, every list or tuple a tuple, as
+    ``JsonValue`` types them, so ``json.loads`` output can be passed.
+
+    Its scalars are not checked; a value that contains itself, or nests too deep (deeper
+    than the interpreter's recursion limit allows from the stack where the value is built),
+    is refused with ``ValueError`` naming ``field``.
+    """
+    try:
+        return _frozen_within(value, field, set())
+    except RecursionError:
+        raise ValueError(f"{field} nests too deep") from None
+
+
+def _frozen_within(value: object, field: str, on_path: set[int]) -> JsonValue:
+    ident = id(value)
+    if not isinstance(value, (Mapping, list, tuple)):
+        return cast(JsonValue, value)
+    if ident in on_path:
+        raise ValueError(f"{field} contains itself")
+    on_path.add(ident)
     if isinstance(value, Mapping):
         items = cast(Mapping[str, object], value).items()
-        return MappingProxyType({key: _frozen_json(item) for key, item in items})
-    if isinstance(value, (list, tuple)):
-        return tuple(_frozen_json(item) for item in cast(Sequence[object], value))
-    return cast(JsonValue, value)
+        held: JsonValue = MappingProxyType(
+            {key: _frozen_within(item, field, on_path) for key, item in items}
+        )
+    else:
+        held = tuple(_frozen_within(item, field, on_path) for item in cast(Sequence[object], value))
+    on_path.discard(ident)
+    return held
 
 
 def _check_instruction(instruction: object) -> None:
@@ -679,8 +715,9 @@ class Request:
     Keys are unique within a request. ``options`` are per-request settings a leaf may read
     by key, such as Clairic's ``reference_date``; a leaf ignores a key it does not know and
     warns ``unknown-option`` naming it. Every wire request planned from the request carries
-    the same options. They are held as a read-only mapping, left out of the object's
-    ``hash()``, and part of the canonical wire request when non-empty.
+    the same options. They are held as a read-only mapping in the order given, each value
+    read-only all the way down as a ``JsonPart``'s is, left out of the object's ``hash()``,
+    and part of the canonical wire request when non-empty.
     """
 
     state: State
@@ -691,7 +728,7 @@ class Request:
     def __post_init__(self) -> None:
         _check_shape("Request", self.state, self.questions, self.options)
         _check_type("Request", "deadline", self.deadline, Deadline, "a Deadline")
-        object.__setattr__(self, "options", MappingProxyType(dict(self.options)))
+        object.__setattr__(self, "options", _frozen_options("Request", self.options))
         if not self.questions:
             raise ValueError("a request asks at least one question")
         keys = [question.key for question in self.questions]
@@ -710,7 +747,15 @@ class WireRequest:
 
     def __post_init__(self) -> None:
         _check_shape("WireRequest", self.state, self.questions, self.options)
-        object.__setattr__(self, "options", MappingProxyType(dict(self.options)))
+        object.__setattr__(self, "options", _frozen_options("WireRequest", self.options))
+
+
+def _frozen_options(owner: str, options: Mapping[str, JsonValue]) -> Mapping[str, JsonValue]:
+    """``options`` as a read-only mapping in the order given, each value held read-only all
+    the way down."""
+    return MappingProxyType(
+        {key: _frozen_json(value, f"{owner}.options[{key!r}]") for key, value in options.items()}
+    )
 
 
 def _check_shape(owner: str, state: object, questions: object, options: object) -> None:
