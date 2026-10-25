@@ -1,7 +1,7 @@
 {
   "expected": null,
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clairic",
   "model": "clairic",
   "request": {
@@ -75,26 +75,26 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The number of spectators at the ground.",
-        "is_list": false,
-        "key": "crowd",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "number"
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "crowd",
+        "kind": "extraction",
+        "instruction": "The number of spectators at the ground.",
+        "labels": [],
+        "value_type": "number",
+        "is_list": false
+      }
+    ]
   }
 }

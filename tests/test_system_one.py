@@ -14,7 +14,7 @@ import sys
 import zlib
 from collections.abc import Callable, Mapping
 from types import MappingProxyType
-from typing import Any
+from typing import Any, cast
 
 import httpx2
 import pytest
@@ -846,11 +846,8 @@ def test_the_wording_cassette_sends_criteria_and_the_structured_instruction(
     configuration: Configuration,
 ) -> None:
     cassette = load(configuration, WORDING)
-    wire, leaf, decoded = _replay(configuration, WORDING)
-    # The cassette's wire request is stored with sorted keys, as every canonical form is,
-    # so the call is the request as asked, its instruction's keys in the order sent.
-    wire_request = wording_request()
-    assert decoded == wire_request
+    wire, leaf, wire_request = _replay(configuration, WORDING)
+    assert wire_request == wording_request()
     response = _call(leaf, wire_request)
     assert body_key(wire.body_sent) == body_key(cassette["request"]["body"])
     assert response.answers == decode(cassette["expected"])
@@ -862,6 +859,9 @@ def test_the_wording_cassette_sends_criteria_and_the_structured_instruction(
         "false": described.labels[1].description,
     }
     assert sent["structured"]["instructions"] == structured.instruction
+    asked = cast(Mapping[str, object], wording_request().questions[1].instruction)
+    assert list(cast(Mapping[str, object], structured.instruction).items()) == list(asked.items())
+    assert list(sent["structured"]["instructions"].items()) == list(asked.items())
     estimate = leaf.estimator.estimate(wire_request.state, wire_request.questions)
     used = cassette["response"]["body"]["usage"]["input_tokens"]
     assert used <= estimate.tokens * (1 + estimate.margin)

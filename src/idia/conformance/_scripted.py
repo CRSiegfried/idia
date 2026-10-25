@@ -259,6 +259,9 @@ class ScriptedHarness:
     def requests_sent(self) -> int:
         return self._sent
 
+    def body_sent(self) -> bytes:
+        raise CheckNotApplicable("the scripted leaf sends no body")
+
     def sdk_retries(self) -> int:
         raise CheckNotApplicable("the scripted leaf is built on no SDK")
 

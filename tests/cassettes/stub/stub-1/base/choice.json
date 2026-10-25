@@ -1,13 +1,7 @@
 {
   "expected": {
     "choice_a": {
-      "chosen": "red",
-      "confidence": 0.5,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "red",
@@ -22,16 +16,16 @@
           0.2
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "choice_b": {
-      "chosen": null,
-      "confidence": 0.8,
-      "derived": [],
+      "confidence": 0.5,
+      "chosen": "red",
+      "expected_level": null,
       "echo": null,
       "echo_of": null,
-      "expected_level": null,
       "off_label_mass": null,
+      "derived": []
+    },
+    "choice_b": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "red",
@@ -46,11 +40,17 @@
           0.8
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.8,
+      "chosen": null,
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "stub",
   "model": "stub-1",
   "request": {
@@ -200,67 +200,67 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "Which?",
-        "is_list": false,
-        "key": "choice_a",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "red",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "green",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "blue",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "Which else?",
-        "is_list": false,
-        "key": "choice_b",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "red",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "green",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "blue",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The state every conformance question is about.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The state every conformance question is about."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_a",
+        "kind": "choice",
+        "instruction": "Which?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "red",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "green",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "blue",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "choice_b",
+        "kind": "choice",
+        "instruction": "Which else?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "red",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "green",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "blue",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

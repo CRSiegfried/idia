@@ -1,13 +1,7 @@
 {
   "expected": {
     "choice_outcome": {
-      "chosen": "called_off",
-      "confidence": 0.9783,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "played",
@@ -18,16 +12,16 @@
           0.9946
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "choice_weather": {
-      "chosen": "rain",
-      "confidence": 0.778,
-      "derived": [],
+      "confidence": 0.9783,
+      "chosen": "called_off",
+      "expected_level": null,
       "echo": null,
       "echo_of": null,
-      "expected_level": null,
       "off_label_mass": null,
+      "derived": []
+    },
+    "choice_weather": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "rain",
@@ -42,27 +36,23 @@
           0.0092
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.778,
+      "chosen": "rain",
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     },
     "noul_sun": {
-      "confidence": null,
-      "derived": [],
-      "off_label_mass": null,
+      "type": "NoulAnswer",
       "probability": 0.9658,
-      "type": "NoulAnswer"
+      "confidence": null,
+      "off_label_mass": null,
+      "derived": []
     },
     "score_mood": {
-      "chosen": null,
-      "confidence": 0.3435,
-      "derived": [],
-      "echo": [
-        "low",
-        "mid",
-        "high"
-      ],
-      "echo_of": "descriptions",
-      "expected_level": 0.3314,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -77,11 +67,21 @@
           0.0292
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.3435,
+      "chosen": null,
+      "expected_level": 0.3314,
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "descriptions",
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clef",
   "model": "clef",
   "request": {
@@ -202,96 +202,96 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The match?",
-        "is_list": false,
-        "key": "choice_outcome",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "played",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "called_off",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "Did the sun come out?",
-        "is_list": false,
-        "key": "noul_sun",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "The mood?",
-        "is_list": false,
-        "key": "score_mood",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "mid",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "The weather?",
-        "is_list": false,
-        "key": "choice_weather",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": "It rained.",
-            "name": "rain",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "sun",
-            "type": "Label"
-          },
-          {
-            "description": "It snowed.",
-            "name": "snow",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_outcome",
+        "kind": "choice",
+        "instruction": "The match?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "played",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "called_off",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "noul_sun",
+        "kind": "noul",
+        "instruction": "Did the sun come out?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "score_mood",
+        "kind": "score",
+        "instruction": "The mood?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "mid",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "choice_weather",
+        "kind": "choice",
+        "instruction": "The weather?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "rain",
+            "description": "It rained."
+          },
+          {
+            "type": "Label",
+            "name": "sun",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "snow",
+            "description": "It snowed."
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

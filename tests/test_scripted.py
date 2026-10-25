@@ -265,7 +265,7 @@ def test_prompt_sent_renders_every_part_deterministically() -> None:
     assert sent == prompt()
     assert isinstance(sent, str)
     parts = json.loads(sent)["state"]["parts"]
-    assert parts[1]["value"] == {"a": [True, None], "z": 1}
+    assert list(parts[1]["value"].items()) == [("z", 1), ("a", [True, None])]
     assert parts[2]["data"] == "AAE="
     assert parts[3] == {"type": "ImagePart", "data": "Y2F0", "media_type": None}
 
@@ -372,3 +372,29 @@ def test_a_script_item_of_the_wrong_type_raises_a_type_error() -> None:
     leaf = Scripted(capabilities=capabilities(), script=wrong)  # pyright: ignore[reportArgumentType]
     with pytest.raises(TypeError, match="script gave a float"):
         _call(leaf, _wire())
+
+
+def test_the_scripted_prompt_sent_keeps_the_order_built() -> None:
+    """A JSON part, a structured instruction and the options reach the prompt in the order
+    built, at every depth."""
+    value = {"zulu": {"yankee": 1, "xray": ({"whiskey": 2, "victor": 3},)}, "alpha": 0}
+    instruction = {"question": "Is it so?", "detail": {"mike": 1, "lima": 2}}
+    question = idia.Question(key="q", kind="noul", instruction=instruction)
+    wire_request = WireRequest(
+        state=State(parts=(JsonPart(value=value),)),
+        questions=(question,),
+        options={"idia-z": 1, "idia-a": 2},
+    )
+    leaf = Scripted(capabilities=capabilities(), script=[{}])
+    sent = _call(leaf, wire_request).prompt_sent
+    assert isinstance(sent, str)
+    assert sent == json.dumps(encode(wire_request), separators=(",", ":"))
+    held = json.loads(sent)
+    part = held["state"]["parts"][0]["value"]
+    assert list(part) == ["zulu", "alpha"]
+    assert list(part["zulu"]) == ["yankee", "xray"]
+    assert list(part["zulu"]["xray"][0]) == ["whiskey", "victor"]
+    sent_instruction = held["questions"][0]["instruction"]
+    assert list(sent_instruction) == ["question", "detail"]
+    assert list(sent_instruction["detail"]) == ["mike", "lima"]
+    assert list(held["options"]) == ["idia-z", "idia-a"]

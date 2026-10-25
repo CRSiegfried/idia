@@ -10,6 +10,7 @@ import os
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -17,12 +18,15 @@ import idia
 from idia import (
     Deadline,
     Dispatcher,
+    JsonPart,
     Leaf,
     NoulAnswer,
     Provider,
     ProviderError,
+    Question,
     RequestFailed,
     RetryPolicy,
+    State,
     Usage,
     WireRequest,
     WireResponse,
@@ -31,7 +35,7 @@ from idia.conformance import Check, CheckNotApplicable, leaf_checks, run_checks
 from idia.conformance._scripted import ScriptedHarness
 from idia.core import Capabilities, TokenEstimator
 from idia.providers import _REGISTRY
-from idia.providers._canon import CharacterEstimator, canonical_hash
+from idia.providers._canon import CharacterEstimator, canonical_hash, canonical_request, plain
 from idia.providers.recorded import Recorded, ReplayMiss
 from idia.providers.scripted import Item, Scripted, ScriptFunction
 from tests._support import capabilities, noul, text_state
@@ -60,6 +64,12 @@ def _read(log: Path) -> dict[str, object]:
     return json.loads(log.read_text())
 
 
+def _entries(log: Path) -> list[dict[str, Any]]:
+    """The entries of a log's one key."""
+    [call] = cast(dict[str, dict[str, Any]], _read(log)["calls"]).values()
+    return call["entries"]
+
+
 # ----------------------------------------------------------------------------------------
 # Recording and replay
 # ----------------------------------------------------------------------------------------
@@ -75,13 +85,16 @@ def test_once_records_then_none_replays_without_calling_the_leaf(tmp_path: Path)
     assert inner.calls == []
     assert replayed.raw_body == recorded.raw_body
     document = _read(log)
+    assert list(document) == ["format", "name", "model", "enabled_features", "calls"]
     assert (document["format"], document["name"], document["model"]) == (
-        2,
+        3,
         "scripted",
         "scripted-1",
     )
     key = canonical_hash("scripted", "scripted-1", _wire("a"))
     assert list(document["calls"]) == [key]  # type: ignore[arg-type]
+    call = document["calls"][key]  # type: ignore[index]
+    assert call["request"] == plain(canonical_request("scripted", "scripted-1", _wire("a")))
 
 
 def test_a_miss_and_a_call_past_the_count_raise_replay_miss(tmp_path: Path) -> None:
@@ -163,7 +176,7 @@ def test_an_error_is_recorded_re_raised_and_replayed_as_the_base_class(tmp_path:
         replayed.value.status_code,
         replayed.value.request_id,
     ) == ("over quota", True, 1.5, 429, "r-1")
-    [entry] = next(iter(_read(log)["calls"].values()))  # type: ignore[union-attr]
+    [entry] = _entries(log)
     assert set(entry["error"]) == {  # type: ignore[index]
         "message",
         "is_retryable",
@@ -285,10 +298,6 @@ def test_a_log_recorded_from_another_leaf_or_format_is_refused(tmp_path: Path) -
         Recorded(_scripted(name="other"), log, "new")
     with pytest.raises(ValueError, match="not scripted/scripted-2 with"):
         Recorded(_scripted(model="scripted-2"), log, "none")
-    document = _read(log)
-    log.write_text(json.dumps({**document, "format": 1}))
-    with pytest.raises(ValueError, match="format 1; this reads 2"):
-        Recorded(_scripted(), log, "none")
     log.write_text("[]")
     with pytest.raises(ValueError, match="not a recorded leaf's log"):
         Recorded(None, log, "none", capabilities=capabilities())
@@ -335,7 +344,7 @@ def test_the_raw_body_and_raw_usage_are_kept_as_given(raw_body: object, tmp_path
     replayed = _call(Recorded(_Raw(None), log, "none"), _wire("a"))
     assert replayed == recorded
     assert replayed.raw_body == raw_body
-    [entry] = next(iter(_read(log)["calls"].values()))  # type: ignore[union-attr]
+    [entry] = _entries(log)
     response = entry["response"]  # type: ignore[index]
     assert response["usage"]["raw_usage"] == {"type": "Usage", "n": [1]}
     if isinstance(raw_body, dict):
@@ -367,7 +376,7 @@ class _Passes(_Raw):
 
 
 def _logged_usage(log: Path) -> dict[str, object]:
-    [entry] = next(iter(_read(log)["calls"].values()))  # type: ignore[union-attr]
+    [entry] = _entries(log)
     return entry["response"]["usage"]  # type: ignore[index,no-any-return]
 
 
@@ -439,7 +448,7 @@ def test_the_log_bytes_are_the_same_on_every_platform(tmp_path: Path) -> None:
     written = log.read_bytes()
     assert b"\r\n" not in written
     document = json.loads(written.decode("utf-8"))
-    expected = json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    expected = json.dumps(document, indent=2, allow_nan=False) + "\n"
     assert written == expected.encode("utf-8")
 
 
@@ -505,3 +514,113 @@ def test_options_are_part_of_the_key_and_the_warning_replays(tmp_path: Path) -> 
     assert replayed == recorded
     with pytest.raises(ReplayMiss):
         _call(Recorded(_scripted(), log, "none"), _wire("a"))
+
+
+# ----------------------------------------------------------------------------------------
+# Key order
+# ----------------------------------------------------------------------------------------
+
+
+def _json_wire(value: dict[str, Any]) -> WireRequest:
+    return WireRequest(state=State(parts=(JsonPart(value=value),)), questions=(noul("a"),))
+
+
+class _Ordered(_Raw):
+    """A leaf whose ``prompt_sent`` and raw body hold mappings in an order that is not
+    sorted, as a wire leaf sends a caller's JSON part."""
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        sent = {"state": {"zulu": 1, "alpha": {"yankee": 2, "bravo": 3}}, "model": "raw-1"}
+        return WireResponse(
+            answers={"a": NoulAnswer(probability=0.25)},
+            elicitation="passthrough",
+            calibrated=False,
+            prompt_sent=sent,
+            raw_body={"zulu": {"yankee": 1, "bravo": 2}, "alpha": 0},
+            usage=Usage(input_tokens=1, output_tokens=2, raw_usage={"out": 2, "in": 1}),
+        )
+
+
+def test_a_replayed_prompt_sent_keeps_its_key_order(tmp_path: Path) -> None:
+    log = tmp_path / "log.json"
+    recorded = _call(Recorded(_Ordered(None), log, "once"), _wire("a"))
+    replayed = _call(Recorded(_Ordered(None), log, "none"), _wire("a"))
+    for held in (recorded, replayed):
+        sent = cast(dict[str, Any], held.prompt_sent)
+        assert list(sent) == ["state", "model"]
+        assert list(sent["state"]) == ["zulu", "alpha"]
+        assert list(sent["state"]["alpha"]) == ["yankee", "bravo"]
+        raw = cast(dict[str, Any], held.raw_body)
+        assert list(raw) == ["zulu", "alpha"]
+        assert list(raw["zulu"]) == ["yankee", "bravo"]
+        assert held.usage is not None
+        assert list(held.usage.raw_usage) == ["out", "in"]
+
+
+def test_two_key_orders_are_recorded_and_replayed_apart(tmp_path: Path) -> None:
+    log = tmp_path / "log.json"
+    first, second = _json_wire({"b": 1, "a": 2}), _json_wire({"a": 2, "b": 1})
+    assert first == second
+    recorder = Recorded(_scripted(_answer(0.25), _answer(0.75)), log, "once")
+    _call(recorder, first)
+    _call(recorder, second)
+    assert len(cast(dict[str, object], _read(log)["calls"])) == 2
+    replay = Recorded(_scripted(), log, "none")
+    assert _call(replay, second).answers["a"] == NoulAnswer(probability=0.75)
+    assert _call(replay, first).answers["a"] == NoulAnswer(probability=0.25)
+    stored = [call["request"] for call in cast(dict[str, Any], _read(log)["calls"]).values()]
+    values = sorted(list(r["state"]["parts"][0]["value"]) for r in stored)
+    assert values == [["a", "b"], ["b", "a"]]
+
+
+def test_the_log_bytes_are_the_same_whatever_order_its_keys_were_recorded_in(
+    tmp_path: Path,
+) -> None:
+    logs = [tmp_path / "ab.json", tmp_path / "ba.json"]
+    for log, keys in zip(logs, (("a", "b"), ("b", "a")), strict=True):
+        recorder = Recorded(_Raw(None), log, "once")
+        for key in keys:
+            _call(recorder, _wire(key))
+    assert logs[0].read_bytes() == logs[1].read_bytes()
+    keys = list(cast(dict[str, object], _read(logs[0])["calls"]))
+    assert keys == sorted(keys)
+
+
+@pytest.mark.parametrize("format", [1, 2, 4, None])
+def test_a_log_of_another_format_is_refused_at_construction(
+    tmp_path: Path, format: int | None
+) -> None:
+    log = tmp_path / "log.json"
+    _call(Recorded(_scripted(_answer(0.25)), log, "once"), _wire("a"))
+    log.write_text(json.dumps({**_read(log), "format": format}))
+    with pytest.raises(ValueError, match=rf"format {format}; this reads 3: .* upgrade_log"):
+        Recorded(_scripted(), log, "none")
+    with pytest.raises(ValueError, match="upgrade_log"):
+        Recorded(None, log, "none", capabilities=capabilities())
+
+
+def test_a_stored_request_that_does_not_hash_to_its_key_is_refused(tmp_path: Path) -> None:
+    log = tmp_path / "log.json"
+    _call(Recorded(_scripted(_answer(0.25)), log, "once"), _wire("a"))
+    document = _read(log)
+    [call] = cast(dict[str, dict[str, Any]], document["calls"]).values()
+    call["request"]["questions"][0]["key"] = "b"
+    log.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="does not hash to its key"):
+        Recorded(_scripted(), log, "none")
+    call["request"] = None
+    call["extra"] = 1
+    log.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="not a request and its entries"):
+        Recorded(_scripted(), log, "none")
+
+
+def test_a_structured_instruction_in_another_order_is_a_replay_miss(tmp_path: Path) -> None:
+    def asked(instruction: dict[str, str]) -> WireRequest:
+        question = Question(key="a", kind="noul", instruction=instruction)
+        return WireRequest(state=text_state(), questions=(question,))
+
+    log = tmp_path / "log.json"
+    _call(Recorded(_scripted(_answer(0.25)), log, "once"), asked({"q": "?", "e": "x"}))
+    with pytest.raises(ReplayMiss):
+        _call(Recorded(_scripted(), log, "none"), asked({"e": "x", "q": "?"}))

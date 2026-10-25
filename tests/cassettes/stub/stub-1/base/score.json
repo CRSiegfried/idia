@@ -1,13 +1,7 @@
 {
   "expected": {
     "score_a": {
-      "chosen": null,
-      "confidence": null,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -22,16 +16,16 @@
           0.3
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "score_b": {
-      "chosen": null,
       "confidence": null,
-      "derived": [],
+      "chosen": null,
+      "expected_level": null,
       "echo": null,
       "echo_of": null,
-      "expected_level": null,
       "off_label_mass": null,
+      "derived": []
+    },
+    "score_b": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -46,11 +40,17 @@
           0.1
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": null,
+      "chosen": null,
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "stub",
   "model": "stub-1",
   "request": {
@@ -200,67 +200,67 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How much?",
-        "is_list": false,
-        "key": "score_a",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "middle",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "How far?",
-        "is_list": false,
-        "key": "score_b",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "middle",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The state every conformance question is about.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The state every conformance question is about."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_a",
+        "kind": "score",
+        "instruction": "How much?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "middle",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "score_b",
+        "kind": "score",
+        "instruction": "How far?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "middle",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

@@ -765,7 +765,7 @@ the leaf alone and `provider_checks(make_provider_harness)` against it wrapped. 
 factory of a harness you write, the part that knows your leaf's transport. The suite speaks
 to it in exchanges, what the wire or the model does on one call: `Success(kind)`,
 `Failure(status=None)`, `Stall()`, `Error(...)`, `Unreadable(...)`, `Perturbed(...)`,
-`RefusalOnWire(kind)` and `CandidateShape(kind)`; the
+`RefusalOnWire(kind)`, `CandidateShape(kind)` and `AnyBody(kind)`; the
 [conformance spec](../spec/conformance.md#the-harness) gives each.
 
 Your harness turns each exchange into what your transport does. For an in-process leaf
@@ -783,6 +783,11 @@ model, so the fake supplies it too, stored beside each output:
 - **`Failure()`** with no status is a failure that is not retryable; for a model, the
   runtime raising.
 - **`Stall()`** never answers in time, so the call must end by its deadline.
+- **`AnyBody(kind)`** plays the output for `wire_request(kind)` whatever the request
+  holds; L32 sends that request with a JSON part or a structured instruction added. A
+  harness over a wire may also define `body_sent()`, the last body sent as bytes, so L32
+  checks the body too; without it, L32 checks `prompt_sent` alone and notes the body half
+  as not run.
 - An exchange your transport cannot make honestly, such as a status from a model that has
   none, makes your harness raise `CheckNotApplicable` from `make`. Never fake a status, a
   body or an SDK the leaf does not have.
@@ -1098,7 +1103,8 @@ tests pin idia's own wording: when an upgrade changes a note, reread that check 
 update the test. For `SpanLeaf`: no SDK (L9), no status (L12, P9, P20, P21), no body to read
 (L13, P12), no HTTP client (L15), no answer key a model can drop or add, since the leaf maps
 every label it asked (L19), and no candidate shape (L24), no kind whose probabilities sum
-(L18), no `noul` (L20), no opt-in feature (P6), no image (P23), and not a composite (P14 to
+(L18), no `noul` (L20), no JSON part or structured instruction its record carries (L32),
+no opt-in feature (P6), no image (P23), and not a composite (P14 to
 P18):
 
 ```python
@@ -1109,7 +1115,7 @@ def not_applicable(checks: Sequence[Check]) -> set[str]:
 
 
 def test_the_leaf_half_skips_exactly_what_a_model_in_process_cannot_make() -> None:
-    expected = {"L9", "L12", "L13", "L15", "L18", "L19", "L20", "L24"}
+    expected = {"L9", "L12", "L13", "L15", "L18", "L19", "L20", "L24", "L32"}
     assert not_applicable(leaf_checks(SpanLeafHarness)) == expected
 
 

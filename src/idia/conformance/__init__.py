@@ -10,6 +10,7 @@ without a test runner. The suite imports only idia and the standard library.
 """
 
 from idia.conformance._base import (
+    AnyBody,
     CandidateShape,
     Check,
     CheckNotApplicable,
@@ -30,6 +31,7 @@ from idia.conformance._leaf import leaf_checks
 from idia.conformance._provider import provider_checks
 
 __all__ = [
+    "AnyBody",
     "CandidateShape",
     "Check",
     "CheckNotApplicable",

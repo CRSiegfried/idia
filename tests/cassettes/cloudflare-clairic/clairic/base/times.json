@@ -1,36 +1,36 @@
 {
   "expected": {
     "kickoff": {
-      "confidence": 0.9979289680002853,
-      "guess": {
-        "type": "time",
-        "value": "15:00:00"
-      },
-      "p_null": 4.452091616258258e-06,
-      "span": null,
       "type": "ExtractionAnswer",
       "value": {
         "type": "time",
         "value": "15:00:00"
-      }
+      },
+      "guess": {
+        "type": "time",
+        "value": "15:00:00"
+      },
+      "confidence": 0.9979289680002853,
+      "p_null": 4.452091616258258e-06,
+      "span": null
     },
     "moved_to": {
-      "confidence": 0.9999984502810619,
-      "guess": {
-        "type": "datetime",
-        "value": "2026-10-18T14:30:00"
-      },
-      "p_null": 2.6659691343411396e-08,
-      "span": null,
       "type": "ExtractionAnswer",
       "value": {
         "type": "datetime",
         "value": "2026-10-18T14:30:00"
-      }
+      },
+      "guess": {
+        "type": "datetime",
+        "value": "2026-10-18T14:30:00"
+      },
+      "confidence": 0.9999984502810619,
+      "p_null": 2.6659691343411396e-08,
+      "span": null
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clairic",
   "model": "clairic",
   "request": {
@@ -111,38 +111,38 @@
     "status": 200
   },
   "wire_request": {
-    "options": {
-      "reference_date": "2026-10-21"
+    "type": "WireRequest",
+    "state": {
+      "type": "State",
+      "parts": [
+        {
+          "type": "TextPart",
+          "text": "Kick-off was due at 15:00 on 17 October 2026 and was moved to 2026-10-18T14:30."
+        }
+      ]
     },
     "questions": [
       {
-        "instruction": "The kick-off time.",
-        "is_list": false,
+        "type": "Question",
         "key": "kickoff",
         "kind": "extraction",
+        "instruction": "The kick-off time.",
         "labels": [],
-        "type": "Question",
-        "value_type": "time"
+        "value_type": "time",
+        "is_list": false
       },
       {
-        "instruction": "When the match was moved to.",
-        "is_list": false,
+        "type": "Question",
         "key": "moved_to",
         "kind": "extraction",
+        "instruction": "When the match was moved to.",
         "labels": [],
-        "type": "Question",
-        "value_type": "datetime"
+        "value_type": "datetime",
+        "is_list": false
       }
     ],
-    "state": {
-      "parts": [
-        {
-          "text": "Kick-off was due at 15:00 on 17 October 2026 and was moved to 2026-10-18T14:30.",
-          "type": "TextPart"
-        }
-      ],
-      "type": "State"
-    },
-    "type": "WireRequest"
+    "options": {
+      "reference_date": "2026-10-21"
+    }
   }
 }
