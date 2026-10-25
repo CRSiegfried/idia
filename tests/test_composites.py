@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import time
-from collections.abc import Awaitable, Callable
-from typing import Any
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Any, Final, cast
 
 import pytest
 
@@ -36,6 +37,7 @@ from idia import (
     Router,
     State,
     WireRequest,
+    WireResponse,
 )
 from idia.providers.scripted import Item, Script, Scripted
 from tests._support import (
@@ -178,16 +180,16 @@ def test_router_member_gets_the_requests_state_deadline_and_options_unchanged() 
         state=text_state("the state"),
         questions=(noul("x"), choice("z"), noul("y")),
         deadline=Deadline.after(30),
-        options={"reference_date": "2026-10-22"},
+        options={"z": 1, "a": 2},
     )
     _run(Router({"choice": labels, "noul": nouls}), parent)
     ([to_labels], [to_nouls]) = (labels.received, nouls.received)
     assert [q.key for q in to_labels.questions] == ["z"]
     assert [q.key for q in to_nouls.questions] == ["x", "y"]
     for received in (to_labels, to_nouls):
-        assert received.state is parent.state or received.state == parent.state
-        assert received.deadline is parent.deadline or received.deadline == parent.deadline
-        assert dict(received.options) == dict(parent.options)
+        assert received.state is parent.state
+        assert received.deadline is parent.deadline
+        assert list(received.options.items()) == [("z", 1), ("a", 2)]
 
 
 def test_router_member_exception_other_than_request_failed_propagates_bare() -> None:
@@ -353,6 +355,52 @@ def test_fallback_member_gets_the_remaining_deadline_not_a_fresh_one() -> None:
     assert leaf_b.calls[0].deadline == request_.deadline
     assert leaf_b.calls[0].wire_request.questions == request_.questions
     assert response.outcomes[0].provider == "b"
+
+
+def test_fallback_gives_every_member_the_same_request() -> None:
+    leaf_a, _ = _failing("a")
+    leaf_b, _ = _failing("b")
+    leaf_c, _ = _member("c")
+    members = [Recording(leaf_a), Recording(leaf_b), Recording(leaf_c)]
+    parent = Request(
+        state=text_state("the state"),
+        questions=(noul("x"), noul("y")),
+        deadline=Deadline.after(30),
+        options={"z": 1, "a": 2},
+    )
+    _run(Fallback(members), parent)
+    assert [len(member.received) for member in members] == [1, 1, 1]
+    assert all(member.received[0] is parent for member in members)
+
+
+# A prompt as a leaf might record it: keys out of sorted order at every depth.
+PROMPT: Final = {"zeta": {"y": 1, "b": {"q": 2, "c": 3}}, "alpha": "first", "mid": {"z": 0, "a": 1}}
+
+
+def _ordered(value: object) -> object:
+    """``value``'s keys in their order at every depth, as nested items lists."""
+    if isinstance(value, Mapping):
+        items = cast(Mapping[str, object], value).items()
+        return [(key, _ordered(item)) for key, item in items]
+    return value
+
+
+class Prompting(Scripted):
+    """A scripted leaf whose ``prompt_sent`` is ``PROMPT``, in its own order."""
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        response = await super().call(wire_request, deadline)
+        return dataclasses.replace(response, prompt_sent=PROMPT)
+
+
+def test_an_outcome_keeps_the_leafs_prompt_sent_order() -> None:
+    leaf = Prompting(name="p", model="p-1", capabilities=capabilities(), script=_answering())
+    (direct,) = _run(Dispatcher(leaf, retry=QUICK), request()).outcomes
+    _, failing = _failing("a")
+    (carried,) = _run(Fallback([failing, Dispatcher(leaf, retry=QUICK)]), request()).outcomes
+    assert carried.failed_attempts
+    for outcome in (direct, carried):
+        assert _ordered(outcome.prompt_sent) == _ordered(PROMPT)
 
 
 def test_fallback_failed_member_is_listed_on_the_answering_outcome() -> None:

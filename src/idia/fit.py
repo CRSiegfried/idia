@@ -71,8 +71,10 @@ class OverflowPolicy(Protocol):
     is over. ``apply`` returns a state that fits it by ``estimator``, or raises
     :class:`~idia.core.DoesNotFit`. Preflight checks the returned state again, so a
     policy whose state still overflows raises all the same, and a response whose state a
-    policy changed carries an ``overflow-policy`` warning naming it. A body-size overflow is
-    never handed to a policy: it always raises.
+    policy changed carries an ``overflow-policy`` warning naming it. A state that fits is
+    sent exactly as returned, its keys in the order given, so a policy should keep the
+    order of whatever it keeps. A body-size overflow is never handed to a policy: it
+    always raises.
     """
 
     @property

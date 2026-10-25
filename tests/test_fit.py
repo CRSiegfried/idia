@@ -8,7 +8,7 @@ import base64
 import dataclasses
 from collections.abc import Sequence
 from types import MappingProxyType
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import pytest
 
@@ -854,3 +854,69 @@ def test_every_wire_request_of_a_plan_carries_the_requests_options() -> None:
     plan = _plan(request, max_questions=1)
     assert len(plan.wire_requests) == 3
     assert all(w.options == {"reference_date": "2026-10-21"} for w in plan.wire_requests)
+
+
+def _ordered(value: object) -> object:
+    """``value``'s keys in their order at every depth, as nested items lists, so a
+    comparison sees order where ``==`` on a mapping would not."""
+    if isinstance(value, MappingProxyType | dict):
+        items = cast(dict[str, object], value).items()
+        return [(key, _ordered(item)) for key, item in items]
+    if isinstance(value, tuple | list):
+        return [_ordered(item) for item in cast(Sequence[object], value)]
+    return value
+
+
+# Keys deliberately out of sorted order, at every depth.
+NESTED: Final = {"zeta": {"y": 1, "b": {"q": 2, "c": 3}}, "alpha": "first", "mid": {"z": 0, "a": 1}}
+STRUCTURED: Final = {"task": "Is it so?", "rules": {"strict": True, "allow": False}, "aim": "x"}
+
+
+def test_every_wire_request_carries_the_state_and_instructions_as_given() -> None:
+    state = State(parts=(TextPart(text="lead"), JsonPart(value=NESTED)))
+    questions = tuple(
+        Question(key=f"q{index}", kind="noul", instruction=STRUCTURED) for index in range(5)
+    )
+    options = {"zeta": 1, "alpha": {"y": 2, "b": 3}}
+    request = Request(state=state, questions=questions, deadline=DEADLINE, options=options)
+    assert _ordered(request.options) == [("zeta", 1), ("alpha", [("y", 2), ("b", 3)])]
+    plan = _plan(request, max_questions=2, modalities=frozenset({"text", "json"}))
+    assert len(plan.wire_requests) == 3
+    sent = [question for wire in plan.wire_requests for question in wire.questions]
+    assert len(sent) == len(questions)
+    assert all(given is planned for given, planned in zip(questions, sent, strict=True))
+    for wire in plan.wire_requests:
+        assert wire.state is request.state
+        assert _ordered(wire.options) == _ordered(request.options)
+        part = wire.state.parts[1]
+        assert isinstance(part, JsonPart)
+        assert _ordered(part.value) == _ordered(NESTED)
+        for question in wire.questions:
+            assert _ordered(question.instruction) == _ordered(STRUCTURED)
+
+
+def test_a_policys_state_is_planned_as_returned() -> None:
+    given = {"a": 1, "m": {"b": 2, "a": 3}, "z": 4}
+    returned = State(parts=(JsonPart(value={"z": 4, "m": {"a": 3, "b": 2}, "a": 1}),))
+
+    class Reorder:
+        name = "reorder"
+
+        def apply(self, state: State, limit: int, estimator: TokenEstimator) -> State:
+            return returned
+
+    state = State(parts=(TextPart(text="x" * 200), JsonPart(value=given)))
+    request = _request(noul("a"), noul("b"), noul("c"), state=state)
+    plan = _plan(
+        request,
+        overflow=Reorder(),
+        max_input_tokens=100,
+        modalities=frozenset({"text", "json"}),
+        max_questions=1,
+    )
+    assert len(plan.wire_requests) == 3
+    assert _fields(plan.response_warnings) == ["max_input_tokens"]
+    assert all(wire.state is returned for wire in plan.wire_requests)
+    part = plan.wire_requests[0].state.parts[0]
+    assert isinstance(part, JsonPart)
+    assert _ordered(part.value) == [("z", 4), ("m", [("a", 3), ("b", 2)]), ("a", 1)]

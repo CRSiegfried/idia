@@ -130,12 +130,17 @@ def _answering(answers: Mapping[str, object], model: str = "jev-1.14.0") -> Wire
     return Wire({"model": model, "answers": answers, "usage": {"input_tokens": 9}})
 
 
-def test_a_json_part_nested_too_deeply_to_encode_is_a_provider_error() -> None:
-    value: JsonValue = 1
+def test_a_json_part_too_deep_to_encode_is_refused_before_sending() -> None:
+    deep: JsonValue = 1
     for _ in range(100_000):
-        value = (value,)
-    error = _raised(_answering({}).leaf(), _one(_NOUL, State(parts=(JsonPart(value=value),))))
+        deep = (deep,)
+    part = JsonPart(value={"a": 1})
+    object.__setattr__(part, "value", deep)  # past the constructor, which refuses the depth
+    wire = _answering({})
+    error = _raised(wire.leaf(), _one(_NOUL, State(parts=(part,))))
     assert "cannot be sent as JSON" in error.message
+    assert not error.is_retryable
+    assert wire.sent == []
 
 
 def test_a_state_with_a_lone_surrogate_is_refused_as_a_provider_error() -> None:
