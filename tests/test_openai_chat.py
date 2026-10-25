@@ -471,6 +471,15 @@ def test_an_image_is_refused_before_sending() -> None:
     assert wire.sent == []
 
 
+def test_a_json_part_json_cannot_encode_is_refused_before_sending() -> None:
+    wire = _answering({"A": 1.0})
+    state = State(parts=(JsonPart(value=float("nan")),))
+    with pytest.raises(ProviderError, match="cannot be sent as JSON") as raised:
+        _call(wire.leaf(), _NOUL, state)
+    assert not raised.value.is_retryable
+    assert wire.sent == []
+
+
 @pytest.mark.parametrize("bound", [-0.1, 1.5])
 def test_a_bound_outside_zero_to_one_is_refused(bound: float) -> None:
     with pytest.raises(ValueError, match="max_off_label_mass"):
