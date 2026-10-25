@@ -224,7 +224,15 @@ def compact(value: JsonValue) -> str:
 
 
 def _measured(value: object) -> int:
-    return len(json.dumps(value, default=lambda v: repr(v)))
+    """The length of ``value`` as JSON: a read-only mapping as the object it holds, anything
+    else JSON cannot write as its ``repr``."""
+    return len(json.dumps(value, default=_measurable))
+
+
+def _measurable(value: object) -> object:
+    if isinstance(value, Mapping):
+        return dict(cast(Mapping[str, object], value))
+    return repr(value)
 
 
 class OpenAIEstimator:
