@@ -3,7 +3,7 @@
 The shapes every part of idia speaks, the closed sets, the answer union, the rules an answer passes, and the two protocols.
 Every shape is a frozen, slotted, keyword-only dataclass; a map-valued field is a read-only view.
 In the shapes a caller builds, `Deadline`, `TextPart`, `ImagePart`, `State`, `Label`, `Question`, `Request` and `WireRequest`, a tuple-valued field takes a tuple: a list or other sequence is refused with `TypeError`, not converted, while a map-valued field takes any mapping and holds a read-only view of it.
-Each of them refuses a field of the wrong type with `TypeError` and an empty key, instruction, label name, label description or media type with `ValueError`, each naming the field; a text part may be empty and a JSON part's value is not checked, except that a value that contains itself or is nested too deep is refused with `ValueError`, as it is in a structured instruction or an option.
+Each of them refuses a field of the wrong type with `TypeError` and an empty key, instruction, label name, label description or media type with `ValueError`, each naming the field; a text part may be empty and a JSON part's value is not checked, except that a value that contains itself, or nests too deep (deeper than the interpreter's recursion limit allows from the stack where the value is built), is refused with `ValueError`, as it is in a structured instruction or an option.
 The public names are those in `idia.__all__` and in the `__all__` of each module [the contributing notes](../../CONTRIBUTING.md#ground-rules-for-changes) list.
 
 ## State and question
@@ -11,6 +11,7 @@ The public names are those in `idia.__all__` and in the `__all__` of each module
 - A **state** is the input one request is about: a tuple of parts, each a `TextPart(text)`, a `JsonPart(value)` or an `ImagePart(data, media_type=None)` holding the image's bytes.
   A JSON part's value is held read-only all the way down, each object a read-only mapping and each list or tuple a tuple, so a later change to the caller's own object reaches nothing; its contents are not checked beyond the two refusals above, and it is left out of the part's `hash()`.
 - A **JSON value**, `JsonValue`, is `bool | int | float | str | tuple[JsonValue, ...] | Mapping[str, JsonValue] | None`, arrays as tuples so a value can be held read-only.
+  A read-only mapping cannot be pickled or deep-copied, so neither can a shape holding a JSON object: a `State` whose JSON part holds one, or a `Question` whose structured instruction does, raises `TypeError` from `pickle` and `copy.deepcopy`, as a `Request` or `WireRequest`, whose options are a read-only view, always has.
   It types a structured part, a structured instruction, raw usage, the prompt sent and the raw body.
 - **Key order.** A JSON object's keys are held and sent in the order the caller built them, at every depth, in a JSON part, a structured instruction and the options: key order is part of what the model sees, and idia never sorts it.
   `prompt_sent` holds the body in the order sent.

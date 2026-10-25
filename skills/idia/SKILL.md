@@ -100,8 +100,11 @@ and when each ending happens is in the
 is a complete example, and the
 [test-doubles spec](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/test-doubles.md#the-scripted-leaf)
 covers `Scripted` and `Recorded`. The scripted leaf logs each call in `calls`, and raises
-`ScriptExhausted` when its script runs out. A log recorded before the provenance fields
-is brought up to them offline with `upgrade_log(path)`, in `idia.providers.recorded`.
+`ScriptExhausted` when its script runs out. Recorded logs are in format 3, whose keys
+hold key order, so every key recorded before changed. A format-2 log is re-keyed into
+format 3 offline with `upgrade_log(log, *, requests, reasons=None)`, in
+`idia.providers.recorded`, given the wire requests its leaf was sent; a request holding a
+mapping with two or more keys cannot be re-keyed and must be recorded again.
 
 ## Pitfalls
 
