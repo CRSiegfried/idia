@@ -220,9 +220,10 @@ class LeafHarness(Protocol):
     :class:`CheckNotApplicable` for an exchange its transport cannot make.
     ``capabilities_for(features)`` is the record the leaf must declare when built with
     ``features`` on, every field the feature changes included. ``requests_sent`` counts
-    the wire requests the leaf ``make`` built last has sent, and ``body_sent`` the body of
-    the last of them, as sent, raising :class:`CheckNotApplicable` for a leaf that sends no
-    body. ``wire_request(kind)`` is the request
+    the wire requests the leaf ``make`` built last has sent. A harness may also define
+    ``body_sent()``, the body of the last of them, as bytes, raising
+    :class:`CheckNotApplicable` for a leaf that sends no body; it is optional, and a harness
+    without it runs L32 with the body half noted as not run. ``wire_request(kind)`` is the request
     each recorded exchange for ``kind`` answers, and ``expected(kind)`` its answers as
     mapped. An HTTP harness sends ``Failure.retry_after`` as ``retry-after-ms`` beside a
     conflicting ``retry-after``. ``sdk_retries`` is the retries below the leaf: an SDK's,
@@ -250,8 +251,6 @@ class LeafHarness(Protocol):
     def expected(self, kind: Kind) -> Mapping[str, Answer]: ...
 
     def requests_sent(self) -> int: ...
-
-    def body_sent(self) -> bytes: ...
 
     def sdk_retries(self) -> int: ...
 

@@ -700,7 +700,7 @@ def test_an_unknown_model_is_sent_as_given_and_its_404_is_not_retried() -> None:
     assert error.request_id == response["headers"]["x-request-id"]
     assert error.message.startswith("HTTP 404: ")
     assert "model_not_found" in error.message
-    assert wire.body_sent == cassette["request"]["body"]
+    assert body_key(wire.body_sent) == body_key(cassette["request"]["body"])
     assert wire.body_sent["model"] == UNKNOWN_MODEL_NAME
     assert cassette["expected"] is None
     assert cassette["request"]["headers"]["authorization"] == "<filtered>"

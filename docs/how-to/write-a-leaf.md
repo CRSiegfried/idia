@@ -783,6 +783,11 @@ model, so the fake supplies it too, stored beside each output:
 - **`Failure()`** with no status is a failure that is not retryable; for a model, the
   runtime raising.
 - **`Stall()`** never answers in time, so the call must end by its deadline.
+- **`AnyBody(kind)`** plays the output for `wire_request(kind)` whatever the request
+  holds; L32 sends that request with a JSON part or a structured instruction added. A
+  harness over a wire may also define `body_sent()`, the last body sent as bytes, so L32
+  checks the body too; without it, L32 checks `prompt_sent` alone and notes the body half
+  as not run.
 - An exchange your transport cannot make honestly, such as a status from a model that has
   none, makes your harness raise `CheckNotApplicable` from `make`. Never fake a status, a
   body or an SDK the leaf does not have.
@@ -1001,9 +1006,6 @@ class SpanLeafHarness:
 
     def requests_sent(self) -> int:
         return self._model.calls
-
-    def body_sent(self) -> bytes:
-        raise CheckNotApplicable("the leaf runs a model in process and sends no body")
 
     def sdk_retries(self) -> int:
         raise CheckNotApplicable("the leaf is built on no SDK")

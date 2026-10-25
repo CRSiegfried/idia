@@ -1300,12 +1300,14 @@ _LEAF_HARNESSES: Final = (
 
 _READ_BY_NAME: Final = frozenset(
     {
-        # Probes sent outside the leaf: another model, question order, option or key.
+        # Probes sent outside the leaf: question order, an option or a key it never sends.
         "openai-decisions/gpt-6-luna/base/order-4/order-e-1.json",
         "openai-decisions/gpt-6-luna/base/order-4/order-e-2.json",
-        "openai-decisions/gpt-6-luna/base/unknown-model.json",
+        # Asks for 21 logprobs, which the leaf never sends; written by write_cassette.
         "openai-chat/gpt-4.1/base/failure.json",
         "cloudflare-clef/clef/base/question-id-probe.json",
+        # Recorded through the leaf under another model name, and read by name for it.
+        "openai-decisions/gpt-6-luna/base/unknown-model.json",
         # Recorded before bodies kept their order: their bodies hold sorted keys.
         "openai-chat/gpt-4.1/base/score-absent-level.json",
         "cloudflare-clairic/clairic/base/candidate-estimate.json",
@@ -1318,22 +1320,19 @@ _READ_BY_NAME: Final = frozenset(
 outside the leaf, or one recorded before bodies kept their order."""
 
 
-def _recorded_by_leaves() -> list[Any]:
+def _cassettes(*, read_by_name: bool) -> list[Any]:
     classes = {cls.__name__: cls for cls in _harness_classes()}
     return [
         pytest.param(classes[name], path, id=path.relative_to(CASSETTES).as_posix())
         for name in _LEAF_HARNESSES
         for path in sorted(classes[name].cassette_dir.rglob("*.json"))
-        if path.relative_to(CASSETTES).as_posix() not in _READ_BY_NAME
+        if (path.relative_to(CASSETTES).as_posix() in _READ_BY_NAME) == read_by_name
     ]
 
 
-@pytest.mark.parametrize(("harness_class", "path"), _recorded_by_leaves())
-def test_a_cassettes_wire_request_gives_its_stored_body(
-    harness_class: type[HttpLeafHarness], path: Path
-) -> None:
-    """Sending the decoded wire request of a cassette its leaf recorded, through that leaf,
-    gives the body stored, every key in the order stored."""
+def _sent_and_stored(harness_class: type[HttpLeafHarness], path: Path) -> tuple[str, str]:
+    """The body the leaf sends for a cassette's decoded wire request, and the body stored,
+    each as the match compares it."""
     cassette = load_cassette(path)
     sent: list[bytes] = []
 
@@ -1348,7 +1347,31 @@ def test_a_cassettes_wire_request_gives_its_stored_body(
     with contextlib.suppress(ProviderError):
         asyncio.run(leaf.call(cassette.wire_request, Deadline.after(30.0)))
     assert sent, "the leaf sent nothing"
-    assert body_key(parse_body(sent[0])) == body_key(cassette.request["body"])
+    return body_key(parse_body(sent[0])), body_key(cassette.request["body"])
+
+
+@pytest.mark.parametrize(("harness_class", "path"), _cassettes(read_by_name=False))
+def test_a_cassettes_wire_request_gives_its_stored_body(
+    harness_class: type[HttpLeafHarness], path: Path
+) -> None:
+    """Sending the decoded wire request of a cassette its leaf recorded, through that leaf,
+    gives the body stored, every key in the order stored."""
+    sent, stored = _sent_and_stored(harness_class, path)
+    assert sent == stored
+
+
+@pytest.mark.parametrize(("harness_class", "path"), _cassettes(read_by_name=True))
+def test_each_cassette_read_by_name_does_not_give_its_stored_body(
+    harness_class: type[HttpLeafHarness], path: Path
+) -> None:
+    """Each exemption is still needed: a cassette read by name whose body the leaf now sends
+    as stored belongs with the rest."""
+    sent, stored = _sent_and_stored(harness_class, path)
+    assert sent != stored
+
+
+def test_every_cassette_read_by_name_exists() -> None:
+    assert len(_cassettes(read_by_name=True)) == len(_READ_BY_NAME)
 
 
 class SortsTheBody(StubHarness):
@@ -1368,3 +1391,22 @@ def test_a_body_sent_with_sorted_keys_fails_exactly_l32() -> None:
 def test_l32_checks_the_body_and_the_prompt_over_the_mock_wire() -> None:
     [l32] = [check for check in leaf_checks(StubHarness) if check.id == "L32"]
     assert asyncio.run(l32.run()) is None
+
+
+class _NoBodySent:
+    """The stub's harness with no ``body_sent``, as a harness written before it was."""
+
+    def __init__(self) -> None:
+        self._inner = StubHarness()
+
+    def __getattr__(self, name: str) -> Any:
+        if name == "body_sent":
+            raise AttributeError(name)
+        return getattr(self._inner, name)
+
+
+def test_a_harness_without_body_sent_runs_l32_with_a_note() -> None:
+    harness = cast(LeafHarness, _NoBodySent())
+    assert not hasattr(harness, "body_sent")
+    [l32] = [check for check in leaf_checks(lambda: harness) if check.id == "L32"]
+    assert asyncio.run(l32.run()) == "the body was not checked: the harness reads no body"

@@ -17,7 +17,7 @@ _LEAF_NOT_APPLICABLE = {"L9", "L12", "L15", "L18", "L19", "L20", "L24", "L32"}
 """No SDK (L9), no statuses (L12), no HTTP client (L15), no kind whose probabilities sum
 (L18), no noul (L20) and no candidate kind (L24); and no key without a question (L19): the
 runtime answers by label and the leaf maps by question key, so no key without a question can
-reach validation."""
+reach validation; and no JSON part or structured instruction whose order to keep (L32)."""
 _WRAPPED_NOT_APPLICABLE = {
     "P6",
     "P9",

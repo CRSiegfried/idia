@@ -540,8 +540,10 @@ def upgrade_log(
     Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
     reason, claim or version a response already holds stays. A re-keyed response keeps the
     ``prompt_sent`` and raw body its old log holds, with their keys sorted; only a call
-    recorded again holds them in the order sent. The log is refused with ``ValueError``,
-    and nothing written, when it is not in format 2 (a format-3 log included), when a
+    recorded again holds them in the order sent. The old log is replaced, so keep a copy, or
+    its committed version, until the requests given are complete. The log is refused with
+    ``ValueError``, and nothing written, when it is not in format 2 (a format-3 log included),
+    when a
     request is refused as above, when a leaf has no rules and no ``reasons`` are given,
     ``reasons`` are given for a leaf with rules, give ``not-sent`` or give a missing
     snapshot a reason other than ``not-pinned``, a ``gliner`` log records no runtime

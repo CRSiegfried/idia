@@ -806,8 +806,11 @@ async def _l32(harness: LeafHarness) -> str | None:
     )
     assert isinstance(response, WireResponse)
     notes: list[str] = []
+    body_sent = cast(Callable[[], bytes] | None, getattr(harness, "body_sent", None))
     try:
-        body = harness.body_sent()
+        if body_sent is None:
+            raise CheckNotApplicable("the harness reads no body")
+        body = body_sent()
     except CheckNotApplicable as not_applicable:
         notes.append(f"the body was not checked: {not_applicable.reason}")
     else:
