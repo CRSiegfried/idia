@@ -1,13 +1,7 @@
 {
   "expected": {
     "choice_colour": {
-      "chosen": "white",
-      "confidence": 0.97,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "red",
@@ -22,16 +16,16 @@
           0.98
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "choice_shapes": {
-      "chosen": "squares",
-      "confidence": 1.0,
-      "derived": [],
+      "confidence": 0.97,
+      "chosen": "white",
+      "expected_level": null,
       "echo": null,
       "echo_of": null,
-      "expected_level": null,
       "off_label_mass": null,
+      "derived": []
+    },
+    "choice_shapes": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "squares",
@@ -42,13 +36,19 @@
           0.0
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 1.0,
+      "chosen": "squares",
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [
     "images"
   ],
-  "format": 1,
+  "format": 2,
   "leaf": "system-one",
   "model": "jev-1.14.0",
   "request": {
@@ -143,67 +143,67 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The main colour?",
-        "is_list": false,
-        "key": "choice_colour",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": "Mostly red",
-            "name": "red",
-            "type": "Label"
-          },
-          {
-            "description": "Mostly blue",
-            "name": "blue",
-            "type": "Label"
-          },
-          {
-            "description": "Mostly white",
-            "name": "white",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "The shapes?",
-        "is_list": false,
-        "key": "choice_shapes",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "squares",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "circles",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A test card: a white field with two coloured squares.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A test card: a white field with two coloured squares."
         },
         {
+          "type": "ImagePart",
           "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
-          "media_type": "image/png",
-          "type": "ImagePart"
+          "media_type": "image/png"
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_colour",
+        "kind": "choice",
+        "instruction": "The main colour?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "red",
+            "description": "Mostly red"
+          },
+          {
+            "type": "Label",
+            "name": "blue",
+            "description": "Mostly blue"
+          },
+          {
+            "type": "Label",
+            "name": "white",
+            "description": "Mostly white"
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "choice_shapes",
+        "kind": "choice",
+        "instruction": "The shapes?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "squares",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "circles",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

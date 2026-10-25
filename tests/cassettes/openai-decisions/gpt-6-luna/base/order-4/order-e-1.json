@@ -1,13 +1,7 @@
 {
   "expected": {
     "choice_priority": {
-      "chosen": "early_opening",
-      "confidence": 0.6,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "bread_quality",
@@ -22,16 +16,16 @@
           0.01
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "choice_reason": {
-      "chosen": "ordinary_variation",
-      "confidence": 0.38,
-      "derived": [],
+      "confidence": 0.6,
+      "chosen": "early_opening",
+      "expected_level": null,
       "echo": null,
       "echo_of": null,
-      "expected_level": null,
       "off_label_mass": null,
+      "derived": []
+    },
+    "choice_reason": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "novelty_wore_off",
@@ -46,27 +40,23 @@
           0.59
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.38,
+      "chosen": "ordinary_variation",
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     },
     "noul_keep": {
-      "confidence": null,
-      "derived": [],
-      "off_label_mass": null,
+      "type": "NoulAnswer",
       "probability": 0.5,
-      "type": "NoulAnswer"
+      "confidence": null,
+      "off_label_mass": null,
+      "derived": []
     },
     "score_regulars": {
-      "chosen": null,
-      "confidence": 0.63,
-      "derived": [],
-      "echo": [
-        "low",
-        "mid",
-        "high"
-      ],
-      "echo_of": "names",
-      "expected_level": 0.75,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -81,11 +71,21 @@
           0.0
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.63,
+      "chosen": null,
+      "expected_level": 0.75,
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "names",
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-6-luna",
   "request": {
@@ -279,101 +279,101 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "What do the regulars care about most?",
-        "is_list": false,
-        "key": "choice_priority",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "bread_quality",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "early_opening",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "price",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "The likeliest reason sales fell back?",
-        "is_list": false,
-        "key": "choice_reason",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "novelty_wore_off",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "lost_early_buyers",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "ordinary_variation",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "Will the owner keep the new hours?",
-        "is_list": false,
-        "key": "noul_keep",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "How satisfied are the regulars overall?",
-        "is_list": false,
-        "key": "score_regulars",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "mid",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A small bakery moved its opening from six to eight last month. Some regulars say the bread is better now; others miss buying it before work. Sales rose in the first week, then fell back to where they were. The owner has said only that the new hours are under review.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A small bakery moved its opening from six to eight last month. Some regulars say the bread is better now; others miss buying it before work. Sales rose in the first week, then fell back to where they were. The owner has said only that the new hours are under review."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_priority",
+        "kind": "choice",
+        "instruction": "What do the regulars care about most?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "bread_quality",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "early_opening",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "price",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "choice_reason",
+        "kind": "choice",
+        "instruction": "The likeliest reason sales fell back?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "novelty_wore_off",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "lost_early_buyers",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "ordinary_variation",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "noul_keep",
+        "kind": "noul",
+        "instruction": "Will the owner keep the new hours?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "score_regulars",
+        "kind": "score",
+        "instruction": "How satisfied are the regulars overall?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "mid",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

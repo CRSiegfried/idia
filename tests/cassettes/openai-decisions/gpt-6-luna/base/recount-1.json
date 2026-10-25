@@ -1,15 +1,15 @@
 {
   "expected": {
     "noul_0": {
-      "confidence": null,
-      "derived": [],
-      "off_label_mass": null,
+      "type": "NoulAnswer",
       "probability": 1.0,
-      "type": "NoulAnswer"
+      "confidence": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-6-luna",
   "request": {
@@ -97,26 +97,26 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "Is statement 0 about rain true?",
-        "is_list": false,
-        "key": "noul_0",
-        "kind": "noul",
-        "labels": [],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "noul_0",
+        "kind": "noul",
+        "instruction": "Is statement 0 about rain true?",
+        "labels": [],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

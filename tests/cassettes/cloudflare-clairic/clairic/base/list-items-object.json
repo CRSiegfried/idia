@@ -1,7 +1,7 @@
 {
   "expected": null,
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "cloudflare-clairic",
   "model": "clairic",
   "request": {
@@ -77,71 +77,71 @@
     "status": 400
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The home team.",
-        "is_list": false,
-        "key": "home_team",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "text"
-      },
-      {
-        "instruction": "The ticket refunds, in pounds, to two decimals.",
-        "is_list": false,
-        "key": "refunds",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "number"
-      },
-      {
-        "instruction": "The date the match was due to be played.",
-        "is_list": false,
-        "key": "match_date",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "date"
-      },
-      {
-        "instruction": "The referees' names.",
-        "is_list": true,
-        "key": "referees",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "text"
-      },
-      {
-        "instruction": "How long the pitch inspection took.",
-        "is_list": false,
-        "key": "inspection",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "duration"
-      },
-      {
-        "instruction": "The number of spectators at the ground.",
-        "is_list": false,
-        "key": "attendance",
-        "kind": "extraction",
-        "labels": [],
-        "type": "Question",
-        "value_type": "number"
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "Riverside Rovers v Harbour Town, Saturday 17 October: the match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water. Ticket refunds come to 4,250.50 pounds. The referees were Ana Ruiz and Tom Bell, and the pitch inspection took 45 minutes."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "home_team",
+        "kind": "extraction",
+        "instruction": "The home team.",
+        "labels": [],
+        "value_type": "text",
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "refunds",
+        "kind": "extraction",
+        "instruction": "The ticket refunds, in pounds, to two decimals.",
+        "labels": [],
+        "value_type": "number",
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "match_date",
+        "kind": "extraction",
+        "instruction": "The date the match was due to be played.",
+        "labels": [],
+        "value_type": "date",
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "referees",
+        "kind": "extraction",
+        "instruction": "The referees' names.",
+        "labels": [],
+        "value_type": "text",
+        "is_list": true
+      },
+      {
+        "type": "Question",
+        "key": "inspection",
+        "kind": "extraction",
+        "instruction": "How long the pitch inspection took.",
+        "labels": [],
+        "value_type": "duration",
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "attendance",
+        "kind": "extraction",
+        "instruction": "The number of spectators at the ground.",
+        "labels": [],
+        "value_type": "number",
+        "is_list": false
+      }
+    ]
   }
 }

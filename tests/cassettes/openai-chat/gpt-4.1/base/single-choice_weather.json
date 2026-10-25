@@ -1,15 +1,7 @@
 {
   "expected": {
     "choice_weather": {
-      "chosen": "rain",
-      "confidence": null,
-      "derived": [
-        "chosen"
-      ],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": 7.83852780461558e-08,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "rain",
@@ -24,11 +16,19 @@
           1.1579442033030713e-12
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": null,
+      "chosen": "rain",
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": 7.83852780461558e-08,
+      "derived": [
+        "chosen"
+      ]
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-chat",
   "model": "gpt-4.1",
   "request": {
@@ -306,42 +306,42 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The weather?",
-        "is_list": false,
-        "key": "choice_weather",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": "It rained.",
-            "name": "rain",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "sun",
-            "type": "Label"
-          },
-          {
-            "description": "It snowed.",
-            "name": "snow",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_weather",
+        "kind": "choice",
+        "instruction": "The weather?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "rain",
+            "description": "It rained."
+          },
+          {
+            "type": "Label",
+            "name": "sun",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "snow",
+            "description": "It snowed."
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

@@ -1,17 +1,7 @@
 {
   "expected": {
     "score_rain": {
-      "chosen": null,
-      "confidence": 0.56,
-      "derived": [],
-      "echo": [
-        "No rain",
-        "Light rain",
-        "Heavy rain"
-      ],
-      "echo_of": "descriptions",
-      "expected_level": 0.29,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "none",
@@ -26,20 +16,20 @@
           0.07
         ]
       ],
-      "type": "LabelAnswer"
-    },
-    "score_red": {
+      "confidence": 0.56,
       "chosen": null,
-      "confidence": 0.22,
-      "derived": [],
+      "expected_level": 0.29,
       "echo": [
-        "low",
-        "mid",
-        "high"
+        "No rain",
+        "Light rain",
+        "Heavy rain"
       ],
       "echo_of": "descriptions",
-      "expected_level": 0.67,
       "off_label_mass": null,
+      "derived": []
+    },
+    "score_red": {
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "low",
@@ -54,13 +44,23 @@
           0.1
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.22,
+      "chosen": null,
+      "expected_level": 0.67,
+      "echo": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "echo_of": "descriptions",
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [
     "images"
   ],
-  "format": 1,
+  "format": 2,
   "leaf": "system-one",
   "model": "jev-1.14.0",
   "request": {
@@ -167,72 +167,72 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "How much red?",
-        "is_list": false,
-        "key": "score_red",
-        "kind": "score",
-        "labels": [
-          {
-            "description": null,
-            "name": "low",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "mid",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "high",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      },
-      {
-        "instruction": "How hard?",
-        "is_list": false,
-        "key": "score_rain",
-        "kind": "score",
-        "labels": [
-          {
-            "description": "No rain",
-            "name": "none",
-            "type": "Label"
-          },
-          {
-            "description": "Light rain",
-            "name": "light",
-            "type": "Label"
-          },
-          {
-            "description": "Heavy rain",
-            "name": "heavy",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A test card: a white field with two coloured squares.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A test card: a white field with two coloured squares."
         },
         {
+          "type": "ImagePart",
           "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAD20lEQVR42u3TwQ0AAAQEweu/aXrwkIiZaIDYFHBWnAAEDAgYEDAIGBAwIGBAwCBgQMCAgEHAgIABAQMCBgEDAgYEDAgYBAwIGBAwCBgQMCBgQMAgYEDAgIABAYOAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAgYBAwIGBAwCBgQMCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCDjfNrELCABYyABSxgBCxgASNgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAkbAAkbAAhYwAhawgBGwgAUsYAELGAELWMAIWMACRsACRsACFjACFrCAEbCABSxgAQsYAQtYwAhYwAJGwAIWsIAFLGAELGABI2ABCxgBCxgBC1jACFjAAkbAAhawgAUsYAQsYAEjYAELGAELGAELWMAIWMACRsACFjACFjACFrCAEbCABYyABSxgAQtYwAhYwAJGwAIWMAIWMAIWsIARsIAFjIAFLGABC1jACFjAAkbAAhYwAhawgAUsYAEjYAELGAELWMAIWMAIWMACRsACFjACFrCABSxgASNgAQsYAQtYwAhYwAIWsIAFjIAFLGAELGABI2ABI2ABCxgBC1jACFjAAhawgAWMgAUsYAQsYAEjYBAwIGBAwICAQcCAgAEBg4ABAQMCBgQMAgYEDAgYBAwIGBAwIGAQMCBgQMCAgEHAgIABAYOAAQEDAgYEDAIGBAwIGBAwCBgQMCBgEDAgYEDAgIDZf6z8GgEjYAELGAELGAQsYAQsYAEjYAELGAELGAQsYAQsYAEjYAGDgAUMAhYwAhawgBGwgEHAAkbAAhYwAhawgBGwgEHAAkbAAhYwAhYwCFjAIGABI2ABCxgBCxgELGAELGABI2ABCxgBCxgELGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGABI2ABg4AFjIAFLGAELGAQsIARsIAFjIAFLGAELGAQsIARsIAFjIAFDAIWMAhYwAhYwAJGwAIGAQsYAQtYwAhYwAJGwAIGAQsYAQtYwAhYwCBgAYOABYyABSxgBCxgELCAEbCABYyABSxgBCxgELCAEbCABYyABQwCFjACFrCAEbCABYyABQwCFjACFrCAEbCABYyABQwIGBAwCBgQMCBgQMAgYEDAgIBBwICAAQEDAgYBAwIGBAwIGAQMCBgQMAgYEDAgYEDAIGBAwICAAQGDgAEBAwIGAQMCBgQMCBgEDAgYEDAIGDirAV8F9CoUB8uAAAAAAElFTkSuQmCC",
-          "media_type": "image/png",
-          "type": "ImagePart"
+          "media_type": "image/png"
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "score_red",
+        "kind": "score",
+        "instruction": "How much red?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "low",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "mid",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "high",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      },
+      {
+        "type": "Question",
+        "key": "score_rain",
+        "kind": "score",
+        "instruction": "How hard?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "none",
+            "description": "No rain"
+          },
+          {
+            "type": "Label",
+            "name": "light",
+            "description": "Light rain"
+          },
+          {
+            "type": "Label",
+            "name": "heavy",
+            "description": "Heavy rain"
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

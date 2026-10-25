@@ -6,6 +6,7 @@ suite names is played through an ``httpx2.MockTransport``."""
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib
 import json
 import os
@@ -31,7 +32,16 @@ from idia.conformance import (
     run_checks,
 )
 from idia.conformance._scripted import CAPABILITIES
-from idia.core import Capabilities, JsonValue, Kind, Leaf, WireRequest
+from idia.core import (
+    Capabilities,
+    JsonPart,
+    JsonValue,
+    Kind,
+    Leaf,
+    NoulAnswer,
+    State,
+    WireRequest,
+)
 from idia.providers._canon import encode, plain
 from idia.providers.recorded import Recorded
 from tests import _http
@@ -50,6 +60,7 @@ from tests._http import (
     LeafSpy,
     NoExchange,
     RecordingTransport,
+    body_key,
     cassette_path,
     features_dir,
     filter_headers,
@@ -325,7 +336,8 @@ _UNSORTED: Final = {
 
 
 def _write_unsorted(path: Path) -> dict[str, Any]:
-    """A cassette written from :data:`_UNSORTED` sent and received, read back in order."""
+    """A cassette written from :data:`_UNSORTED` sent and received, its wire request holding
+    a JSON part in that order too, read back in order."""
     request = httpx2.Request(
         "POST", URL, content=json.dumps(_UNSORTED).encode(), headers={"x-z": "1", "x-a": "2"}
     )
@@ -337,10 +349,15 @@ def _write_unsorted(path: Path) -> dict[str, Any]:
         leaf=StubHttpLeaf(capabilities=RECORD),
         request=request,
         response=response,
-        wire_request=StubHarness().wire_request("noul"),
-        expected=None,
+        wire_request=_with_json_part(StubHarness().wire_request("noul")),
+        expected={"z": NoulAnswer(probability=0.5), "a": NoulAnswer(probability=0.25)},
     )
     return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
+
+
+def _with_json_part(wire_request: WireRequest) -> WireRequest:
+    parts = (*wire_request.state.parts, JsonPart(value={"z": 1, "a": {"y": 2, "b": 3}}))
+    return replace(wire_request, state=State(parts=parts))
 
 
 def _keys_sorted(value: object) -> bool:
@@ -352,7 +369,7 @@ def _keys_sorted(value: object) -> bool:
     return True
 
 
-def test_a_cassette_keeps_both_bodies_verbatim_and_sorts_the_rest(
+def test_a_cassette_keeps_its_bodies_and_wire_request_in_order_and_sorts_the_rest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("IDIA_LIVE", "1")
@@ -365,9 +382,16 @@ def test_a_cassette_keeps_both_bodies_verbatim_and_sorts_the_rest(
         held = {key: value for key, value in document[part].items() if key != "body"}
         assert list(document[part]) == sorted(document[part])
         assert _keys_sorted(held)
-    rest = {key: value for key, value in document.items() if key not in ("request", "response")}
+    in_order = ("request", "response", "wire_request", "expected")
+    rest = {key: value for key, value in document.items() if key not in in_order}
     assert list(document) == sorted(document)
     assert _keys_sorted(rest)
+    part = document["wire_request"]["state"]["parts"][-1]
+    assert list(document["wire_request"]) == ["type", "state", "questions"]
+    assert list(part["value"]) == ["z", "a"]
+    assert list(part["value"]["a"]) == ["y", "b"]
+    assert list(document["expected"]) == ["z", "a"]
+    assert list(document["expected"]["z"])[:2] == ["type", "probability"]
 
 
 def test_a_cassette_misses_a_reordered_object_as_it_misses_a_reordered_array(
@@ -527,9 +551,10 @@ def test_a_cassette_is_kept_under_its_leaf_model_and_features() -> None:
 
 def test_a_cassette_in_another_format_is_refused(tmp_path: Path) -> None:
     path = tmp_path / "c.json"
-    path.write_text(json.dumps({"format": 2}))
-    with pytest.raises(ValueError, match="format 2"):
-        load_cassette(path)
+    for format in (1, 3):
+        path.write_text(json.dumps({"format": format}))
+        with pytest.raises(ValueError, match=f"format {format}; this reads 2"):
+            load_cassette(path)
 
 
 def _answering(request: httpx2.Request) -> httpx2.Response:
@@ -771,7 +796,7 @@ def test_a_written_cassette_names_the_versions_that_shaped_it(
     assert document["recorded_with"] == {"idia": "0.0.1", "httpx2": "2.16.0"}
     assert list(document["recorded_with"]) == ["httpx2", "idia"]
     assert list(document) == sorted(document)
-    assert document["format"] == 1
+    assert document["format"] == 2
     stored = load_cassette(path)
     assert stored.wire_request == wire_request
     assert stored.expected == answers
@@ -1259,3 +1284,68 @@ def test_no_recorded_failure_is_a_credential_error_or_retryable() -> None:
         assert status not in (401, 403), f"{cls.__qualname__}'s recorded failure is a {status}"
         retryable = status in (408, 429) or status >= 500
         assert not retryable, f"{cls.__qualname__}'s recorded failure is a retryable {status}"
+
+
+_LEAF_HARNESSES: Final = (
+    "StubHarness",
+    "SystemOneHarness",
+    "WithImagesHarness",
+    "DecisionsHarness",
+    "ChatHarness",
+    "ClefHarness",
+    "ClefFlashHarness",
+    "ClairicHarness",
+)
+"""The harness of each configuration whose leaf recorded its cassettes."""
+
+_READ_BY_NAME: Final = frozenset(
+    {
+        # Probes sent outside the leaf: another model, question order, option or key.
+        "openai-decisions/gpt-6-luna/base/order-4/order-e-1.json",
+        "openai-decisions/gpt-6-luna/base/order-4/order-e-2.json",
+        "openai-decisions/gpt-6-luna/base/unknown-model.json",
+        "openai-chat/gpt-4.1/base/failure.json",
+        "cloudflare-clef/clef/base/question-id-probe.json",
+        # Recorded before bodies kept their order: their bodies hold sorted keys.
+        "openai-chat/gpt-4.1/base/score-absent-level.json",
+        "cloudflare-clairic/clairic/base/candidate-estimate.json",
+        "cloudflare-clairic/clairic/base/field-name-probe.json",
+        "cloudflare-clairic/clairic/base/list-items-object.json",
+        "cloudflare-clairic/clairic/base/past-context/truncated.json",
+    }
+)
+"""Cassettes whose body the leaf does not send as stored, each read by name: a probe sent
+outside the leaf, or one recorded before bodies kept their order."""
+
+
+def _recorded_by_leaves() -> list[Any]:
+    classes = {cls.__name__: cls for cls in _harness_classes()}
+    return [
+        pytest.param(classes[name], path, id=path.relative_to(CASSETTES).as_posix())
+        for name in _LEAF_HARNESSES
+        for path in sorted(classes[name].cassette_dir.rglob("*.json"))
+        if path.relative_to(CASSETTES).as_posix() not in _READ_BY_NAME
+    ]
+
+
+@pytest.mark.parametrize(("harness_class", "path"), _recorded_by_leaves())
+def test_a_cassettes_wire_request_gives_its_stored_body(
+    harness_class: type[HttpLeafHarness], path: Path
+) -> None:
+    """Sending the decoded wire request of a cassette its leaf recorded, through that leaf,
+    gives the body stored, every key in the order stored."""
+    cassette = load_cassette(path)
+    sent: list[bytes] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        sent.append(request.content)
+        response = cassette.response
+        return _http._response(response["status"], response["headers"], response["body"])
+
+    harness = harness_class()  # type: ignore[abstract]
+    client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
+    leaf = harness.build(client, harness.capabilities.enabled_features)
+    with contextlib.suppress(ProviderError):
+        asyncio.run(leaf.call(cassette.wire_request, Deadline.after(30.0)))
+    assert sent, "the leaf sent nothing"
+    assert body_key(parse_body(sent[0])) == body_key(cassette.request["body"])

@@ -5,7 +5,7 @@ exchange the suite names into a response from an ``httpx2.MockTransport``, read 
 leaf's cassettes. A cassette is one JSON file per case, at
 ``tests/cassettes/<leaf>/<model>/<features>/<name>.json``::
 
-    {"format": 1, "leaf": ..., "model": ..., "features": [...],
+    {"format": 2, "leaf": ..., "model": ..., "features": [...],
      "request": {"method", "url", "headers", "body"},
      "wire_request": <the WireRequest, encoded>,
      "response": {"status", "headers", "body"},
@@ -13,14 +13,17 @@ leaf's cassettes. A cassette is one JSON file per case, at
      "recorded_with": <optional: {package: version}, the versions that shaped it>}
 
 :func:`write_cassette` stores the request and response bodies verbatim, keys in the order
-sent and received, and the rest of the document with sorted keys, for stable diffs; a
-cassette written before it kept that order, as a probe recorded once and never written
-again, holds its bodies with sorted keys, matches no request a leaf sends and is replayed
-only by name. A replayed success asserts that the leaf sent the cassette's method, URL and
-JSON body: the body is in the match, so two requests to one URL cannot answer for each
-other. The match compares :func:`body_key`, the parsed body dumped in the order parsed, so
-an object's key order is compared as well as an array's: a wire's answers can move with
-the order of its questions.
+sent and received, the wire request and the answers in the order held, every mapping a
+caller built in the order built, so sending the ``wire_request`` of a cassette its leaf
+recorded through that leaf gives its stored body; the rest of the document, the envelope
+and the headers, is written with sorted keys, for stable diffs. A cassette written before
+bodies kept their order, as a probe recorded once and never written again, holds its
+bodies with sorted keys, matches no request a leaf sends and is replayed only by name; so
+does a probe sent outside the leaf. A replayed success asserts that the leaf sent the
+cassette's method, URL and JSON body: the body is in the match, so two requests to one URL
+cannot answer for each other. The match compares :func:`body_key`, the parsed body dumped
+in the order parsed, so an object's key order is compared as well as an array's: a wire's
+answers can move with the order of its questions.
 
 Except the stub leaf's cassettes, which no wire answers and which are written by hand in
 the order the stub leaf sends, a
@@ -97,9 +100,10 @@ from idia.core import (
 )
 from idia.providers._canon import decode, encode, plain
 
-FORMAT: Final = 1
+FORMAT: Final = 2
 """The cassette format this module reads and writes. A change to ``_canon``'s rendering,
-which a cassette's wire request and answers are written in, bumps it."""
+which a cassette's wire request and answers are written in, bumps it: format 2 writes them
+in the order held, where format 1 sorted their keys."""
 
 SECRET_HEADERS: Final = frozenset(
     {
@@ -602,8 +606,9 @@ def write_cassette(
     the URL, to the placeholder written in its place wherever it appears in the cassette.
     ``recorded_with``, when given, names the versions that shaped the cassette, such as
     idia's, written as the member ``recorded_with``, which no reader
-    needs. The two bodies are written verbatim, keys in the order sent and received, and the rest
-    with sorted keys. The file is written through a temporary file beside it, replaced in
+    needs. The two bodies are written verbatim, keys in the order sent and received, the wire
+    request and the answers in the order held, and the rest with sorted keys. The file is
+    written through a temporary file beside it, replaced in
     one step, so a failed write leaves an earlier cassette as it was, or none. Refuses
     unless ``IDIA_LIVE=1``."""
     if os.environ.get("IDIA_LIVE") != "1":
@@ -648,15 +653,17 @@ def _render_cassette(
                 "headers": filter_headers(request.headers),
                 "body": None,
             },
-            "wire_request": plain(encode(wire_request)),
+            "wire_request": None,
             "response": {
                 "status": response.status_code,
                 "headers": filter_headers(response.headers),
                 "body": None,
             },
-            "expected": None if expected is None else plain(encode(expected)),
+            "expected": None,
         }
     )
+    document["wire_request"] = plain(encode(wire_request))
+    document["expected"] = None if expected is None else plain(encode(expected))
     document["request"]["body"] = parse_body(request.content)
     document["response"]["body"] = parse_body(body)
     text = json.dumps(document, indent=2) + "\n"

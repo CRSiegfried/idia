@@ -1,13 +1,7 @@
 {
   "expected": {
     "choice_outcome": {
-      "chosen": "called_off",
-      "confidence": 1.0,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "played",
@@ -18,11 +12,17 @@
           1.0
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 1.0,
+      "chosen": "called_off",
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-6-luna",
   "request": {
@@ -129,37 +129,37 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The match?",
-        "is_list": false,
-        "key": "choice_outcome",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "played",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "called_off",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "The match was called off after an hour of heavy rain; the sun came out at six, when the ground was already under water."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_outcome",
+        "kind": "choice",
+        "instruction": "The match?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "played",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "called_off",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }

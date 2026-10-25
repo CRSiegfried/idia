@@ -1,13 +1,7 @@
 {
   "expected": {
     "choice_reason": {
-      "chosen": "ordinary_variation",
-      "confidence": 0.38,
-      "derived": [],
-      "echo": null,
-      "echo_of": null,
-      "expected_level": null,
-      "off_label_mass": null,
+      "type": "LabelAnswer",
       "probabilities": [
         [
           "novelty_wore_off",
@@ -22,11 +16,17 @@
           0.59
         ]
       ],
-      "type": "LabelAnswer"
+      "confidence": 0.38,
+      "chosen": "ordinary_variation",
+      "expected_level": null,
+      "echo": null,
+      "echo_of": null,
+      "off_label_mass": null,
+      "derived": []
     }
   },
   "features": [],
-  "format": 1,
+  "format": 2,
   "leaf": "openai-decisions",
   "model": "gpt-6-luna",
   "request": {
@@ -140,42 +140,42 @@
     "status": 200
   },
   "wire_request": {
-    "questions": [
-      {
-        "instruction": "The likeliest reason sales fell back?",
-        "is_list": false,
-        "key": "choice_reason",
-        "kind": "choice",
-        "labels": [
-          {
-            "description": null,
-            "name": "novelty_wore_off",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "lost_early_buyers",
-            "type": "Label"
-          },
-          {
-            "description": null,
-            "name": "ordinary_variation",
-            "type": "Label"
-          }
-        ],
-        "type": "Question",
-        "value_type": null
-      }
-    ],
+    "type": "WireRequest",
     "state": {
+      "type": "State",
       "parts": [
         {
-          "text": "A small bakery moved its opening from six to eight last month. Some regulars say the bread is better now; others miss buying it before work. Sales rose in the first week, then fell back to where they were. The owner has said only that the new hours are under review.",
-          "type": "TextPart"
+          "type": "TextPart",
+          "text": "A small bakery moved its opening from six to eight last month. Some regulars say the bread is better now; others miss buying it before work. Sales rose in the first week, then fell back to where they were. The owner has said only that the new hours are under review."
         }
-      ],
-      "type": "State"
+      ]
     },
-    "type": "WireRequest"
+    "questions": [
+      {
+        "type": "Question",
+        "key": "choice_reason",
+        "kind": "choice",
+        "instruction": "The likeliest reason sales fell back?",
+        "labels": [
+          {
+            "type": "Label",
+            "name": "novelty_wore_off",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "lost_early_buyers",
+            "description": null
+          },
+          {
+            "type": "Label",
+            "name": "ordinary_variation",
+            "description": null
+          }
+        ],
+        "value_type": null,
+        "is_list": false
+      }
+    ]
   }
 }
