@@ -919,4 +919,7 @@ def test_a_policys_state_is_planned_as_returned() -> None:
     assert all(wire.state is returned for wire in plan.wire_requests)
     part = plan.wire_requests[0].state.parts[0]
     assert isinstance(part, JsonPart)
-    assert _ordered(part.value) == [("z", 4), ("m", [("a", 3), ("b", 2)]), ("a", 1)]
+    planned = _ordered(part.value)
+    assert part.value == given
+    assert planned != _ordered(given)
+    assert planned == _ordered({"z": 4, "m": {"a": 3, "b": 2}, "a": 1})

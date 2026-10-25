@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
@@ -586,14 +587,13 @@ def test_the_log_bytes_are_the_same_whatever_order_its_keys_were_recorded_in(
     assert keys == sorted(keys)
 
 
-@pytest.mark.parametrize("format", [1, 2, 4, None])
-def test_a_log_of_another_format_is_refused_at_construction(
-    tmp_path: Path, format: int | None
-) -> None:
+@pytest.mark.parametrize("format", [1, 2, 4, None, 3.0, "3", True])
+def test_a_log_of_another_format_is_refused_at_construction(tmp_path: Path, format: object) -> None:
     log = tmp_path / "log.json"
     _call(Recorded(_scripted(_answer(0.25)), log, "once"), _wire("a"))
     log.write_text(json.dumps({**_read(log), "format": format}))
-    with pytest.raises(ValueError, match=rf"format {format}; this reads 3: .* upgrade_log"):
+    shown = re.escape(f"format {format!r}; this reads 3: ")
+    with pytest.raises(ValueError, match=rf"{shown}.* upgrade_log"):
         Recorded(_scripted(), log, "none")
     with pytest.raises(ValueError, match="upgrade_log"):
         Recorded(None, log, "none", capabilities=capabilities())

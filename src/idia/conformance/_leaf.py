@@ -733,10 +733,11 @@ async def _l31(harness: LeafHarness) -> str | None:
 
 
 _ORDERED_PART: Final[JsonValue] = {
-    "l32-zulu": {"l32-yankee": 1, "l32-xray": ({"l32-whiskey": "w", "l32-victor": "v"},)},
+    "l32-zulu": {"l32-yankee": 1, "l32-xray": ({"l32-victor": "v", "l32-whiskey": "w"},)},
     "l32-alpha": "a",
 }
-"""L32's JSON part: no object's keys in sorted order, at any depth."""
+"""L32's JSON part, nested: its outer objects' keys descend and its innermost object's
+ascend, so a leaf that sorts every object either way, or reverses each, changes the order."""
 
 _ORDERED_DETAIL: Final[JsonValue] = {"l32-mike": "m", "l32-lima": "l"}
 """What L32 adds to its structured instruction, after the question, keys not sorted."""

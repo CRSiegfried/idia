@@ -432,6 +432,32 @@ def test_p19_fails_a_replay_that_does_not_reproduce_the_recording() -> None:
     )
 
 
+def test_p19_fails_a_replay_that_reorders_what_it_recorded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A replay that hands back the raw usage it recorded with its keys reversed is equal by
+    ``==`` to what was recorded, and still fails P19."""
+    from idia.providers import recorded
+
+    honest = recorded._replay  # pyright: ignore[reportPrivateUsage]
+
+    def reordering(entry: dict[str, object]) -> WireResponse:
+        response = honest(entry)
+        usage = response.usage
+        assert usage is not None
+        assert len(usage.raw_usage) >= 2
+        reversed_usage = dict(reversed(list(usage.raw_usage.items())))
+        return replace(response, usage=replace(usage, raw_usage=reversed_usage))
+
+    monkeypatch.setattr(recorded, "_replay", reordering)
+    verdicts = _verdicts(
+        provider_checks(lambda: ScriptedProviders("leaf", [CAPABILITIES], CAPABILITIES))
+    )
+    p19 = verdicts["P19"]
+    assert p19.result == "fail"
+    assert "the replay of an answer gave" in (p19.reason or "")
+
+
 def test_p19_compares_errors_by_their_fields() -> None:
     from idia.conformance._provider import _replayable
 

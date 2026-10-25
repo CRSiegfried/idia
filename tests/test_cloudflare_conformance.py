@@ -54,7 +54,8 @@ from tests._http import Cassette, load_cassette
 _CLEF_NOT_APPLICABLE = {"L24", "L25"}
 """Clef returns no candidate shape and has no extraction kind."""
 _CLAIRIC_NOT_APPLICABLE = {"L18", "L20", "L32"}
-"""Clairic claims no kind whose probabilities sum and no noul."""
+"""Clairic claims no kind whose probabilities sum and no noul, and no JSON part or
+structured instruction whose order to keep (L32)."""
 _WRAPPED_NOT_APPLICABLE = {"P6", "P14", "P15", "P16", "P17", "P18"}
 """A wrapped leaf with no opt-in feature is no composite."""
 _ROUTER_NOT_APPLICABLE = {"P6", "P18", "P19"}

@@ -1388,6 +1388,42 @@ def test_a_body_sent_with_sorted_keys_fails_exactly_l32() -> None:
     assert "the body sent holds the structured instruction's keys" in (verdicts["L32"].reason or "")
 
 
+class _SortsThePrompt(StubHttpLeaf):
+    """Sends the body as given but reports ``prompt_sent`` with every object's keys sorted,
+    as a string, or as a mapping when ``as_mapping``."""
+
+    as_mapping = False
+
+    async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
+        response = await super().call(wire_request, deadline)
+        assert isinstance(response.prompt_sent, str)
+        text = json.dumps(json.loads(response.prompt_sent), sort_keys=True)
+        sorted_prompt: str | Mapping[str, JsonValue] = (
+            cast(Mapping[str, JsonValue], json.loads(text)) if self.as_mapping else text
+        )
+        return replace(response, prompt_sent=sorted_prompt)
+
+
+class _SortsThePromptAsMapping(_SortsThePrompt):
+    as_mapping = True
+
+
+@pytest.mark.parametrize("leaf_class", [_SortsThePrompt, _SortsThePromptAsMapping])
+def test_a_prompt_sent_with_sorted_keys_fails_l32_with_the_body_intact(
+    leaf_class: type[_SortsThePrompt],
+) -> None:
+    class SortsThePrompt(StubHarness):
+        def build(self, client: httpx2.AsyncClient | None, features: frozenset[str]) -> Leaf:
+            record = replace(RECORD, enabled_features=features)
+            return leaf_class(capabilities=record, client=client)
+
+    verdicts = {v.id: v for v in asyncio.run(run_checks(leaf_checks(SortsThePrompt)))}
+    assert verdicts["L32"].result == "fail"
+    reason = verdicts["L32"].reason or ""
+    assert "prompt_sent holds the" in reason
+    assert "the body sent" not in reason
+
+
 def test_l32_checks_the_body_and_the_prompt_over_the_mock_wire() -> None:
     [l32] = [check for check in leaf_checks(StubHarness) if check.id == "L32"]
     assert asyncio.run(l32.run()) is None

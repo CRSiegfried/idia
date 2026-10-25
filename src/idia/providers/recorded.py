@@ -315,7 +315,7 @@ def _load(log: Path, *, version: int = _FORMAT) -> _Log:
         raise ValueError(f"{log} is not a recorded leaf's log")
     held = cast(dict[str, object], document)
     found = held.get("format")
-    if found != version:
+    if type(found) is not int or found != version:
         if version == _OLD_FORMAT:
             raise ValueError(f"{log} is in format {found!r}; upgrade_log reads only format 2")
         raise ValueError(
@@ -543,9 +543,8 @@ def upgrade_log(
     recorded again holds them in the order sent. The old log is replaced, so keep a copy, or
     its committed version, until the requests given are complete. The log is refused with
     ``ValueError``, and nothing written, when it is not in format 2 (a format-3 log included),
-    when a
-    request is refused as above, when a leaf has no rules and no ``reasons`` are given,
-    ``reasons`` are given for a leaf with rules, give ``not-sent`` or give a missing
+    when a request is refused as above, when a leaf has no rules and no ``reasons`` are
+    given, ``reasons`` are given for a leaf with rules, give ``not-sent`` or give a missing
     snapshot a reason other than ``not-pinned``, a ``gliner`` log records no runtime
     version, a missing snapshot has no ``no-snapshot`` warning, a response records an empty
     request id, its ``elicitation`` or ``calibrated`` holds no value or has a reason, or a

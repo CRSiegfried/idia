@@ -61,7 +61,7 @@ content part beside the text."""
 JsonValue: TypeAlias = (
     "bool | int | float | str | tuple[JsonValue, ...] | Mapping[str, JsonValue] | None"
 )
-"""A JSON value as Python data, with arrays as tuples, so it can be hashed and logged."""
+"""A JSON value as Python data, with arrays as tuples, so a value can be held read-only."""
 
 WARNING_EXTRA_ANSWER_KEY: Final = "extra-answer-key"
 """Warning code: an answer key matched no question and was dropped."""
@@ -657,8 +657,9 @@ def _frozen_json(value: object, field: str) -> JsonValue:
     mapping keeping its keys in the order built, every list or tuple a tuple, as
     ``JsonValue`` types them, so ``json.loads`` output can be passed.
 
-    Its scalars are not checked; a value that contains itself, or is nested too deep to
-    walk, is refused with ``ValueError`` naming ``field``.
+    Its scalars are not checked; a value that contains itself, or nests too deep (deeper
+    than the interpreter's recursion limit allows from the stack where the value is built),
+    is refused with ``ValueError`` naming ``field``.
     """
     try:
         return _frozen_within(value, field, set())

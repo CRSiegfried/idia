@@ -998,6 +998,28 @@ def test_a_json_part_is_held_read_only_in_the_order_given() -> None:
     assert core.JsonPart(value="text").value == "text"
 
 
+def test_a_structured_instruction_is_held_read_only_in_the_order_given() -> None:
+    built: dict[str, Any] = {"z": "ask", "a": {"y": [{"q": 1, "b": 2}], "c": None}}
+    question = Question(key="q", kind="noul", instruction=built)
+    built["z"] = "changed"
+    built["a"]["y"][0]["q"] = 99
+    built["a"]["y"].append(3)
+    built["new"] = True
+    assert _items_all_the_way_down(question.instruction) == [
+        ("z", "ask"),
+        ("a", [("y", [[("q", 1), ("b", 2)]]), ("c", None)]),
+    ]
+    held = cast(Mapping[str, Any], question.instruction)
+    assert isinstance(held, MappingProxyType)
+    assert isinstance(held["a"], MappingProxyType)
+    assert isinstance(held["a"]["y"], tuple)
+    assert isinstance(held["a"]["y"][0], MappingProxyType)
+    with pytest.raises(TypeError):
+        held["z"] = "again"  # type: ignore[index]
+    with pytest.raises(TypeError):
+        held["a"]["y"][0]["q"] = 2  # type: ignore[index]
+
+
 def test_a_value_that_contains_itself_or_nests_too_deep_is_refused_at_build() -> None:
     loop: list[Any] = [1]
     loop.append({"again": loop})

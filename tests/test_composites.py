@@ -8,7 +8,7 @@ import asyncio
 import contextlib
 import dataclasses
 import time
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any, Final, cast
 
 import pytest
@@ -180,7 +180,7 @@ def test_router_member_gets_the_requests_state_deadline_and_options_unchanged() 
         state=text_state("the state"),
         questions=(noul("x"), choice("z"), noul("y")),
         deadline=Deadline.after(30),
-        options={"z": 1, "a": 2},
+        options={"z": 1, "a": {"y": ({"q": 2, "b": 3},), "c": 4}},
     )
     _run(Router({"choice": labels, "noul": nouls}), parent)
     ([to_labels], [to_nouls]) = (labels.received, nouls.received)
@@ -189,7 +189,10 @@ def test_router_member_gets_the_requests_state_deadline_and_options_unchanged() 
     for received in (to_labels, to_nouls):
         assert received.state is parent.state
         assert received.deadline is parent.deadline
-        assert list(received.options.items()) == [("z", 1), ("a", 2)]
+        assert _ordered(received.options) == [
+            ("z", 1),
+            ("a", [("y", [[("q", 2), ("b", 3)]]), ("c", 4)]),
+        ]
 
 
 def test_router_member_exception_other_than_request_failed_propagates_bare() -> None:
@@ -382,6 +385,8 @@ def _ordered(value: object) -> object:
     if isinstance(value, Mapping):
         items = cast(Mapping[str, object], value).items()
         return [(key, _ordered(item)) for key, item in items]
+    if isinstance(value, list | tuple):
+        return [_ordered(item) for item in cast(Sequence[object], value)]
     return value
 
 
