@@ -407,7 +407,8 @@ def test_clef_refuses_a_state_json_cannot_hold_and_a_kind_it_does_not_answer() -
     deep: Any = 1
     for _ in range(100_000):
         deep = (deep,)
-    # A value nested too deep never reaches the wire: it is refused when the part is built.
+    # A value nested too deep never reaches the wire: Core refuses its depth when the part is
+    # built, so the leaf's own guard is never reached by it.
     with pytest.raises(ValueError, match=r"^JsonPart\.value nests too deep$"):
         JsonPart(value=deep)
     error = _raises(_clef(wire), EXTRACTION)
