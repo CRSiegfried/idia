@@ -9,8 +9,12 @@ The public names are those in `idia.__all__` and in the `__all__` of each module
 ## State and question
 
 - A **state** is the input one request is about: a tuple of parts, each a `TextPart(text)`, a `JsonPart(value)` or an `ImagePart(data, media_type=None)` holding the image's bytes.
-- A **JSON value**, `JsonValue`, is `bool | int | float | str | tuple[JsonValue, ...] | Mapping[str, JsonValue] | None`, arrays as tuples so a value can be hashed and logged.
+  A JSON part's value is held read-only all the way down, each object a read-only mapping and each list or tuple a tuple, so a later change to the caller's own object reaches nothing; its contents are still not checked, and it is left out of the part's `hash()`.
+- A **JSON value**, `JsonValue`, is `bool | int | float | str | tuple[JsonValue, ...] | Mapping[str, JsonValue] | None`, arrays as tuples so a value can be held read-only.
   It types a structured part, a structured instruction, raw usage, the prompt sent and the raw body.
+- **Key order.** A JSON object's keys are held and sent in the order the caller built them, at every depth, in a JSON part, a structured instruction and the options: key order is part of what the model sees, and idia never sorts it.
+  `prompt_sent` holds the body in the order sent.
+  `==` on the shapes compares mappings as Python does, without regard to order, so two equal shapes may be two different prompts; `hash()` agrees with `==`, since a JSON part's value, a structured instruction and the options are each left out of their shape's hash, so a state hashes whatever it holds.
 - A **question** is `Question(key, kind, instruction, labels=(), value_type=None, is_list=False)`.
   `labels` holds `Label(name, description=None)` entries in the order asked; for a `score` a level's position from 0 is its value.
   `instruction` is a non-empty string, or a non-empty JSON object (a mapping with string keys) or array (a tuple) for a wire API that takes structure; it is held read-only all the way down, each object a read-only mapping and each list inside it a tuple, so `json.loads` output may be passed, its scalar values unchecked, and it is left out of the question's `hash()`; a list at the top is refused, an array being a tuple.
@@ -20,7 +24,7 @@ The public names are those in `idia.__all__` and in the `__all__` of each module
   An `extraction` declares its `value_type` and may ask for a list; no other kind does.
   A malformed question raises `ValueError`, and an instruction of the wrong type, such as a list or a number, `TypeError`.
 - A **request** is `Request(state, questions, deadline, options={})`; it asks at least one question, and keys are unique within it.
-  `options` maps a name to a JSON value, settings a leaf may read per request (Clairic's `reference_date`); they are held read-only, left out of the object's `hash()`, and part of the canonical wire request when non-empty.
+  `options` maps a name to a JSON value, settings a leaf may read per request (Clairic's `reference_date`); each value is held read-only all the way down in the order given, as a JSON part's is, and they are left out of the object's `hash()`, and part of the canonical wire request when non-empty.
   A **wire request** is `WireRequest(state, questions, options={})`, one entry of a fit plan, carrying its request's options unchanged.
   A leaf treats each option key in one of three ways.
   A key it reads it records in the prompt sent.

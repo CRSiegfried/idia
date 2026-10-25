@@ -17,7 +17,7 @@ import enum
 import math
 import re
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Final, Literal, Protocol, TypeAlias, TypeVar, cast, get_args, runtime_checkable
@@ -414,9 +414,20 @@ class TextPart:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class JsonPart:
-    """A structured part of a state: a JSON value as Python data."""
+    """A structured part of a state: a JSON value as Python data.
 
-    value: JsonValue
+    The value is held read-only all the way down in the order given: each object a
+    read-only mapping keeping its keys in the order built, each list or tuple a tuple, so a
+    later change to the caller's own object reaches nothing. Its contents are not checked
+    here. It is left out of the object's ``hash()``, so a state hashes whatever it holds;
+    ``==`` compares mappings without regard to key order, so two equal parts may be two
+    prompts.
+    """
+
+    value: JsonValue = field(hash=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "value", _frozen_json(self.value))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -639,14 +650,63 @@ _NOUL_LABELS: Final = ("yes", "no")
 
 
 def _frozen_json(value: object) -> JsonValue:
-    """``value`` read-only all the way down: every object a read-only mapping, every list or
-    tuple a tuple, as ``JsonValue`` types them, so ``json.loads`` output can be passed."""
-    if isinstance(value, Mapping):
-        items = cast(Mapping[str, object], value).items()
-        return MappingProxyType({key: _frozen_json(item) for key, item in items})
-    if isinstance(value, (list, tuple)):
-        return tuple(_frozen_json(item) for item in cast(Sequence[object], value))
-    return cast(JsonValue, value)
+    """``value`` read-only all the way down in the order given: every object a read-only
+    mapping keeping its keys in the order built, every list or tuple a tuple, as
+    ``JsonValue`` types them, so ``json.loads`` output can be passed.
+
+    Nothing is checked: it walks without recursing, so a value nested past the
+    interpreter's recursion limit is held, and a container met again inside itself is held
+    as given, for the leaf that sends it to refuse.
+    """
+    if not _is_json_container(value):
+        return cast(JsonValue, value)
+    stack = [_FreezeFrame(value)]
+    on_path = {id(value)}
+    while True:
+        frame = stack[-1]
+        step = next(frame.items, None)
+        if step is not None:
+            key, item = step
+            if _is_json_container(item) and id(item) not in on_path:
+                frame.pending = key
+                stack.append(_FreezeFrame(item))
+                on_path.add(id(item))
+            else:
+                frame.built.append((key, item))
+            continue
+        stack.pop()
+        on_path.discard(frame.of)
+        done = frame.done()
+        if not stack:
+            return done
+        stack[-1].built.append((stack[-1].pending, done))
+
+
+def _is_json_container(value: object) -> bool:
+    return isinstance(value, (Mapping, list, tuple))
+
+
+class _FreezeFrame:
+    """One container being frozen by ``_frozen_json``: its items still to walk, and those
+    already held, with their keys (a list's are its indexes)."""
+
+    __slots__ = ("built", "is_mapping", "items", "of", "pending")
+
+    def __init__(self, container: object) -> None:
+        self.of = id(container)
+        self.is_mapping = isinstance(container, Mapping)
+        self.items: Iterator[tuple[object, object]] = (
+            iter(cast(Mapping[object, object], container).items())
+            if self.is_mapping
+            else enumerate(cast(Sequence[object], container))
+        )
+        self.built: list[tuple[object, object]] = []
+        self.pending: object = None
+
+    def done(self) -> JsonValue:
+        if self.is_mapping:
+            return cast(JsonValue, MappingProxyType(dict(self.built)))
+        return cast(JsonValue, tuple(item for _, item in self.built))
 
 
 def _check_instruction(instruction: object) -> None:
@@ -679,8 +739,9 @@ class Request:
     Keys are unique within a request. ``options`` are per-request settings a leaf may read
     by key, such as Clairic's ``reference_date``; a leaf ignores a key it does not know and
     warns ``unknown-option`` naming it. Every wire request planned from the request carries
-    the same options. They are held as a read-only mapping, left out of the object's
-    ``hash()``, and part of the canonical wire request when non-empty.
+    the same options. They are held as a read-only mapping in the order given, each value
+    read-only all the way down as a ``JsonPart``'s is, left out of the object's ``hash()``,
+    and part of the canonical wire request when non-empty.
     """
 
     state: State
@@ -691,7 +752,7 @@ class Request:
     def __post_init__(self) -> None:
         _check_shape("Request", self.state, self.questions, self.options)
         _check_type("Request", "deadline", self.deadline, Deadline, "a Deadline")
-        object.__setattr__(self, "options", MappingProxyType(dict(self.options)))
+        object.__setattr__(self, "options", _frozen_options(self.options))
         if not self.questions:
             raise ValueError("a request asks at least one question")
         keys = [question.key for question in self.questions]
@@ -710,7 +771,13 @@ class WireRequest:
 
     def __post_init__(self) -> None:
         _check_shape("WireRequest", self.state, self.questions, self.options)
-        object.__setattr__(self, "options", MappingProxyType(dict(self.options)))
+        object.__setattr__(self, "options", _frozen_options(self.options))
+
+
+def _frozen_options(options: Mapping[str, JsonValue]) -> Mapping[str, JsonValue]:
+    """``options`` as a read-only mapping in the order given, each value held read-only all
+    the way down."""
+    return MappingProxyType({key: _frozen_json(value) for key, value in options.items()})
 
 
 def _check_shape(owner: str, state: object, questions: object, options: object) -> None:

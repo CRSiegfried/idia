@@ -9,7 +9,7 @@ import dataclasses
 import math
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from decimal import Decimal, localcontext
 from pathlib import Path
 from types import MappingProxyType
@@ -959,6 +959,98 @@ def test_request_options_are_empty_by_default_and_read_only() -> None:
     assert dict(idia.WireRequest(state=state, questions=(question,)).options) == {}
     assert hash(wire) == hash(dataclasses.replace(wire, options={"a": 2}))
     assert wire != dataclasses.replace(wire, options={"a": 2})
+
+
+def _items_all_the_way_down(value: object) -> object:
+    """``value`` with every mapping as its items list, so a comparison sees key order."""
+    if isinstance(value, Mapping):
+        held = cast(Mapping[str, object], value)
+        return [(key, _items_all_the_way_down(item)) for key, item in held.items()]
+    if isinstance(value, (list, tuple)):
+        return [_items_all_the_way_down(item) for item in cast(Sequence[object], value)]
+    return value
+
+
+def test_a_json_part_is_held_read_only_in_the_order_given() -> None:
+    built: dict[str, Any] = {"z": 1, "a": {"y": [{"q": 1, "b": 2}], "c": None}, "m": "x"}
+    part = core.JsonPart(value=built)
+    built["z"] = 99
+    built["a"]["y"][0]["q"] = 99
+    built["a"]["y"].append(3)
+    built["new"] = True
+    assert _items_all_the_way_down(part.value) == [
+        ("z", 1),
+        ("a", [("y", [[("q", 1), ("b", 2)]]), ("c", None)]),
+        ("m", "x"),
+    ]
+    value = cast(Mapping[str, Any], part.value)
+    assert isinstance(value, MappingProxyType)
+    assert isinstance(value["a"], MappingProxyType)
+    assert isinstance(value["a"]["y"], tuple)
+    assert isinstance(value["a"]["y"][0], MappingProxyType)
+    with pytest.raises(TypeError):
+        value["z"] = 2  # type: ignore[index]
+    with pytest.raises(TypeError):
+        value["a"]["y"][0]["q"] = 2  # type: ignore[index]
+    listed = core.JsonPart(value=cast(Any, [{"b": 1, "a": 2}, [1, 2]]))
+    assert _items_all_the_way_down(listed.value) == [[("b", 1), ("a", 2)], [1, 2]]
+    assert isinstance(listed.value, tuple)
+    assert core.JsonPart(value="text").value == "text"
+
+
+def test_a_json_part_holds_any_depth_and_a_cycle_as_given() -> None:
+    deep: Any = 1
+    for _ in range(100_000):
+        deep = [{"k": deep}]
+    held: Any = core.JsonPart(value=deep).value
+    for _ in range(100_000):
+        assert isinstance(held, tuple)
+        assert isinstance(held[0], MappingProxyType)
+        held = cast(Any, held[0]["k"])
+    assert held == 1
+    loop: list[Any] = [1]
+    loop.append({"again": loop})
+    cyclic = cast(tuple[Any, ...], core.JsonPart(value=cast(Any, loop)).value)
+    assert cyclic[0] == 1
+    assert cyclic[1]["again"] is loop  # met again inside itself: held as given, for the leaf
+    shared = {"b": 1}
+    twice = cast(tuple[Any, ...], core.JsonPart(value=cast(Any, [shared, shared])).value)
+    assert all(isinstance(item, MappingProxyType) for item in twice)
+
+
+def test_options_are_held_read_only_in_the_order_given() -> None:
+    state = idia.State(parts=(idia.TextPart(text="x"),))
+    question = idia.Question(key="q", kind="noul", instruction="?")
+    built: dict[str, Any] = {"z": {"y": 1, "b": [{"d": 1, "c": 2}]}, "a": [1, 2]}
+    request = idia.Request(
+        state=state, questions=(question,), deadline=idia.Deadline.after(1.0), options=built
+    )
+    wire = idia.WireRequest(state=state, questions=(question,), options=built)
+    built["z"]["y"] = 99
+    built["z"]["b"][0]["d"] = 99
+    built["a"].append(3)
+    expected = [("z", [("y", 1), ("b", [[("d", 1), ("c", 2)]])]), ("a", [1, 2])]
+    for options in (request.options, wire.options):
+        assert _items_all_the_way_down(options) == expected
+        inner = cast(Mapping[str, Any], options["z"])
+        assert isinstance(inner, MappingProxyType)
+        assert isinstance(inner["b"], tuple)
+        assert isinstance(options["a"], tuple)
+        with pytest.raises(TypeError):
+            inner["y"] = 2  # type: ignore[index]
+
+
+def test_a_state_with_a_json_object_hashes() -> None:
+    built: Any = {"a": [1, {"b": 2}], "c": 3}
+    state = State(parts=(core.JsonPart(value=built), TextPart(text="x")))
+    reordered = State(parts=(core.JsonPart(value={"c": 3, "a": built["a"]}), TextPart(text="x")))
+    assert hash(state) == hash(reordered)
+    assert state == reordered  # equal shapes, two prompts: == and hash() ignore key order
+    one, other = core.JsonPart(value={"b": 1, "a": 2}), core.JsonPart(value={"a": 2, "b": 1})
+    assert hash(one) == hash(other)
+    assert one == other
+    request = Request(state=state, questions=(Question(**_QUESTION),), deadline=Deadline.after(1))  # type: ignore[arg-type]
+    assert isinstance(hash(request), int)
 
 
 def test_unknown_options_names_every_unknown_key_in_one_warning() -> None:
