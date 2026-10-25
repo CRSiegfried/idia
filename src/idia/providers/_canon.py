@@ -104,7 +104,13 @@ class Json:
 
 
 def json_bytes(value: JsonValue) -> bytes:
-    """``value`` as sorted, compact JSON."""
+    """``value`` as compact JSON, every object's keys in the order held."""
+    return json.dumps(value, separators=(",", ":"), allow_nan=False).encode()
+
+
+def _sorted_bytes(value: JsonValue) -> bytes:
+    """``value`` as compact JSON with every object's keys sorted: the order a set's members
+    are written in, which no caller gives, and the format-2 key."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
 
 
@@ -125,7 +131,9 @@ def encode(value: object) -> JsonValue:
     A dataclass becomes an object tagged with its type name; a date, time, datetime or
     timedelta an object tagged with its type's name, holding its ISO form or its seconds;
     a non-finite float an object tagged ``float`` holding its ``repr``, so no string is
-    ever read as a float; bytes base64; an enum member its value; a set a sorted array.
+    ever read as a float; bytes base64; an enum member its value; a mapping its keys in
+    the order held; a set an array sorted by its members' renderings with sorted keys, since
+    a set carries no order of its own.
     A request's empty ``options`` are left out, a usage's ``passes`` when ``None``, and a
     wire response's ``versions``, ``client_versions``, ``unreported`` and ``claimed`` when
     empty. Any other type raises :class:`TypeError`.
@@ -162,17 +170,17 @@ def encode(value: object) -> JsonValue:
         return {str(key): encode(item) for key, item in mapping.items()}
     if isinstance(value, frozenset | set):
         members = cast(Iterable[object], value)
-        return tuple(sorted((encode(item) for item in members), key=json_bytes))
+        return tuple(sorted((encode(item) for item in members), key=_sorted_bytes))
     if isinstance(value, tuple | list):
         items = cast(Iterable[object], value)
         return tuple(encode(item) for item in items)
     raise TypeError(f"the test doubles cannot render a {type(value).__name__}")
 
 
-def canonical_hash(name: str, model: str, wire_request: WireRequest) -> str:
-    """The key a recorded call is filed under: the SHA-256, in hex, of the leaf's name and
-    model, the state, the questions in order and the options, rendered as sorted, compact
-    JSON. Empty options are left out."""
+def canonical_request(name: str, model: str, wire_request: WireRequest) -> JsonValue:
+    """The canonical wire request: the leaf's name and model, the state, the questions in
+    order and the options, every mapping in the order built, as :func:`encode` renders
+    them. Empty options are left out."""
     held: dict[str, object] = {
         "name": name,
         "model": model,
@@ -181,8 +189,26 @@ def canonical_hash(name: str, model: str, wire_request: WireRequest) -> str:
     }
     if wire_request.options:
         held["options"] = wire_request.options
-    canonical = encode(held)
+    return encode(held)
+
+
+def canonical_hash(name: str, model: str, wire_request: WireRequest) -> str:
+    """The key a recorded call is filed under: the SHA-256, in hex, of the canonical wire
+    request written as compact JSON with no key sorted, so two wire requests that differ
+    only in a mapping's key order have two keys."""
+    return hash_of(canonical_request(name, model, wire_request))
+
+
+def hash_of(canonical: JsonValue) -> str:
+    """The SHA-256, in hex, of a canonical wire request as :func:`canonical_request` gives
+    it or as a log stores it."""
     return hashlib.sha256(json_bytes(canonical)).hexdigest()
+
+
+def format_2_hash(name: str, model: str, wire_request: WireRequest) -> str:
+    """The key a format-2 log filed a call under: the canonical wire request written with
+    every object's keys sorted. Only the offline upgrade of such a log uses it."""
+    return hashlib.sha256(_sorted_bytes(canonical_request(name, model, wire_request))).hexdigest()
 
 
 # ----------------------------------------------------------------------------------------
@@ -379,7 +405,8 @@ def tokens(text: str) -> int:
 
 
 def render_wire_request(wire_request: WireRequest) -> str:
-    """The wire request as sorted, compact JSON: the prompt the scripted leaf "sent"."""
+    """The wire request as compact JSON, every mapping in the order built: the prompt the
+    scripted leaf "sent"."""
     return json_bytes(encode(wire_request)).decode()
 
 

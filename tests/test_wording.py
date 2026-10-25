@@ -158,16 +158,15 @@ def test_the_wording_round_trips_through_the_canonical_form(question: Question) 
     assert list(decoded.questions[0].instruction) == list(cast(Any, question.instruction))
 
 
-def test_a_json_values_key_order_is_not_in_the_canonical_hash() -> None:
-    """The rule as it stands: two instructions that differ only in key order share a
-    recording, as two JSON parts do."""
+def test_a_structured_instructions_key_order_is_in_the_canonical_hash() -> None:
+    """Two instructions that differ only in key order are two prompts, so two recordings."""
 
     def hashed(instruction: JsonValue) -> str:
         question = Question(key="q", kind="noul", instruction=instruction)
         wire_request = WireRequest(state=text_state(), questions=(question,))
         return _canon.canonical_hash("leaf", "model", wire_request)
 
-    assert hashed({"a": "1", "b": "2"}) == hashed({"b": "2", "a": "1"})
+    assert hashed({"a": "1", "b": "2"}) != hashed({"b": "2", "a": "1"})
 
 
 def test_fit_measures_a_structured_instruction_as_its_compact_json() -> None:

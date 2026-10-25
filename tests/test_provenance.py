@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import importlib.metadata
 import json
 import stat
@@ -26,6 +27,7 @@ from idia import (
     REASONS,
     Deadline,
     Dispatcher,
+    JsonPart,
     LabelAnswer,
     NoulAnswer,
     Outcome,
@@ -302,17 +304,39 @@ def test_a_fallbacks_answering_outcome_keeps_its_own_provenance() -> None:
 # The recorded leaf's log
 # ----------------------------------------------------------------------------------------
 
-_KEY = "b0a43f8b7956e51da539cb6b677dbfa06262286a65bd47ba6dc7f544cbdb6788"
-_OLD_LOG = (
-    '{"calls":{"' + _KEY + '":[{"response":{"answers":{"q":{"confidence":null,"derived":[],'
+_KEY = "8d292a40ec00d837b140c55c9a7547f84b48667cbacd4665472f5cf6bbf7fc49"
+"""The key of :func:`_wire`'s request from the scripted leaf, in format 3."""
+_OLD_KEY = "b0a43f8b7956e51da539cb6b677dbfa06262286a65bd47ba6dc7f544cbdb6788"
+"""The same request's key in format 2, which sorted the keys of the canonical request."""
+_REQUEST = (
+    '{"name":"scripted","model":"scripted-1","state":{"type":"State","parts":[{"type":'
+    '"TextPart","text":"t"}]},"questions":[{"type":"Question","key":"q","kind":"noul",'
+    '"instruction":"Is it so?","labels":[],"value_type":null,"is_list":false}]}'
+)
+_ENTRY = (
+    '{"response":{"answers":{"q":{"confidence":null,"derived":[],'
     '"off_label_mass":null,"probability":0.25,"type":"NoulAnswer"}},"calibrated":true,'
     '"elicitation":"passthrough","model_reported":"scripted-1","prompt_sent":"x",'
     '"raw_body":{"json":{"answers":{}}},"request_id":"scripted-1","snapshot":"scripted-1",'
     '"type":"WireResponse","usage":{"input_tokens":1,"output_tokens":0,"passes":1,'
-    '"raw_usage":{},"type":"Usage"},"warnings":[]}}]},"enabled_features":[],"format":2,'
+    '"raw_usage":{},"type":"Usage"},"warnings":[]}}'
+)
+"""A response recorded before the provenance fields existed: none of them is in it."""
+_LOG = (
+    '{"format":3,"name":"scripted","model":"scripted-1","enabled_features":[],"calls":{"'
+    + _KEY
+    + '":{"request":'
+    + _REQUEST
+    + ',"entries":['
+    + _ENTRY
+    + "]}}}"
+)
+"""A format-3 log holding that response."""
+_OLD_LOG = (
+    '{"calls":{"' + _OLD_KEY + '":[' + _ENTRY + ']},"enabled_features":[],"format":2,'
     '"model":"scripted-1","name":"scripted"}'
 )
-"""A format-2 log written before the provenance fields existed: none of them is in it."""
+"""The same response in a format-2 log, keyed on the sorted request and storing none."""
 
 
 def _wire() -> WireRequest:
@@ -329,7 +353,7 @@ def test_a_log_written_before_the_provenance_fields_replays_with_their_defaults(
     tmp_path: Path,
 ) -> None:
     log = tmp_path / "old.json"
-    log.write_text(_OLD_LOG, encoding="utf-8")
+    log.write_text(_LOG, encoding="utf-8")
     replayed = _replay(log)
     assert replayed.answers == {"q": NoulAnswer(probability=0.25)}
     assert dict(replayed.versions) == {}
@@ -350,9 +374,9 @@ def test_a_log_that_fills_the_provenance_fields_replays_them_unchanged(tmp_path:
     leaf = Scripted(capabilities=capabilities(), script=[reply])
     recorded = asyncio.run(Recorded(leaf, log, "once").call(_wire(), Deadline.after(5)))
     stored = json.loads(log.read_text(encoding="utf-8"))
-    (entry,) = next(iter(stored["calls"].values()))
+    ((entry,),) = (call["entries"] for call in stored["calls"].values())
     assert {"versions", "client_versions", "unreported", "claimed"} <= set(entry["response"])
-    assert stored["format"] == 2
+    assert stored["format"] == 3
     replayed = _replay(log)
     for name in ("versions", "client_versions", "unreported", "claimed"):
         assert getattr(replayed, name) == getattr(recorded, name), name
@@ -406,25 +430,52 @@ def test_client_versions_never_gives_idia_which_dispatch_adds() -> None:
 # ----------------------------------------------------------------------------------------
 
 
-def _old_log(tmp_path: Path, name: str, *items: Any) -> Path:
+def _old_log(
+    tmp_path: Path,
+    name: str,
+    *items: Any,
+    wire: WireRequest | None = None,
+    old: bool = True,
+) -> Path:
     """A log as idia wrote it before the profile: recorded with every provenance field empty,
-    which the log leaves out."""
+    which the log leaves out, every call of ``wire``, and with ``old`` in format 2, keyed
+    on the sorted request, as idia wrote it before the key kept key order."""
     log = tmp_path / f"{name}.json"
     leaf = Scripted(capabilities=capabilities(), script=list(items), name=name, model="m-1")
     recorder = Recorded(leaf, log, "once")
     for _ in items:
         with contextlib.suppress(ProviderError):
-            asyncio.run(recorder.call(_wire(), Deadline.after(5)))
+            asyncio.run(recorder.call(wire or _wire(), Deadline.after(5)))
         recorder = Recorded(leaf, log, "new")
     assert all(k not in log.read_text() for k in ('"unreported"', '"versions"', '"claimed"'))
+    if old:
+        _as_format_2(log)
     return log
 
 
-def _replayed(log: Path) -> list[WireResponse]:
+def _as_format_2(log: Path) -> None:
+    """Rewrite a format-3 log as the format-2 writer wrote it: each key's calls under the
+    hash of its request with sorted keys, no request stored, and every key sorted."""
     document = json.loads(log.read_text(encoding="utf-8"))
+    calls: dict[str, Any] = {}
+    for call in document["calls"].values():
+        rendered = json.dumps(call["request"], sort_keys=True, separators=(",", ":"))
+        calls.setdefault(hashlib.sha256(rendered.encode()).hexdigest(), []).extend(call["entries"])
+    document.update(format=2, calls=calls)
+    log.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _calls(log: Path) -> dict[str, list[dict[str, Any]]]:
+    """A format-3 log's entries by key."""
+    document = json.loads(log.read_text(encoding="utf-8"))
+    assert document["format"] == 3
+    return {key: call["entries"] for key, call in document["calls"].items()}
+
+
+def _replayed(log: Path) -> list[WireResponse]:
     return [
         _replay_entry(entry)
-        for entries in document["calls"].values()
+        for entries in _calls(log).values()
         for entry in entries
         if "response" in entry
     ]
@@ -448,8 +499,7 @@ def test_upgrading_a_wire_leafs_log_gives_the_reasons_the_leaf_gives_today(
 
     usage = Usage(input_tokens=3, output_tokens=0, raw_usage={"input_tokens": 3})
     log = _old_log(tmp_path, "cloudflare-clairic", _bare(pinned=False, usage=usage))
-    before = log.read_text(encoding="utf-8")
-    assert upgrade_log(log) == 1
+    assert upgrade_log(log, requests=[_wire()]) == 0
     (response,) = _replayed(log)
     assert dict(response.unreported) == {
         "versions": "not-applicable",
@@ -460,10 +510,10 @@ def test_upgrading_a_wire_leafs_log_gives_the_reasons_the_leaf_gives_today(
     assert response.claimed == frozenset()
     assert profile_problems(response) == []
     assert response.answers == {"q": NoulAnswer(probability=0.25)}
-    assert json.loads(log.read_text())["format"] == 2
     after = log.read_text(encoding="utf-8")
-    assert upgrade_log(log) == 0
-    assert log.read_text(encoding="utf-8") == after != before
+    with pytest.raises(ValueError, match="format 3; upgrade_log reads only format 2"):
+        upgrade_log(log, requests=[_wire()])
+    assert log.read_text(encoding="utf-8") == after
 
 
 def test_upgrading_keeps_every_recorded_value_and_leaves_errors_alone(tmp_path: Path) -> None:
@@ -472,17 +522,20 @@ def test_upgrading_keeps_every_recorded_value_and_leaves_errors_alone(tmp_path: 
     refused = ProviderError("refused", status_code=400, request_id="r-1")
     log = _old_log(tmp_path, "system-one", _bare(), refused)
     old = json.loads(log.read_text(encoding="utf-8"))
-    upgrade_log(log)
+    assert upgrade_log(log, requests=[_wire()]) == 0
     new = json.loads(log.read_text(encoding="utf-8"))
-    for key, entries in old["calls"].items():
-        for was, now in zip(entries, new["calls"][key], strict=True):
-            if "error" in was:
-                assert now == was
-                continue
-            added = {"versions", "client_versions", "unreported", "claimed"}
-            assert {k: v for k, v in now["response"].items() if k not in added} == was["response"]
+    (key,) = new["calls"]
+    ((old_key, entries),) = old["calls"].items()
+    for was, now in zip(entries, new["calls"][key]["entries"], strict=True):
+        if "error" in was:
+            assert now == was
+            continue
+        added = {"versions", "client_versions", "unreported", "claimed"}
+        assert {k: v for k, v in now["response"].items() if k not in added} == was["response"]
+    assert old_key != key
     assert {k: v for k, v in new.items() if k != "calls"} == {
-        k: v for k, v in old.items() if k != "calls"
+        **{k: v for k, v in old.items() if k != "calls"},
+        "format": 3,
     }
 
 
@@ -507,7 +560,7 @@ def test_a_gliner_log_takes_its_versions_from_the_raw_body_and_claims(tmp_path: 
     }
     raw_body = entries[0]["response"]["raw_body"]
     log.write_text(json.dumps(document), encoding="utf-8")
-    assert upgrade_log(log) == 1
+    assert upgrade_log(log, requests=[_wire()]) == 0
     (response,) = _replayed(log)
     assert dict(response.versions) == {
         "python": "3.11.13",
@@ -522,7 +575,7 @@ def test_a_gliner_log_takes_its_versions_from_the_raw_body_and_claims(tmp_path: 
     }
     assert response.claimed == {"model_reported", "snapshot"}
     assert profile_problems(response) == []
-    (entries,) = json.loads(log.read_text(encoding="utf-8"))["calls"].values()
+    (entries,) = _calls(log).values()
     assert entries[0]["response"]["raw_body"] == raw_body
 
 
@@ -541,7 +594,7 @@ def test_upgrading_refuses_a_log_it_cannot_upgrade_honestly_and_writes_nothing(
     log = _old_log(tmp_path, name, reply)
     before = log.read_text(encoding="utf-8")
     with pytest.raises(ValueError, match=message):
-        upgrade_log(log)
+        upgrade_log(log, requests=[_wire()])
     assert log.read_text(encoding="utf-8") == before
 
 
@@ -550,8 +603,15 @@ def test_an_unknown_leaf_is_upgraded_with_the_reasons_its_caller_gives(tmp_path:
 
     log = _old_log(tmp_path, "someone-else", _bare(usage=Usage(input_tokens=1, output_tokens=1)))
     with pytest.raises(ValueError, match=r"leave out usage\.passes"):
-        upgrade_log(log, reasons={"versions": "not-applicable"})
-    assert upgrade_log(log, reasons={"versions": "not-applicable", "usage.passes": "hidden"}) == 1
+        upgrade_log(log, requests=[_wire()], reasons={"versions": "not-applicable"})
+    assert (
+        upgrade_log(
+            log,
+            requests=[_wire()],
+            reasons={"versions": "not-applicable", "usage.passes": "hidden"},
+        )
+        == 0
+    )
     (response,) = _replayed(log)
     assert dict(response.unreported) == {"versions": "not-applicable", "usage.passes": "hidden"}
     assert profile_problems(response) == []
@@ -564,7 +624,7 @@ def test_a_pass_count_only_the_raw_usage_holds_is_not_exposed_and_stays_as_recor
 
     usage = Usage(input_tokens=3, output_tokens=0, raw_usage={"input_tokens": 3, "passes": 2})
     log = _old_log(tmp_path, "cloudflare-clairic", _bare(pinned=False, usage=usage))
-    assert upgrade_log(log) == 1
+    assert upgrade_log(log, requests=[_wire()]) == 0
     (response,) = _replayed(log)
     assert response.unreported["usage.passes"] == "not-exposed"
     assert response.usage is not None
@@ -577,7 +637,9 @@ def test_a_callers_snapshot_reason_other_than_not_pinned_is_refused(tmp_path: Pa
 
     log = _old_log(tmp_path, "someone-else", _bare(pinned=False))
     with pytest.raises(ValueError, match="reason is not-pinned"):
-        upgrade_log(log, reasons={"snapshot": "hidden", "versions": "not-applicable"})
+        upgrade_log(
+            log, requests=[_wire()], reasons={"snapshot": "hidden", "versions": "not-applicable"}
+        )
 
 
 def test_a_response_recording_an_empty_request_id_is_refused(tmp_path: Path) -> None:
@@ -590,7 +652,7 @@ def test_a_response_recording_an_empty_request_id_is_refused(tmp_path: Path) -> 
     log.write_text(json.dumps(document), encoding="utf-8")
     before = log.read_text(encoding="utf-8")
     with pytest.raises(ValueError, match="empty request id"):
-        upgrade_log(log)
+        upgrade_log(log, requests=[_wire()])
     assert log.read_text(encoding="utf-8") == before
 
 
@@ -599,7 +661,11 @@ def test_a_callers_not_sent_is_refused_since_only_the_dispatcher_gives_it(tmp_pa
 
     log = _old_log(tmp_path, "someone-else", _bare())
     with pytest.raises(ValueError, match="not-sent is the dispatcher's"):
-        upgrade_log(log, reasons={"usage.passes": "not-sent", "versions": "not-applicable"})
+        upgrade_log(
+            log,
+            requests=[_wire()],
+            reasons={"usage.passes": "not-sent", "versions": "not-applicable"},
+        )
 
 
 def test_a_response_whose_elicitation_has_a_reason_is_refused(tmp_path: Path) -> None:
@@ -644,7 +710,7 @@ def test_a_gliner_log_recording_no_runtime_version_is_refused(
     log = _gliner_log(tmp_path, versions)
     before = log.read_text(encoding="utf-8")
     with pytest.raises(ValueError, match="records no runtime version"):
-        upgrade_log(log)
+        upgrade_log(log, requests=[_wire()])
     assert log.read_text(encoding="utf-8") == before
 
 
@@ -653,7 +719,7 @@ def test_a_leaf_with_rules_of_its_own_takes_no_reasons(tmp_path: Path) -> None:
 
     log = _old_log(tmp_path, "system-one", _bare())
     with pytest.raises(ValueError, match="takes no reasons"):
-        upgrade_log(log, reasons={"snapshot": "not-pinned"})
+        upgrade_log(log, requests=[_wire()], reasons={"snapshot": "not-pinned"})
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX modes")
@@ -666,7 +732,7 @@ def test_an_upgraded_log_keeps_its_mode_and_is_written_where_its_link_points(
     target.chmod(0o644)
     link = tmp_path / "link.json"
     link.symlink_to(target)
-    assert upgrade_log(link) == 1
+    assert upgrade_log(link, requests=[_wire()]) == 0
     assert link.is_symlink()
     assert stat.S_IMODE(target.stat().st_mode) == 0o644
     assert '"unreported"' in target.read_text(encoding="utf-8")
@@ -705,9 +771,24 @@ def test_a_log_that_is_not_a_recorded_leafs_is_refused_with_value_error(
 ) -> None:
     from idia.providers.recorded import upgrade_log
 
-    log = _old_log(tmp_path, "system-one", _bare())
+    for old in (True, False):
+        directory = tmp_path / f"format-{2 if old else 3}"
+        directory.mkdir()
+        log = _old_log(directory, "system-one", _bare(), old=old)
+        _broken(log, change, old=old)
+        if old:
+            with pytest.raises(ValueError, match="is not a recorded leaf's log"):
+                upgrade_log(log, requests=[_wire()])
+        else:
+            with pytest.raises(ValueError, match="is not a recorded leaf's log"):
+                Recorded(None, log, "none", capabilities=capabilities())
+
+
+def _broken(log: Path, change: str, *, old: bool) -> None:
+    """Break the log at ``log`` as ``change`` says."""
     document: dict[str, Any] = json.loads(log.read_text(encoding="utf-8"))
-    entries: list[Any] = next(iter(cast(dict[str, list[Any]], document["calls"]).values()))
+    (held,) = cast(dict[str, Any], document["calls"]).values()
+    entries: list[Any] = held if old else held["entries"]
     if change == "no-name":
         del document["name"]
     elif change == "calls-a-list":
@@ -736,10 +817,6 @@ def test_a_log_that_is_not_a_recorded_leafs_is_refused_with_value_error(
         }[change]
         entries.append({"error": {**_ERROR, field: value}})
     log.write_text(json.dumps(document), encoding="utf-8")
-    with pytest.raises(ValueError, match="is not a recorded leaf's log"):
-        upgrade_log(log)
-    with pytest.raises(ValueError, match="is not a recorded leaf's log"):
-        Recorded(None, log, "none", capabilities=capabilities())
 
 
 def test_a_log_nested_past_the_parsers_depth_is_refused_with_value_error(
@@ -750,13 +827,14 @@ def test_a_log_nested_past_the_parsers_depth_is_refused_with_value_error(
     log = tmp_path / "deep.json"
     log.write_text("[" * 100_000, encoding="utf-8")
     with pytest.raises(ValueError, match="nests too deep"):
-        upgrade_log(log)
+        upgrade_log(log, requests=[_wire()])
 
 
 def test_a_log_whose_errors_and_bodies_are_well_formed_loads(tmp_path: Path) -> None:
-    log = _old_log(tmp_path, "system-one", _bare())
+    log = _old_log(tmp_path, "system-one", _bare(), old=False)
     document: dict[str, Any] = json.loads(log.read_text(encoding="utf-8"))
-    entries: list[Any] = next(iter(cast(dict[str, list[Any]], document["calls"]).values()))
+    (call,) = cast(dict[str, Any], document["calls"]).values()
+    entries: list[Any] = call["entries"]
     entries[0]["response"]["raw_body"] = {"base64": "aGk="}
     entries.append({"error": {**_ERROR, "retry_after": 1.5, "request_id": "r-1"}})
     log.write_text(json.dumps(document), encoding="utf-8")
@@ -780,7 +858,7 @@ def test_a_private_log_stays_private_through_a_rewrite(tmp_path: Path) -> None:
 
     log = _old_log(tmp_path, "system-one", _bare())
     log.chmod(0o600)
-    assert upgrade_log(log) == 1
+    assert upgrade_log(log, requests=[_wire()]) == 0
     assert stat.S_IMODE(log.stat().st_mode) == 0o600
 
 
@@ -801,7 +879,7 @@ def test_a_callers_reason_for_the_passes_wins_over_not_exposed(tmp_path: Path) -
     usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"passes": 2})
     log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
     reasons: dict[Any, Any] = {"versions": "not-applicable", "usage.passes": "hidden"}
-    assert upgrade_log(log, reasons=reasons) == 1
+    assert upgrade_log(log, requests=[_wire()], reasons=reasons) == 0
     (response,) = _replayed(log)
     assert response.unreported["usage.passes"] == "hidden"
 
@@ -812,4 +890,114 @@ def test_an_unknown_leaf_whose_reasons_leave_out_the_passes_is_refused(tmp_path:
     usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"passes": 2})
     log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
     with pytest.raises(ValueError, match=r"leave out usage\.passes"):
-        upgrade_log(log, reasons={"versions": "not-applicable"})
+        upgrade_log(log, requests=[_wire()], reasons={"versions": "not-applicable"})
+
+
+# ----------------------------------------------------------------------------------------
+# Re-keying a format-2 log, keyed before the key kept key order
+# ----------------------------------------------------------------------------------------
+
+
+def _json_wire(value: Any, **options: Any) -> WireRequest:
+    question = Question(key="q", kind="noul", instruction="Is it so?")
+    return WireRequest(
+        state=State(parts=(TextPart(text="t"), JsonPart(value=value))),
+        questions=(question,),
+        options=options,
+    )
+
+
+def test_an_old_log_is_re_keyed_for_a_request_with_one_order_only(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = tmp_path / "old.json"
+    log.write_text(_OLD_LOG, encoding="utf-8")
+    assert upgrade_log(log, requests=[_wire(), _wire()]) == 0
+    document = json.loads(log.read_text(encoding="utf-8"))
+    assert list(document) == ["format", "name", "model", "enabled_features", "calls"]
+    assert document["format"] == 3
+    assert list(document["calls"]) == [_KEY]
+    assert document["calls"][_KEY]["request"] == json.loads(_REQUEST)
+    replayed = _replay(log)
+    assert replayed.answers == {"q": NoulAnswer(probability=0.25)}
+    assert replayed.prompt_sent == "x"
+    assert dict(replayed.unreported) == {"versions": "not-applicable"}
+
+    # A nested JSON part of one key at every depth, and an option, re-key; errors move too.
+    nested = _json_wire({"a": ({"b": {"c": 1}},)}, reference_date="2026-10-25")
+    refused = ProviderError("refused", status_code=400, request_id="r-1")
+    old = tmp_path / "nested.json"
+    leaf = Scripted(
+        capabilities=capabilities(), script=[_bare(), refused, _bare()], name="system-one"
+    )
+    recorder = Recorded(leaf, old, "once")
+    for _ in range(3):
+        with contextlib.suppress(ProviderError):
+            asyncio.run(recorder.call(nested, Deadline.after(5)))
+    _as_format_2(old)
+    assert upgrade_log(old, requests=[nested]) == 0
+    (entries,) = _calls(old).values()
+    assert ["error" in entry for entry in entries] == [False, True, False]
+    replayer = Recorded(None, old, "none", capabilities=capabilities())
+    assert asyncio.run(replayer.call(nested, Deadline.after(5))).request_id == "system-one-1"
+    with pytest.raises(ProviderError, match="refused"):
+        asyncio.run(replayer.call(nested, Deadline.after(5)))
+    assert asyncio.run(replayer.call(nested, Deadline.after(5))).request_id == "system-one-3"
+
+
+@pytest.mark.parametrize(
+    "wire",
+    [
+        pytest.param(_json_wire({"b": 1, "a": 2}), id="json-part"),
+        pytest.param(_json_wire({"a": ({"y": 1, "x": 2},)}), id="nested-json-part"),
+        pytest.param(_json_wire("v", one=1, two=2), id="options"),
+        pytest.param(_json_wire("v", one={"y": 1, "x": 2}), id="nested-option"),
+        pytest.param(
+            WireRequest(
+                state=State(parts=(TextPart(text="t"),)),
+                questions=(Question(key="q", kind="noul", instruction={"q": "?", "e": "x"}),),
+            ),
+            id="structured-instruction",
+        ),
+    ],
+)
+def test_an_old_log_refuses_a_request_with_two_orders(tmp_path: Path, wire: WireRequest) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _old_log(tmp_path, "system-one", _bare(), wire=wire)
+    before = log.read_bytes()
+    with pytest.raises(ValueError, match="cannot be re-keyed"):
+        upgrade_log(log, requests=[_wire(), wire])
+    assert log.read_bytes() == before
+    assert upgrade_log(log, requests=[_wire()]) == 1
+
+
+def test_an_entry_no_request_re_keys_is_a_replay_miss(tmp_path: Path) -> None:
+    from idia.providers.recorded import ReplayMiss, upgrade_log
+
+    log = tmp_path / "log.json"
+    leaf = Scripted(capabilities=capabilities(), script=[_bare()] * 3, name="system-one")
+    recorder = Recorded(leaf, log, "once")
+    kept, dropped = _json_wire("kept"), _json_wire("dropped")
+    for wire in (kept, dropped, dropped):
+        asyncio.run(recorder.call(wire, Deadline.after(5)))
+    _as_format_2(log)
+    never = _json_wire("never recorded")
+    assert upgrade_log(log, requests=[never, kept]) == 2
+    replayer = Recorded(None, log, "none", capabilities=capabilities())
+    asyncio.run(replayer.call(kept, Deadline.after(5)))
+    with pytest.raises(ReplayMiss):
+        asyncio.run(replayer.call(dropped, Deadline.after(5)))
+    assert upgrade_log(_old_log(tmp_path, "scripted", _bare()), requests=[]) == 1
+
+
+def test_an_upgrade_that_would_reorder_a_response_is_refused(tmp_path: Path) -> None:
+    from idia.providers.recorded import (
+        _expect_only_provenance_added,  # pyright: ignore[reportPrivateUsage]
+    )
+
+    stored: dict[str, Any] = {"response": {"raw_body": {"json": {"a": 1, "b": 2}}}}
+    reordered: dict[str, Any] = {"response": {"raw_body": {"json": {"b": 2, "a": 1}}}}
+    _expect_only_provenance_added(stored, stored, stored, tmp_path)
+    with pytest.raises(ValueError, match="would change what it recorded"):
+        _expect_only_provenance_added(stored, stored, reordered, tmp_path)

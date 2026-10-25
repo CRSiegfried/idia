@@ -34,12 +34,15 @@ from idia import (
     WireRequest,
     WireResponse,
 )
-from idia.core import UNBOUNDED, Capabilities, Deadline
+from idia.core import UNBOUNDED, Capabilities, Deadline, JsonValue
 from idia.providers._canon import (
     Json,
     canonical_hash,
+    canonical_request,
     decode,
     encode,
+    format_2_hash,
+    hash_of,
     json_bytes,
     plain,
     thaw,
@@ -149,17 +152,20 @@ def test_raw_usage_comes_back_thawed_as_a_raw_body_does() -> None:
 
 
 # A change to the rendering bumps the format of each that holds what changed, the recorded
-# leaf's _FORMAT or the cassettes' FORMAT in tests/_http.py, and these two literals with it.
-GOLDEN_HASH = "a1f1018fb225317e97aafb2340362885def243874265f4a63d19ea1bb80b0a25"
+# leaf's _FORMAT or the cassettes' FORMAT in tests/_http.py, and these literals with it.
+GOLDEN_HASH = "d1c56513b8258a1099cd35c8dd185a4e768d5816ccadae6ca48c75abe2aa2f32"
+GOLDEN_FORMAT_2_HASH = "a1f1018fb225317e97aafb2340362885def243874265f4a63d19ea1bb80b0a25"
+"""The same request's key in a format-2 log, written with sorted keys: only the upgrade
+reads it."""
 GOLDEN_RESPONSE = (
-    '{"answers":{"f":{"failures":[{"bound":null,"observed":{"type":"float","value":"inf"},'
-    '"rule":"not_finite","type":"RuleFailure"}],"key":"f","mapped":null,"type":"Fault"},'
-    '"q":{"confidence":null,"derived":[],"off_label_mass":null,"probability":0.25,'
-    '"type":"NoulAnswer"}},"calibrated":true,"elicitation":"passthrough",'
-    '"model_reported":"m-1","prompt_sent":null,"raw_body":null,"request_id":"r-1",'
-    '"snapshot":null,"type":"WireResponse","usage":{"input_tokens":1,"output_tokens":2,'
-    '"raw_usage":{"n":[1]},"type":"Usage"},"warnings":[{"code":"no-snapshot","field":null,'
-    '"message":"none","type":"Notice"}]}'
+    '{"type":"WireResponse","answers":{"q":{"type":"NoulAnswer","probability":0.25,'
+    '"confidence":null,"off_label_mass":null,"derived":[]},"f":{"type":"Fault","key":"f",'
+    '"failures":[{"type":"RuleFailure","rule":"not_finite","observed":{"type":"float",'
+    '"value":"inf"},"bound":null}],"mapped":null}},"elicitation":"passthrough",'
+    '"calibrated":true,"model_reported":"m-1","snapshot":null,"prompt_sent":null,'
+    '"usage":{"type":"Usage","input_tokens":1,"output_tokens":2,"raw_usage":{"n":[1]}},'
+    '"request_id":"r-1","raw_body":null,"warnings":[{"type":"Notice","code":"no-snapshot",'
+    '"message":"none","field":null}]}'
 )
 
 
@@ -169,6 +175,7 @@ def test_the_rendering_is_pinned() -> None:
         questions=(Question(key="q", kind="noul", instruction="Is it so?"),),
     )
     assert canonical_hash("leaf", "model-1", wire_request) == GOLDEN_HASH
+    assert format_2_hash("leaf", "model-1", wire_request) == GOLDEN_FORMAT_2_HASH
     response = WireResponse(
         answers={
             "q": NoulAnswer(probability=0.25),
@@ -309,7 +316,7 @@ def test_decoding_unions_and_plain_types() -> None:
 
 def test_encoding_is_deterministic_and_refuses_what_it_cannot_render() -> None:
     assert json_bytes(encode({"b": frozenset({2, 1}), "a": Rule.box_order})) == (
-        b'{"a":"box_order","b":[1,2]}'
+        b'{"b":[1,2],"a":"box_order"}'
     )
     with pytest.raises(TypeError, match="cannot render a object"):
         encode(object())
@@ -345,3 +352,28 @@ def test_decode_refuses_a_key_the_type_lacks() -> None:
     """A rendering with a field the type no longer has fails instead of replaying."""
     with pytest.raises(TypeError, match="Span does not admit"):
         decode({"type": "Span", "part": 0, "start": 0, "end": 1, "path": []}, Span)
+
+
+def _ordered(**value: JsonValue) -> WireRequest:
+    question = Question(key="q", kind="noul", instruction={"why": "?", "how": {"z": 1, "a": 2}})
+    return WireRequest(
+        state=State(parts=(JsonPart(value=value),)), questions=(question,), options=value
+    )
+
+
+def test_two_key_orders_have_two_keys() -> None:
+    """A JSON part, a structured instruction and the options are keyed in the order built,
+    at every depth; a set, which carries no order, is written sorted."""
+    nested = _ordered(b={"y": 1, "x": (2, {"d": 3, "c": 4})}, a=0)
+    top = _ordered(a=0, b={"y": 1, "x": (2, {"d": 3, "c": 4})})
+    deep = _ordered(b={"y": 1, "x": (2, {"c": 4, "d": 3})}, a=0)
+    keys = {canonical_hash("leaf", "m", w) for w in (nested, top, deep)}
+    assert len(keys) == 3
+    assert nested == top == deep  # == ignores order; the key does not
+    rendered = json_bytes(canonical_request("leaf", "m", nested)).decode()
+    assert '{"b":{"y":1,"x":[2,{"d":3,"c":4}]},"a":0}' in rendered
+    assert '{"why":"?","how":{"z":1,"a":2}}' in rendered
+    assert hash_of(canonical_request("leaf", "m", nested)) == canonical_hash("leaf", "m", nested)
+    assert format_2_hash("leaf", "m", nested) == format_2_hash("leaf", "m", top)
+    swapped = json_bytes(encode(frozenset({("b", "a"), ("a", "b")})))
+    assert swapped == b'[["a","b"],["b","a"]]'
