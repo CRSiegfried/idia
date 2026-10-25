@@ -75,6 +75,9 @@ class GlinerHarness:
     def requests_sent(self) -> int:
         return self._model.calls
 
+    def body_sent(self) -> bytes:
+        raise CheckNotApplicable("the leaf runs a local model and sends no body")
+
     def sdk_retries(self) -> int:
         raise CheckNotApplicable("the leaf is built on no SDK")
 

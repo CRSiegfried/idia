@@ -75,6 +75,7 @@ import httpx2
 
 from idia import core
 from idia.conformance import (
+    AnyBody,
     CandidateShape,
     CheckNotApplicable,
     Error,
@@ -265,6 +266,7 @@ class HttpLeafHarness(abc.ABC):
 
     def __init__(self) -> None:
         self._sent = 0
+        self._body: bytes | None = None
         self._cassettes: dict[str, Cassette] = {}
 
     # The hooks a leaf's harness fills ------------------------------------------------
@@ -323,6 +325,7 @@ class HttpLeafHarness(abc.ABC):
         one shared connection does; :meth:`make` builds its transport from it."""
         bodies = [self._special(exchange) for exchange in exchanges]
         self._sent = 0
+        self._body = None
         return self._handler(iter(zip(exchanges, bodies, strict=True)))
 
     def wire_request(self, kind: Kind) -> WireRequest:
@@ -336,6 +339,11 @@ class HttpLeafHarness(abc.ABC):
 
     def requests_sent(self) -> int:
         return self._sent
+
+    def body_sent(self) -> bytes:
+        if self._body is None:
+            raise AssertionError("the leaf sent no request")
+        return self._body
 
     def sdk_retries(self) -> int:
         """The retries of the transport under the client the leaf makes itself. It reads
@@ -396,6 +404,7 @@ class HttpLeafHarness(abc.ABC):
     ) -> Callable[[httpx2.Request], Coroutine[Any, Any, httpx2.Response]]:
         async def handle(request: httpx2.Request) -> httpx2.Response:
             self._sent += 1
+            self._body = request.content
             play = next(plays, None)
             if play is None:
                 raise AssertionError(f"the harness's exchanges ran out at request {self._sent}")
@@ -413,7 +422,10 @@ class HttpLeafHarness(abc.ABC):
                 content = self.unreadable(exchange.which)
                 headers = {"content-type": "application/json"}
                 return httpx2.Response(200, headers=headers, content=content)
-            cassette = self._matching(exchange.kind, request)
+            if isinstance(exchange, AnyBody):
+                cassette = self._cassette(self.cassette_for(exchange.kind))
+            else:
+                cassette = self._matching(exchange.kind, request)
             response = cassette.response
             body = response["body"]
             if special is not None:

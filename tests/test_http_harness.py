@@ -157,7 +157,7 @@ def test_the_stub_passes_every_check_of_the_leaf_half() -> None:
     harness: LeafHarness = StubHarness()
     assert harness.prompt_hidden is False
     verdicts = _verdicts(StubHarness)
-    assert list(verdicts) == [f"L{n}" for n in range(1, 32)]
+    assert list(verdicts) == [f"L{n}" for n in range(1, 33)]
     assert _with("fail", verdicts) == set()
     assert _with("not_applicable", verdicts) == set()
 
@@ -1349,3 +1349,22 @@ def test_a_cassettes_wire_request_gives_its_stored_body(
         asyncio.run(leaf.call(cassette.wire_request, Deadline.after(30.0)))
     assert sent, "the leaf sent nothing"
     assert body_key(parse_body(sent[0])) == body_key(cassette.request["body"])
+
+
+class SortsTheBody(StubHarness):
+    """A wire whose leaf sends a caller's JSON with every object's keys sorted: the body
+    the harness reports is the one sent, sorted."""
+
+    def body_sent(self) -> bytes:
+        return json.dumps(json.loads(super().body_sent()), sort_keys=True).encode()
+
+
+def test_a_body_sent_with_sorted_keys_fails_exactly_l32() -> None:
+    verdicts = {v.id: v for v in asyncio.run(run_checks(leaf_checks(SortsTheBody)))}
+    assert {id for id, v in verdicts.items() if v.result == "fail"} == {"L32"}
+    assert "the body sent holds the structured instruction's keys" in (verdicts["L32"].reason or "")
+
+
+def test_l32_checks_the_body_and_the_prompt_over_the_mock_wire() -> None:
+    [l32] = [check for check in leaf_checks(StubHarness) if check.id == "L32"]
+    assert asyncio.run(l32.run()) is None

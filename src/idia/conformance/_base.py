@@ -176,6 +176,16 @@ class RefusalOnWire:
 
 
 @dataclass(frozen=True, slots=True)
+class AnyBody:
+    """The recorded success for ``harness.wire_request(kind)``, served whatever body the leaf
+    sends: for a check that sends that request with its state or its instructions changed,
+    as L32 does. The questions' keys are those of the request recorded, so its answers
+    still map."""
+
+    kind: Kind
+
+
+@dataclass(frozen=True, slots=True)
 class CandidateShape:
     """The recorded candidate shape returned for a question of the admitted ``kind``."""
 
@@ -183,7 +193,15 @@ class CandidateShape:
 
 
 Exchange: TypeAlias = (
-    Success | Failure | Unreadable | Perturbed | Error | Stall | RefusalOnWire | CandidateShape
+    Success
+    | Failure
+    | Unreadable
+    | Perturbed
+    | Error
+    | Stall
+    | RefusalOnWire
+    | CandidateShape
+    | AnyBody
 )
 """What the wire does on one call; a harness turns each into its own transport's terms."""
 
@@ -202,7 +220,9 @@ class LeafHarness(Protocol):
     :class:`CheckNotApplicable` for an exchange its transport cannot make.
     ``capabilities_for(features)`` is the record the leaf must declare when built with
     ``features`` on, every field the feature changes included. ``requests_sent`` counts
-    the wire requests the leaf ``make`` built last has sent. ``wire_request(kind)`` is the request
+    the wire requests the leaf ``make`` built last has sent, and ``body_sent`` the body of
+    the last of them, as sent, raising :class:`CheckNotApplicable` for a leaf that sends no
+    body. ``wire_request(kind)`` is the request
     each recorded exchange for ``kind`` answers, and ``expected(kind)`` its answers as
     mapped. An HTTP harness sends ``Failure.retry_after`` as ``retry-after-ms`` beside a
     conflicting ``retry-after``. ``sdk_retries`` is the retries below the leaf: an SDK's,
@@ -230,6 +250,8 @@ class LeafHarness(Protocol):
     def expected(self, kind: Kind) -> Mapping[str, Answer]: ...
 
     def requests_sent(self) -> int: ...
+
+    def body_sent(self) -> bytes: ...
 
     def sdk_retries(self) -> int: ...
 

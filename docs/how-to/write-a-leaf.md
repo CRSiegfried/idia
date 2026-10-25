@@ -765,7 +765,7 @@ the leaf alone and `provider_checks(make_provider_harness)` against it wrapped. 
 factory of a harness you write, the part that knows your leaf's transport. The suite speaks
 to it in exchanges, what the wire or the model does on one call: `Success(kind)`,
 `Failure(status=None)`, `Stall()`, `Error(...)`, `Unreadable(...)`, `Perturbed(...)`,
-`RefusalOnWire(kind)` and `CandidateShape(kind)`; the
+`RefusalOnWire(kind)`, `CandidateShape(kind)` and `AnyBody(kind)`; the
 [conformance spec](../spec/conformance.md#the-harness) gives each.
 
 Your harness turns each exchange into what your transport does. For an in-process leaf
@@ -1002,6 +1002,9 @@ class SpanLeafHarness:
     def requests_sent(self) -> int:
         return self._model.calls
 
+    def body_sent(self) -> bytes:
+        raise CheckNotApplicable("the leaf runs a model in process and sends no body")
+
     def sdk_retries(self) -> int:
         raise CheckNotApplicable("the leaf is built on no SDK")
 
@@ -1098,7 +1101,8 @@ tests pin idia's own wording: when an upgrade changes a note, reread that check 
 update the test. For `SpanLeaf`: no SDK (L9), no status (L12, P9, P20, P21), no body to read
 (L13, P12), no HTTP client (L15), no answer key a model can drop or add, since the leaf maps
 every label it asked (L19), and no candidate shape (L24), no kind whose probabilities sum
-(L18), no `noul` (L20), no opt-in feature (P6), no image (P23), and not a composite (P14 to
+(L18), no `noul` (L20), no JSON part or structured instruction its record carries (L32),
+no opt-in feature (P6), no image (P23), and not a composite (P14 to
 P18):
 
 ```python
@@ -1109,7 +1113,7 @@ def not_applicable(checks: Sequence[Check]) -> set[str]:
 
 
 def test_the_leaf_half_skips_exactly_what_a_model_in_process_cannot_make() -> None:
-    expected = {"L9", "L12", "L13", "L15", "L18", "L19", "L20", "L24"}
+    expected = {"L9", "L12", "L13", "L15", "L18", "L19", "L20", "L24", "L32"}
     assert not_applicable(leaf_checks(SpanLeafHarness)) == expected
 
 
