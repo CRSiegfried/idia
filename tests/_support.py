@@ -21,7 +21,7 @@ from idia import (
 )
 
 SEPARATE_EXTRAS: frozenset[str] = frozenset({"gliner"})
-"""The extras CI installs in a job of their own and leaves out of the jobs that install every
+"""The extras checked in a run of their own and left out of the run that installs every
 other one: a test may skip for a missing dependency of one of these, and of no other extra."""
 
 # One tick of ``time.monotonic()`` on Windows before Python 3.13 (15.6 ms, rounded up), where
