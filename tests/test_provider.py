@@ -141,7 +141,7 @@ def test_the_overloads_name_exactly_the_registered_providers() -> None:
 def test_each_overload_takes_its_leafs_keywords_as_the_leaf_types_them(name: str) -> None:
     function = _typed()[name]
     entry = providers._REGISTRY[name]
-    # An extra CI runs in a job of its own is checked here by that job; any other must import.
+    # An extra checked in a run of its own is checked here by that run; any other must import.
     if entry.extra in SEPARATE_EXTRAS:
         for dependency in providers._EXTRAS[entry.extra]:
             pytest.importorskip(dependency)

@@ -860,7 +860,7 @@ def test_no_module_under_providers_reaches_into_the_call_loop() -> None:
         try:
             importlib.import_module(module.name)
         except ModuleNotFoundError as error:
-            # An extra CI runs in a job of its own is reviewed by that job; any other must import.
+            # An extra checked in a run of its own is reviewed by that run; any other must import.
             if (error.name or "").split(".")[0] not in separate:
                 raise
             continue

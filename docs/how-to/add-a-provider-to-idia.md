@@ -170,34 +170,29 @@ gliner = ["gliner2[local]>=2.0.0", "torch>=2.1", "protobuf>=4", "sentencepiece>=
 
 Give each dependency a floor, not a pin: the stored outputs record the versions they were
 made with, and the gated run against the real model tells you when a newer runtime moves
-them. Then run `uv lock` and commit the lock file. The build job installs the wheel alone
-and runs `scripts/check_bare_install.py`, which checks that idia imports with no extra and
-that each registered provider names its extra in the install hint.
+them. Then run `uv lock` and commit the lock file. The wheel, installed alone, runs
+`scripts/check_bare_install.py`, which checks that idia imports with no extra and that each
+registered provider names its extra in the install hint.
 
-A wire leaf's extra is small, and CI installs it with every other: add its import to the
-"Every extra imports" step of the test job in `.github/workflows/ci.yml`.
+A wire leaf's extra is small and is installed with every other. Before running the checks,
+make sure each of its imports works, so that its tests run rather than skip:
 
-A local runtime such as torch is large, and CI downloads no model weights, so such an extra
-is left out of the jobs that install every extra and installed by a job of its own:
+```sh
+uv run python -c "import openai, httpx2"
+```
 
-- The lint and test jobs run `uv sync --locked --all-extras --no-extra <extra>`.
-- The job of its own installs the extra alone, with torch from the CPU-only index, on one
-  Python version, and runs the import check and then the whole suite with its coverage
-  floor, since the tests that import the registered module run only there:
+A local runtime such as torch is large, so such an extra is left out of the first run of
+[the checks](#the-checks), which installs every other extra, and checked in a run of its own:
 
-```yaml
-# .github/workflows/ci.yml
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          python-version: "3.13"
-          working-directory: idia
-      # torch comes from the CPU-only index that pyproject.toml names; no weights are fetched.
-      - run: uv sync --locked --extra gliner
-      - name: Every extra imports
-        run: uv run python -c "import gliner2, torch, transformers, huggingface_hub, google.protobuf, sentencepiece"
-      # The tests that import the registered module, which the other jobs skip, run here, with
-      # the coverage floor the test jobs hold.
-      - run: uv run pytest --cov
+- The first run syncs with `uv sync --locked --all-extras --no-extra <extra>`.
+- The run of its own installs the extra, with torch from the CPU-only index, checks that
+  it imports, and runs the whole suite with its coverage floor, since the tests that import
+  the registered module run only there. No run downloads model weights:
+
+```sh
+uv sync --locked --extra gliner
+uv run python -c "import gliner2, torch, transformers, huggingface_hub, google.protobuf, sentencepiece"
+uv run pytest --cov
 ```
 
 - The CPU-only index is named in `pyproject.toml`. `[tool.uv.sources]` reaches a package
@@ -219,7 +214,7 @@ explicit = true
 - Name the extra in `SEPARATE_EXTRAS`, in `tests/_support.py`. Two existing tests import
   every registered module, the one that checks the overloads and the one that checks no
   provider module reaches the call loop; they skip only for an extra listed there, so
-  without it both fail in the jobs that leave the extra out:
+  without it both fail in the run that leaves the extra out:
 
 ```python
 # tests/_support.py
@@ -399,9 +394,9 @@ new `Unreleased` section above it.
 ## The checks
 
 Run every check before you open the pull request, twice: once with every extra except
-those in `SEPARATE_EXTRAS`, as the lint and test jobs run, and once with every extra, as the
-separate extra's own job runs. Some errors show in only one of them: pyright's on a missing runtime
-show only without the extra, and the registered module's tests run only with it.
+those in `SEPARATE_EXTRAS`, and once with every extra. Some errors show in only one of
+them: pyright's on a missing runtime show only without the extra, and the registered
+module's tests run only with it.
 
 ```sh
 uv sync --all-extras --no-extra gliner
@@ -421,10 +416,10 @@ uv build
 uvx twine check --strict dist/*
 ```
 
-Then check the wheel alone, as the build job does: in a fresh virtual environment with only
-the built wheel installed, `python scripts/check_bare_install.py`.
+Then check the wheel alone: in a fresh virtual environment with only the built wheel
+installed, `python scripts/check_bare_install.py`.
 
 `check_terms.py` checks that the library, its docs and its commit subjects describe the
-library. With `--subjects` it reads the subjects of the commits in a range, which CI checks
-on a push to main: give it the commit your branch started from as `<base>`, since on a
-branch stacked on another, `main..HEAD` also checks the commits of the branch beneath.
+library. With `--subjects` it reads the subjects of the commits in a range: give it the
+commit your branch started from as `<base>`, since on a branch stacked on another,
+`main..HEAD` also checks the commits of the branch beneath.

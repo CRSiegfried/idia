@@ -2,7 +2,7 @@
 
 Run it as ``uv run python scripts/check_terms.py``. It scans ``src/``, ``docs/``,
 ``tests/`` (its recorded cassettes aside), ``scripts/`` (this script aside), ``skills/``,
-the workflows in ``.github/``, the top-level README, CHANGELOG, CONTRIBUTING and SECURITY
+``.github/``, the top-level README, CHANGELOG, CONTRIBUTING and SECURITY
 files and ``pyproject.toml`` for the patterns in ``TERMS``, words that describe how a change
 was organized rather than what the library does, and exits 1 with one line per hit, or 0
 when none is found. Standard library only.
