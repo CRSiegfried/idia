@@ -2,6 +2,20 @@
 
 All notable changes to idia are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0, a minor release may break the API; each break is listed under **Changed** or **Removed**. A new question kind, a new elicitation or a new validation rule is a minor release and is listed here.
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- `extras` on `WireResponse` and `Outcome`, `Mapping[str, JsonValue]`, empty by default: the figures a wire reports beyond the shared vocabulary, under keys each leaf documents in the providers spec. It is no provenance detail and needs no reason. It is held read-only at every depth in the order built, and either constructor refuses a non-mapping with `TypeError`, and a key that is not a string, a value outside the JSON domain or a non-finite float with `ValueError`. Dispatch carries an answered outcome's `extras` from its wire response unchanged; a failed outcome has none. Clairic fills `{"passes": n}` from its usage; every other leaf gives it empty. The scripted leaf's `Reply` takes `extras`, the recorded leaf's log keeps it and leaves it out when empty, and conformance check P8 holds a wrapped leaf's outcome to the leaf's `extras` and a failed outcome to none.
+
+### Changed
+
+- The recorded leaf's log is format 4, and a format-3 log is refused until upgraded. `upgrade_log` brings a format-3 log to format 4, moving each logged pass count from the usage to `extras` and dropping `usage.passes` from the reasons and claims, with its keys and everything else unchanged; it still re-keys a format-2 log, now to format 4, and its `requests` default to none. A log that is not JSON is refused as not a recorded leaf's log.
+
+### Removed
+
+- `Usage.passes`, and `usage.passes` from `DETAILS` and `ProvenanceDetail`: a figure only one provider reports is no longer a typed field of the shared vocabulary. Read Clairic's passes from `outcome.extras["passes"]`. No leaf gives `usage.passes` a reason any longer, and `upgrade_log` no longer gives it `not-exposed`.
+
 ## [0.1.0] - 2026-10-23
 
 The first release.
@@ -32,4 +46,5 @@ The first release.
 
 - The binding to ommat ships with ommat, as `ommat[idia]`; idia has no dependency on ommat.
 
+[0.2.0]: https://github.com/CRSiegfried/idia/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.1.0

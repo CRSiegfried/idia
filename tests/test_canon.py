@@ -204,14 +204,14 @@ def test_a_wire_response_round_trips() -> None:
         model_reported="m-1",
         snapshot="m-1",
         prompt_sent={"messages": ({"role": "user", "content": "hi"},)},
-        usage=Usage(
-            input_tokens=3, output_tokens=None, passes=2, raw_usage={"in": 3, "detail": (1, 2)}
-        ),
+        usage=Usage(input_tokens=3, output_tokens=None, raw_usage={"in": 3, "detail": (1, 2)}),
         request_id="req-1",
         raw_body=None,
         warnings=(Notice(code="no-snapshot", message="none", field="snapshot"),),
+        extras={"passes": 2, "detail": {"z": 1, "a": (1.5, None)}},
     )
     assert _through_json(response, WireResponse) == response
+    assert list(_through_json(response, WireResponse).extras["detail"]) == ["z", "a"]  # type: ignore[arg-type]
     texted = WireResponse(answers={}, elicitation="logprobs", calibrated=False, prompt_sent="hi")
     assert _through_json(texted, WireResponse) == texted
 

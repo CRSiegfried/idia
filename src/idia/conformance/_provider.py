@@ -321,8 +321,8 @@ async def _p8(harness: ProviderHarness) -> str | None:
 async def _p8_as_the_leaf_gave_it(
     harness: ProviderHarness, request: Request, response: Response
 ) -> None:
-    """Each answered outcome of a wrapped leaf carries the provenance the leaf itself gives
-    for the same wire request, with idia's version added."""
+    """Each answered outcome of a wrapped leaf carries the provenance and the extras the leaf
+    itself gives for the same wire request, with idia's version added."""
     leaf = harness.leaf(_answering(harness, request)[0])
     by_key = {question.key: question for question in request.questions}
     for outcome in response.outcomes:
@@ -332,7 +332,7 @@ async def _p8_as_the_leaf_gave_it(
             options=request.options,
         )
         given = await leaf.call(wire_request, request.deadline)
-        for name in ("versions", "unreported", "claimed"):
+        for name in ("versions", "unreported", "claimed", "extras"):
             expect(
                 getattr(outcome, name) == getattr(given, name),
                 f"the outcome's {name} {getattr(outcome, name)!r} is not the leaf's "
@@ -347,7 +347,7 @@ async def _p8_as_the_leaf_gave_it(
 
 async def _p8_failed(harness: ProviderHarness, request: Request) -> str | None:
     """Every failed outcome gives not-sent to each detail with no value, and no other
-    reason."""
+    reason, and carries no extras."""
     failing: list[list[Exchange]] = [
         [Failure()] * (len(request.questions) + 2) for _ in range(harness.members)
     ]
@@ -365,6 +365,8 @@ async def _p8_failed(harness: ProviderHarness, request: Request) -> str | None:
             problems.append(f"{others} have a reason other than not-sent")
         if outcome.claimed:
             problems.append(f"{sorted(outcome.claimed)} are claimed on a failed outcome")
+        if outcome.extras:
+            problems.append(f"a failed outcome carries extras {dict(outcome.extras)}")
         if outcome.client_versions.get("idia") != VERSION:
             problems.append(f"client_versions holds idia {outcome.client_versions.get('idia')}")
         expect(not problems, f"the failed outcome for {outcome.keys}: {'; '.join(problems)}")

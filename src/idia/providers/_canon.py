@@ -49,8 +49,8 @@ from idia.core import (
 
 _CHARS_PER_TOKEN: Final = 4
 
-_PROVENANCE: Final = frozenset({"versions", "client_versions", "unreported", "claimed"})
-"""A wire response's provenance fields, left out of the rendering when empty."""
+_PROVENANCE: Final = frozenset({"versions", "client_versions", "unreported", "claimed", "extras"})
+"""A wire response's provenance fields and ``extras``, left out of the rendering when empty."""
 
 _NON_FINITE: Final = {
     repr(math.inf): math.inf,
@@ -115,14 +115,14 @@ def _sorted_bytes(value: JsonValue) -> bytes:
 
 
 def _left_out(value: object, name: str) -> bool:
-    """Whether ``encode`` leaves a field out: a request's empty ``options``, a usage's
-    ``passes`` when ``None``, and a wire response's provenance fields when empty, so a log
-    written before them reads the same."""
+    """Whether ``encode`` leaves a field out: a request's empty ``options``, and a wire
+    response's provenance fields and ``extras`` when empty, so a log written before them
+    reads the same."""
     if name == "options" and isinstance(value, (Request, WireRequest)):
         return not value.options
     if name in _PROVENANCE and isinstance(value, WireResponse):
         return not getattr(value, name)
-    return name == "passes" and isinstance(value, Usage) and value.passes is None
+    return False
 
 
 def encode(value: object) -> JsonValue:
@@ -134,9 +134,9 @@ def encode(value: object) -> JsonValue:
     ever read as a float; bytes base64; an enum member its value; a mapping its keys in
     the order held; a set an array sorted by its members' renderings with sorted keys, since
     a set carries no order of its own.
-    A request's empty ``options`` are left out, a usage's ``passes`` when ``None``, and a
-    wire response's ``versions``, ``client_versions``, ``unreported`` and ``claimed`` when
-    empty. Any other type raises :class:`TypeError`.
+    A request's empty ``options`` are left out, and a wire response's ``versions``,
+    ``client_versions``, ``unreported``, ``claimed`` and ``extras`` when empty. Any other
+    type raises :class:`TypeError`.
 
     The recorded leaf's logs and the HTTP harness's cassettes are written in this
     rendering: a change to it bumps the format of each that holds what changed, the

@@ -78,7 +78,7 @@ The raw body goes no further than the wire response.
 The dispatcher adds `started_at` (wall clock), `latency` (monotonic, over the whole wire request, waits and retries included) and `failed_attempts`, one per `ProviderError` with the leaf's name and model, the error, its request id, the attempt's start and duration.
 `attempts` is derived: the failed attempts plus one when the request answered.
 A failed outcome has the error, no prompt sent and no usage.
-Every outcome carries its leaf's record's `rounding`, and `client_versions` with `idia` set to idia's version, over any the leaf gave; an answered one carries the wire response's `versions`, `unreported` and `claimed` as the leaf gave them, and a failed one gives `not-sent` to each provenance detail that holds no value and claims nothing (see [Provenance](vocabulary.md#provenance)).
+Every outcome carries its leaf's record's `rounding`, and `client_versions` with `idia` set to idia's version, over any the leaf gave; an answered one carries the wire response's `versions`, `unreported`, `claimed` and `extras` as the leaf gave them, and a failed one gives `not-sent` to each provenance detail that holds no value, claims nothing and has no `extras` (see [Provenance](vocabulary.md#provenance)).
 A replayed outcome carries the recording's leaf-set details and today's `idia` version.
 
 Warnings: an outcome's are the wire response's followed by preflight's `unchecked-limit` warnings for that wire request, on a failed outcome too; the response's are the warnings about the request as a whole rather than one wire request, which in this release is preflight's `overflow-policy` warning alone.

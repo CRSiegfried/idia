@@ -94,7 +94,7 @@ WARNING_OVERFLOW_POLICY: Final = "overflow-policy"
 """Warning code: the state overflowed and a named overflow policy, named in the message,
 changed it before any call."""
 
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.2.0"
 """idia's own version, which ``idia.__version__`` re-exports and every outcome's
 ``client_versions`` records."""
 
@@ -107,7 +107,6 @@ ProvenanceDetail: TypeAlias = Literal[
     "prompt_sent",
     "usage.input_tokens",
     "usage.output_tokens",
-    "usage.passes",
     "request_id",
 ]
 """A detail of an outcome's provenance profile: each is a value, or has a reason in
@@ -1250,6 +1249,48 @@ def _no_raw_usage() -> dict[str, JsonValue]:
     return {}
 
 
+def _no_extras() -> Mapping[str, JsonValue]:
+    return MappingProxyType({})
+
+
+def _frozen_extras(owner: str, extras: object) -> Mapping[str, JsonValue]:
+    """``extras`` as a read-only JSON object in the order built, refusing with ``TypeError``
+    anything but a mapping and with ``ValueError`` a key that is not a string, a value outside
+    the JSON domain or a float that is not finite, anywhere inside it."""
+    if not isinstance(extras, Mapping):
+        raise TypeError(f"{owner}.extras must be a mapping, got {type(extras).__name__}")
+    held = cast(Mapping[object, object], extras)
+    try:
+        _check_json(held, f"{owner}.extras", set())
+    except RecursionError:
+        raise ValueError(f"{owner}.extras nests too deep") from None
+    return cast(Mapping[str, JsonValue], _frozen_json(held, f"{owner}.extras"))
+
+
+def _check_json(value: object, where: str, on_path: set[int]) -> None:
+    ident = id(value)
+    if value is None or isinstance(value, bool | int | str):
+        return
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError(f"{where} holds {value!r}, which JSON cannot carry")
+        return
+    if not isinstance(value, Mapping | list | tuple):
+        raise ValueError(f"{where} holds a {type(value).__name__}, which is not a JSON value")
+    if ident in on_path:
+        raise ValueError(f"{where} contains itself")
+    on_path.add(ident)
+    if isinstance(value, Mapping):
+        for key, item in cast(Mapping[object, object], value).items():
+            if not isinstance(key, str):
+                raise ValueError(f"{where} has the key {key!r}, which is not a string")
+            _check_json(item, f"{where}[{key!r}]", on_path)
+    else:
+        for index, item in enumerate(cast(Sequence[object], value)):
+            _check_json(item, f"{where}[{index}]", on_path)
+    on_path.discard(ident)
+
+
 def _no_versions() -> dict[str, str]:
     return {}
 
@@ -1292,7 +1333,6 @@ def _held(record: _Provenance) -> dict[ProvenanceDetail, bool]:
         "prompt_sent": record.prompt_sent is not None,
         "usage.input_tokens": usage is not None and usage.input_tokens is not None,
         "usage.output_tokens": usage is not None and usage.output_tokens is not None,
-        "usage.passes": usage is not None and usage.passes is not None,
         "request_id": record.request_id is not None,
     }
 
@@ -1354,13 +1394,11 @@ def _freeze_provenance(
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Usage:
-    """Token counts and passes as the leaf normalizes them from the wire; each 0 is a
-    reported 0 and None unreported; the wire's raw figures are beside them. ``passes`` is
-    the number of passes the wire reports for the call."""
+    """Token counts as the leaf normalizes them from the wire; each 0 is a reported 0 and
+    None unreported; the wire's raw figures are beside them, as the wire gave them."""
 
     input_tokens: int | None
     output_tokens: int | None
-    passes: int | None = None
     raw_usage: Mapping[str, JsonValue] = field(default_factory=_no_raw_usage)
 
     def __post_init__(self) -> None:
@@ -1390,7 +1428,9 @@ class WireResponse:
 
     The answers are mapped and validated; the provenance is what only the leaf knows, the
     leaf's own name and model being read off the leaf itself; the raw body travels here and
-    no further, since the dispatcher drops it when it builds the outcome.
+    no further, since the dispatcher drops it when it builds the outcome. ``extras`` holds
+    the figures the wire reports beyond the shared vocabulary, under keys the leaf names, and
+    is no provenance detail: empty means the wire reported nothing more.
     """
 
     answers: Mapping[str, Answer]
@@ -1407,9 +1447,11 @@ class WireResponse:
     client_versions: Mapping[str, str] = field(default_factory=_no_versions)
     unreported: Mapping[ProvenanceDetail, UnreportedReason] = field(default_factory=_no_unreported)
     claimed: frozenset[ProvenanceDetail] = frozenset()
+    extras: Mapping[str, JsonValue] = field(default_factory=_no_extras)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "answers", MappingProxyType(dict(self.answers)))
+        object.__setattr__(self, "extras", _frozen_extras("WireResponse", self.extras))
         if isinstance(self.prompt_sent, Mapping):
             object.__setattr__(self, "prompt_sent", MappingProxyType(dict(self.prompt_sent)))
         _freeze_provenance(
@@ -1433,6 +1475,7 @@ class Outcome:
     request that failed has no wire response, so its elicitation and calibration claim are
     unknown. ``started_at`` is wall-clock seconds since the epoch; ``latency`` is a monotonic
     duration in seconds covering the whole wire request, waits and retries included.
+    ``extras`` is the answering wire response's, and empty on a failed outcome.
     """
 
     keys: tuple[str, ...]
@@ -1455,8 +1498,10 @@ class Outcome:
     client_versions: Mapping[str, str] = field(default_factory=_no_versions)
     unreported: Mapping[ProvenanceDetail, UnreportedReason] = field(default_factory=_no_unreported)
     claimed: frozenset[ProvenanceDetail] = frozenset()
+    extras: Mapping[str, JsonValue] = field(default_factory=_no_extras)
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "extras", _frozen_extras("Outcome", self.extras))
         if isinstance(self.prompt_sent, Mapping):
             object.__setattr__(self, "prompt_sent", MappingProxyType(dict(self.prompt_sent)))
         _freeze_provenance(

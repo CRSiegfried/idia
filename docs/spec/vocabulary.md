@@ -107,9 +107,9 @@ For a range rule `observed` is the value and `bound` the limit crossed; for a to
 
 ## Responses
 
-- `WireResponse(answers, elicitation, calibrated, model_reported=None, snapshot=None, prompt_sent=None, usage=None, request_id=None, raw_body=None, warnings=(), versions={}, client_versions={}, unreported={}, claimed=frozenset())`: what a leaf returns from one call.
+- `WireResponse(answers, elicitation, calibrated, model_reported=None, snapshot=None, prompt_sent=None, usage=None, request_id=None, raw_body=None, warnings=(), versions={}, client_versions={}, unreported={}, claimed=frozenset(), extras={})`: what a leaf returns from one call.
   The raw body travels no further.
-- `Outcome`: one per wire request, in plan order: the `keys` it carried, in the order the wire request sent them, its `error` (a `ProviderError` or `None`), the leaf's `provider` and `model_requested`, `model_reported`, `snapshot`, `elicitation` and `calibrated` (unknown on a failed outcome), `prompt_sent`, `usage`, `latency`, `started_at`, `request_id`, `failed_attempts`, `warnings`, `rounding`, its leaf's record's, so a composite's outcome gives the precision of the member that answered, and the provenance fields below.
+- `Outcome`: one per wire request, in plan order: the `keys` it carried, in the order the wire request sent them, its `error` (a `ProviderError` or `None`), the leaf's `provider` and `model_requested`, `model_reported`, `snapshot`, `elicitation` and `calibrated` (unknown on a failed outcome), `prompt_sent`, `usage`, `latency`, `started_at`, `request_id`, `failed_attempts`, `warnings`, `rounding`, its leaf's record's, so a composite's outcome gives the precision of the member that answered, the provenance fields below and its [extras](#extras).
   `attempts` is the failed attempts plus one when answered, 0 for a wire request never sent.
   `started_at` is wall-clock seconds since the epoch; `latency` and a failed attempt's `duration` are monotonic durations.
   `prompt_sent` is the supported way to see what was sent: the body or messages as the leaf sent them, `None` when the request was never sent or the wire API hides it.
@@ -124,7 +124,7 @@ For a range rule `observed` is the value and `bound` the limit crossed; for a to
 ### Provenance
 
 Every outcome states one profile of detail, each a value or a reason why it is not.
-The details are `DETAILS`, the members of `ProvenanceDetail`: `model_reported`, `snapshot`, `versions`, `elicitation`, `calibrated`, `prompt_sent`, `usage.input_tokens`, `usage.output_tokens`, `usage.passes` and `request_id`; `None`, an empty `versions` and a `None` `usage` hold no value.
+The details are `DETAILS`, the members of `ProvenanceDetail`: `model_reported`, `snapshot`, `versions`, `elicitation`, `calibrated`, `prompt_sent`, `usage.input_tokens`, `usage.output_tokens` and `request_id`; `None`, an empty `versions` and a `None` `usage` hold no value.
 `provider` and `model_requested` are always filled, latency, start time and warnings are the dispatcher's, and precision is the outcome's `rounding`, so none of them is a detail.
 These names are shared with ommat, which calls `snapshot` its revision, `versions` its runtime and `prompt_sent` its prompt.
 
@@ -139,10 +139,19 @@ Either constructor raises `ValueError` for a key of `unreported` or `claimed` ou
 That every detail with no value has a reason is checked by the conformance suite, not the constructor, so a hand-built response still builds.
 An answered outcome carries its wire response's `versions`, `unreported` and `claimed` as given, and its `client_versions` with `idia` added; a failed outcome, sent or not, has `not-sent` for each detail that holds no value, a request id its error carries staying a value, and claims nothing.
 
+### Extras
+
+`WireResponse` and `Outcome` each carry `extras: Mapping[str, JsonValue]`, empty by default: the figures the wire reports beyond the shared vocabulary, such as Clairic's passes as `{"passes": 2}`.
+Its keys are the leaf's own, and the [providers spec](providers.md) lists each leaf's; an empty `extras` means the wire reported nothing more.
+It is no provenance detail, so it has no reason in `unreported` and is never claimed.
+It is held read-only at every depth in the order built, each object a read-only mapping and each array a tuple, and either constructor raises `TypeError` for an `extras` that is not a mapping and `ValueError` for a key that is not a string, a value outside the JSON domain or a float that is not finite, anywhere inside it; no size is bounded.
+An answered outcome carries its wire response's `extras` unchanged; a failed outcome, sent or not, has none, and a `FailedAttempt` carries none.
+A figure is read from `extras` by the key its leaf documents, never from `raw_usage`; a figure every source turns out to report is promoted into the shared vocabulary by a deliberate change, not read from `extras` by convention.
+
 ### Usage
 
-`Usage(input_tokens, output_tokens, passes=None, raw_usage={})`.
-`input_tokens`, `output_tokens` and `passes`, the number of passes the wire reports for the call, are as the wire reports them, each `None` when it reports none; `raw_usage` is the wire's usage object as given, its own keys unchanged.
+`Usage(input_tokens, output_tokens, raw_usage={})`.
+`input_tokens` and `output_tokens` are as the wire reports them, each `None` when it reports none; `raw_usage` is the wire's usage object as given, its own keys unchanged.
 A decision model that returns probabilities or values and no text reports `output_tokens` 0, and 0 is kept as 0.
 A 0 does not mean an answer is missing: a question with no answer gets a `Fault`, a wire request that failed has an outcome with its `error` set, and `RequestFailed` is raised only when no wire request answered.
 

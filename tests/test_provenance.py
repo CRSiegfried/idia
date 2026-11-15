@@ -98,7 +98,6 @@ def test_the_closed_sets_are_the_profiles_details_and_reasons() -> None:
         "prompt_sent",
         "usage.input_tokens",
         "usage.output_tokens",
-        "usage.passes",
         "request_id",
     } == DETAILS
     assert {
@@ -195,8 +194,100 @@ def test_an_answered_outcome_carries_its_wire_responses_provenance_and_idias_ver
     assert dict(outcome.versions) == {"runtime": "1.0"}
     assert dict(outcome.client_versions) == {"httpx2": "2.16", "idia": idia.__version__}
     assert outcome.claimed == {"model_reported"}
-    assert dict(outcome.unreported) == {"usage.passes": "not-reported"}
+    assert dict(outcome.unreported) == {}
     assert outcome.rounding == record.rounding
+
+
+# ----------------------------------------------------------------------------------------
+# Extras: the figures a wire reports beyond the shared vocabulary
+# ----------------------------------------------------------------------------------------
+
+
+def test_extras_are_empty_by_default_and_held_read_only_in_the_order_built() -> None:
+    assert dict(_response().extras) == {}
+    assert dict(_outcome().extras) == {}
+    built: dict[str, Any] = {"passes": 2, "detail": {"z": [1, 2.5], "a": None}}
+    for held in (_response(extras=built), _outcome(extras=built)):
+        built["detail"]["z"].append(3)
+        assert list(held.extras) == ["passes", "detail"]
+        detail = cast(Any, held.extras["detail"])
+        assert list(detail) == ["z", "a"]
+        assert detail["z"] == (1, 2.5)
+        with pytest.raises(TypeError):
+            detail["a"] = 1
+        built["detail"]["z"].pop()
+
+
+@pytest.mark.parametrize(
+    ("extras", "message"),
+    [
+        pytest.param({1: "x"}, "the key 1, which is not a string", id="int-key"),
+        pytest.param({"a": {"b": {2: 1}}}, "the key 2, which is not a string", id="deep-key"),
+        pytest.param({"a": float("nan")}, "nan, which JSON cannot carry", id="nan"),
+        pytest.param({"a": (1, float("inf"))}, r"\['a'\]\[1\] holds inf", id="deep-inf"),
+        pytest.param({"a": b"x"}, "a bytes, which is not a JSON value", id="bytes"),
+        pytest.param({"a": {1, 2}}, "a set, which is not a JSON value", id="set"),
+    ],
+)
+def test_extras_outside_the_json_domain_are_refused(extras: Any, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        _response(extras=extras)
+    with pytest.raises(ValueError, match=message):
+        _outcome(extras=extras)
+
+
+def test_extras_that_are_not_a_mapping_or_contain_themselves_are_refused() -> None:
+    with pytest.raises(TypeError, match="extras must be a mapping"):
+        _response(extras=[("passes", 2)])
+    looped: dict[str, Any] = {}
+    looped["self"] = looped
+    with pytest.raises(ValueError, match="contains itself"):
+        _outcome(extras=looped)
+    deep: dict[str, Any] = {}
+    for _ in range(sys.getrecursionlimit() + 10):
+        deep = {"d": deep}
+    with pytest.raises(ValueError, match="nests too deep"):
+        _response(extras=deep)
+
+
+def test_dispatch_carries_the_wire_responses_extras_onto_the_answered_outcome() -> None:
+    reply = Reply(answers={"q": NoulAnswer(probability=0.25)}, extras={"passes": 2, "b": 0})
+    leaf = Scripted(capabilities=capabilities(), script=[reply])
+    (outcome,) = asyncio.run(Dispatcher(leaf).answer(request(noul()))).outcomes
+    assert dict(outcome.extras) == {"passes": 2, "b": 0}
+    assert list(outcome.extras) == ["passes", "b"]
+    assert "extras" not in outcome.unreported  # not a provenance detail
+
+
+def test_an_outcome_answered_on_a_retry_carries_the_answering_calls_extras() -> None:
+    busy = ProviderError("busy", is_retryable=True, status_code=503)
+    reply = Reply(answers={"q": NoulAnswer(probability=0.25)}, extras={"passes": 1})
+    leaf = Scripted(capabilities=capabilities(), script=[busy, reply])
+    retry = RetryPolicy(attempts=2, base_delay=0.0, jitter=0.0)
+    (outcome,) = asyncio.run(Dispatcher(leaf, retry=retry).answer(request(noul()))).outcomes
+    assert len(outcome.failed_attempts) == 1
+    assert dict(outcome.extras) == {"passes": 1}
+
+
+def test_a_failed_outcome_carries_no_extras() -> None:
+    leaf = Scripted(capabilities=capabilities(), script=[ProviderError("refused", status_code=400)])
+    with pytest.raises(RequestFailed) as raised:
+        asyncio.run(Dispatcher(leaf).answer(request(noul())))
+    (outcome,) = raised.value.response.outcomes
+    assert dict(outcome.extras) == {}
+
+
+def test_a_fallback_passes_the_answering_members_extras_through() -> None:
+    from idia import Fallback
+
+    first = Scripted(
+        capabilities=capabilities(), script=[ProviderError("no", status_code=400)], name="first"
+    )
+    reply = Reply(answers={"q": NoulAnswer(probability=0.25)}, extras={"passes": 4})
+    second = Scripted(capabilities=capabilities(), script=[reply], name="second")
+    response = asyncio.run(Fallback([Dispatcher(first), Dispatcher(second)]).answer(request()))
+    (outcome,) = response.outcomes
+    assert dict(outcome.extras) == {"passes": 4}
 
 
 def test_idias_own_version_wins_over_a_leafs() -> None:
@@ -214,6 +305,7 @@ def test_a_failed_outcome_gives_not_sent_to_every_detail_with_no_value() -> None
     (outcome,) = raised.value.response.outcomes
     assert outcome.request_id == "r-9"
     assert dict(outcome.unreported) == dict.fromkeys(DETAILS - {"request_id"}, "not-sent")
+    assert dict(outcome.extras) == {}
     assert outcome.claimed == frozenset()
     assert dict(outcome.client_versions) == {"idia": idia.__version__}
     assert outcome.rounding == capabilities().rounding
@@ -227,6 +319,7 @@ def test_a_wire_request_never_sent_gives_not_sent_to_its_request_id_too() -> Non
     (outcome,) = raised.value.response.outcomes
     assert outcome.attempts == 0
     assert dict(outcome.unreported) == dict.fromkeys(DETAILS, "not-sent")
+    assert dict(outcome.extras) == {}
 
 
 def _two_noul_plan(script: list[Any], **dispatcher: Any) -> RequestFailed | Response:
@@ -252,6 +345,7 @@ def test_a_wire_request_left_unsent_by_a_credential_error_gives_not_sent_to_all(
     assert unsent.request_id is None
     assert unsent.error is refused
     assert dict(unsent.unreported) == dict.fromkeys(DETAILS, "not-sent")
+    assert dict(unsent.extras) == {}
 
 
 def test_a_retry_the_deadline_cannot_fit_gives_not_sent_and_keeps_the_attempts_id() -> None:
@@ -264,6 +358,7 @@ def test_a_retry_the_deadline_cannot_fit_gives_not_sent_and_keeps_the_attempts_i
     assert outcome.request_id is None
     assert [attempt.request_id for attempt in outcome.failed_attempts] == ["r-2"]
     assert dict(outcome.unreported) == dict.fromkeys(DETAILS, "not-sent")
+    assert dict(outcome.extras) == {}
 
 
 def test_a_routers_outcomes_carry_each_members_own_rounding() -> None:
@@ -297,7 +392,7 @@ def test_a_fallbacks_answering_outcome_keeps_its_own_provenance() -> None:
     assert outcome.provider == "second"
     assert dict(outcome.versions) == {"runtime": "1"}
     assert len(outcome.failed_attempts) == 1
-    assert dict(outcome.unreported) == {"usage.passes": "not-reported"}
+    assert dict(outcome.unreported) == {}
 
 
 # ----------------------------------------------------------------------------------------
@@ -305,7 +400,7 @@ def test_a_fallbacks_answering_outcome_keeps_its_own_provenance() -> None:
 # ----------------------------------------------------------------------------------------
 
 _KEY = "8d292a40ec00d837b140c55c9a7547f84b48667cbacd4665472f5cf6bbf7fc49"
-"""The key of :func:`_wire`'s request from the scripted leaf, in format 3."""
+"""The key of :func:`_wire`'s request from the scripted leaf, in formats 3 and 4."""
 _OLD_KEY = "b0a43f8b7956e51da539cb6b677dbfa06262286a65bd47ba6dc7f544cbdb6788"
 """The same request's key in format 2, which sorted the keys of the canonical request."""
 _REQUEST = (
@@ -318,12 +413,12 @@ _ENTRY = (
     '"off_label_mass":null,"probability":0.25,"type":"NoulAnswer"}},"calibrated":true,'
     '"elicitation":"passthrough","model_reported":"scripted-1","prompt_sent":"x",'
     '"raw_body":{"json":{"answers":{}}},"request_id":"scripted-1","snapshot":"scripted-1",'
-    '"type":"WireResponse","usage":{"input_tokens":1,"output_tokens":0,"passes":1,'
+    '"type":"WireResponse","usage":{"input_tokens":1,"output_tokens":0,'
     '"raw_usage":{},"type":"Usage"},"warnings":[]}}'
 )
 """A response recorded before the provenance fields existed: none of them is in it."""
 _LOG = (
-    '{"format":3,"name":"scripted","model":"scripted-1","enabled_features":[],"calls":{"'
+    '{"format":4,"name":"scripted","model":"scripted-1","enabled_features":[],"calls":{"'
     + _KEY
     + '":{"request":'
     + _REQUEST
@@ -331,7 +426,7 @@ _LOG = (
     + _ENTRY
     + "]}}}"
 )
-"""A format-3 log holding that response."""
+"""A format-4 log holding that response."""
 _OLD_LOG = (
     '{"calls":{"' + _OLD_KEY + '":[' + _ENTRY + ']},"enabled_features":[],"format":2,'
     '"model":"scripted-1","name":"scripted"}'
@@ -362,6 +457,93 @@ def test_a_log_written_before_the_provenance_fields_replays_with_their_defaults(
     assert replayed.claimed == frozenset()
 
 
+def _format_3(tmp_path: Path, **response: object) -> Path:
+    """:data:`_LOG` as format 3 wrote it, its one response's fields replaced by
+    ``response``: a usage holding ``passes``, say, as 0.1.0 recorded Clairic's."""
+    document = json.loads(_LOG)
+    document["format"] = 3
+    (entry,) = document["calls"][_KEY]["entries"]
+    entry["response"].update(response)
+    log = tmp_path / "format-3.json"
+    log.write_text(json.dumps(document), encoding="utf-8")
+    return log
+
+
+def test_a_format_3_log_is_refused_until_upgraded(tmp_path: Path) -> None:
+    log = _format_3(tmp_path)
+    with pytest.raises(ValueError, match=r"format 3; this reads 4: .*upgrade_log"):
+        _replay(log)
+
+
+def test_upgrading_a_format_3_log_moves_its_pass_count_into_extras(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    usage = {"input_tokens": 1, "output_tokens": 0, "passes": 2, "raw_usage": {"passes": 2}}
+    log = _format_3(tmp_path, usage={**usage, "type": "Usage"})
+    before = json.loads(log.read_text(encoding="utf-8"))
+    assert upgrade_log(log) == 0
+    after = json.loads(log.read_text(encoding="utf-8"))
+    assert after["format"] == 4
+    assert list(after["calls"]) == [_KEY]
+    assert after["calls"][_KEY]["request"] == before["calls"][_KEY]["request"]
+    (entry,) = after["calls"][_KEY]["entries"]
+    assert "passes" not in entry["response"]["usage"]
+    assert entry["response"]["extras"] == {"passes": 2}
+    (was,) = before["calls"][_KEY]["entries"]
+    kept = {k: v for k, v in entry["response"].items() if k not in {"usage", "extras"}}
+    assert kept == {k: v for k, v in was["response"].items() if k != "usage"}
+    replayed = _replay(log)
+    assert dict(replayed.extras) == {"passes": 2}
+    assert replayed.usage is not None
+    assert replayed.usage.raw_usage["passes"] == 2
+
+
+def test_upgrading_a_format_3_log_drops_the_passes_detail_and_a_null_count(
+    tmp_path: Path,
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = _format_3(
+        tmp_path,
+        usage={"input_tokens": 1, "output_tokens": 0, "passes": None, "type": "Usage"},
+        unreported={"usage.passes": "not-reported", "snapshot": "not-pinned"},
+        claimed=["model_reported", "usage.passes"],
+        snapshot=None,
+        warnings=[{"code": "no-snapshot", "field": "snapshot", "message": "m", "type": "Notice"}],
+    )
+    assert upgrade_log(log, requests=[_wire()], reasons={"versions": "hidden"}) == 0
+    (entry,) = json.loads(log.read_text(encoding="utf-8"))["calls"][_KEY]["entries"]
+    assert "extras" not in entry["response"]
+    assert entry["response"]["unreported"] == {"snapshot": "not-pinned"}
+    assert entry["response"]["claimed"] == ["model_reported"]
+    replayed = _replay(log)
+    assert dict(replayed.extras) == {}
+    assert replayed.claimed == {"model_reported"}
+
+
+def test_a_format_3_response_holding_both_passes_and_extras_is_refused(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    usage = {"input_tokens": 1, "output_tokens": 0, "passes": 2, "type": "Usage"}
+    log = _format_3(tmp_path, usage=usage, extras={"passes": 3})
+    before = log.read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match="both a pass count and extras"):
+        upgrade_log(log)
+    assert log.read_text(encoding="utf-8") == before
+
+
+def test_upgrading_refuses_a_log_in_a_format_it_does_not_read(tmp_path: Path) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    log = tmp_path / "log.json"
+    log.write_text(_LOG.replace('"format":4', '"format":1'), encoding="utf-8")
+    with pytest.raises(ValueError, match="format 1; upgrade_log reads only formats 2 and 3"):
+        upgrade_log(log)
+    log.write_text("not json", encoding="utf-8")
+    with pytest.raises(ValueError, match="is not a recorded leaf's log"):
+        upgrade_log(log)
+
+
 def test_a_log_that_fills_the_provenance_fields_replays_them_unchanged(tmp_path: Path) -> None:
     reply = Reply(
         answers={"q": NoulAnswer(probability=0.25)},
@@ -376,14 +558,11 @@ def test_a_log_that_fills_the_provenance_fields_replays_them_unchanged(tmp_path:
     stored = json.loads(log.read_text(encoding="utf-8"))
     ((entry,),) = (call["entries"] for call in stored["calls"].values())
     assert {"versions", "client_versions", "unreported", "claimed"} <= set(entry["response"])
-    assert stored["format"] == 3
+    assert stored["format"] == 4
     replayed = _replay(log)
     for name in ("versions", "client_versions", "unreported", "claimed"):
         assert getattr(replayed, name) == getattr(recorded, name), name
-    assert dict(replayed.unreported) == {
-        "snapshot": "not-pinned",
-        "usage.passes": "not-reported",
-    }
+    assert dict(replayed.unreported) == {"snapshot": "not-pinned"}
 
 
 # ----------------------------------------------------------------------------------------
@@ -404,7 +583,7 @@ def test_wire_unreported_gives_the_reasons_a_wire_leaf_states() -> None:
     pytest.importorskip("httpx2")
     from idia.providers.http import wire_unreported
 
-    full = Usage(input_tokens=1, output_tokens=0, passes=2)
+    full = Usage(input_tokens=1, output_tokens=0)
     assert wire_unreported(snapshot="v1", usage=full, request_id="r") == {
         "versions": "not-applicable"
     }
@@ -413,7 +592,6 @@ def test_wire_unreported_gives_the_reasons_a_wire_leaf_states() -> None:
         "snapshot": "not-pinned",
         "usage.input_tokens": "not-reported",
         "usage.output_tokens": "not-reported",
-        "usage.passes": "not-reported",
         "request_id": "not-reported",
     }
 
@@ -454,7 +632,7 @@ def _old_log(
 
 
 def _as_format_2(log: Path) -> None:
-    """Rewrite a format-3 log as the format-2 writer wrote it: each key's calls under the
+    """Rewrite a format-4 log as the format-2 writer wrote it: each key's calls under the
     hash of its request with sorted keys, no request stored, and every key sorted."""
     document = json.loads(log.read_text(encoding="utf-8"))
     calls: dict[str, Any] = {}
@@ -466,9 +644,9 @@ def _as_format_2(log: Path) -> None:
 
 
 def _calls(log: Path) -> dict[str, list[dict[str, Any]]]:
-    """A format-3 log's entries by key."""
+    """A format-4 log's entries by key."""
     document = json.loads(log.read_text(encoding="utf-8"))
-    assert document["format"] == 3
+    assert document["format"] == 4
     return {key: call["entries"] for key, call in document["calls"].items()}
 
 
@@ -501,17 +679,13 @@ def test_upgrading_a_wire_leafs_log_gives_the_reasons_the_leaf_gives_today(
     log = _old_log(tmp_path, "cloudflare-clairic", _bare(pinned=False, usage=usage))
     assert upgrade_log(log, requests=[_wire()]) == 0
     (response,) = _replayed(log)
-    assert dict(response.unreported) == {
-        "versions": "not-applicable",
-        "snapshot": "not-pinned",
-        "usage.passes": "not-reported",
-    }
+    assert dict(response.unreported) == {"versions": "not-applicable", "snapshot": "not-pinned"}
     assert dict(response.client_versions) == {}
     assert response.claimed == frozenset()
     assert profile_problems(response) == []
     assert response.answers == {"q": NoulAnswer(probability=0.25)}
     after = log.read_text(encoding="utf-8")
-    with pytest.raises(ValueError, match="format 3; upgrade_log reads only format 2"):
+    with pytest.raises(ValueError, match="format 4; upgrade_log reads only formats 2 and 3"):
         upgrade_log(log, requests=[_wire()])
     assert log.read_text(encoding="utf-8") == after
 
@@ -535,7 +709,7 @@ def test_upgrading_keeps_every_recorded_value_and_leaves_errors_alone(tmp_path: 
     assert old_key != key
     assert {k: v for k, v in new.items() if k != "calls"} == {
         **{k: v for k, v in old.items() if k != "calls"},
-        "format": 3,
+        "format": 4,
     }
 
 
@@ -569,10 +743,7 @@ def test_a_gliner_log_takes_its_versions_from_the_raw_body_and_claims(tmp_path: 
         "transformers": "5.20.2",
     }
     assert dict(response.client_versions) == {"huggingface_hub": "2.3.0"}
-    assert dict(response.unreported) == {
-        "usage.output_tokens": "not-applicable",
-        "usage.passes": "not-reported",
-    }
+    assert dict(response.unreported) == {"usage.output_tokens": "not-applicable"}
     assert response.claimed == {"model_reported", "snapshot"}
     assert profile_problems(response) == []
     (entries,) = _calls(log).values()
@@ -601,23 +772,18 @@ def test_upgrading_refuses_a_log_it_cannot_upgrade_honestly_and_writes_nothing(
 def test_an_unknown_leaf_is_upgraded_with_the_reasons_its_caller_gives(tmp_path: Path) -> None:
     from idia.providers.recorded import upgrade_log
 
-    log = _old_log(tmp_path, "someone-else", _bare(usage=Usage(input_tokens=1, output_tokens=1)))
-    with pytest.raises(ValueError, match=r"leave out usage\.passes"):
+    usage = Usage(input_tokens=1, output_tokens=None)
+    log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
+    with pytest.raises(ValueError, match=r"leave out usage\.output_tokens"):
         upgrade_log(log, requests=[_wire()], reasons={"versions": "not-applicable"})
-    assert (
-        upgrade_log(
-            log,
-            requests=[_wire()],
-            reasons={"versions": "not-applicable", "usage.passes": "hidden"},
-        )
-        == 0
-    )
+    hidden: dict[Any, Any] = {"versions": "not-applicable", "usage.output_tokens": "hidden"}
+    assert upgrade_log(log, requests=[_wire()], reasons=hidden) == 0
     (response,) = _replayed(log)
-    assert dict(response.unreported) == {"versions": "not-applicable", "usage.passes": "hidden"}
+    assert dict(response.unreported) == hidden
     assert profile_problems(response) == []
 
 
-def test_a_pass_count_only_the_raw_usage_holds_is_not_exposed_and_stays_as_recorded(
+def test_a_clairic_pass_count_only_the_raw_usage_holds_is_read_into_extras_as_today(
     tmp_path: Path,
 ) -> None:
     from idia.providers.recorded import upgrade_log
@@ -626,10 +792,30 @@ def test_a_pass_count_only_the_raw_usage_holds_is_not_exposed_and_stays_as_recor
     log = _old_log(tmp_path, "cloudflare-clairic", _bare(pinned=False, usage=usage))
     assert upgrade_log(log, requests=[_wire()]) == 0
     (response,) = _replayed(log)
-    assert response.unreported["usage.passes"] == "not-exposed"
+    assert dict(response.unreported) == {"versions": "not-applicable", "snapshot": "not-pinned"}
     assert response.usage is not None
-    assert response.usage.passes is None
     assert response.usage.raw_usage["passes"] == 2
+    assert dict(response.extras) == {"passes": 2}
+
+
+@pytest.mark.parametrize(
+    ("name", "raw"),
+    [
+        pytest.param("cloudflare-clef", {"passes": 2}, id="another-leaf"),
+        pytest.param("cloudflare-clairic", {"passes": "2"}, id="not-an-integer"),
+        pytest.param("cloudflare-clairic", {"passes": True}, id="a-bool"),
+    ],
+)
+def test_an_upgrade_reads_no_extras_its_leaf_would_not_read_today(
+    tmp_path: Path, name: str, raw: dict[str, Any]
+) -> None:
+    from idia.providers.recorded import upgrade_log
+
+    usage = Usage(input_tokens=3, output_tokens=0, raw_usage=raw)
+    log = _old_log(tmp_path, name, _bare(pinned=False, usage=usage))
+    assert upgrade_log(log, requests=[_wire()]) == 0
+    (response,) = _replayed(log)
+    assert dict(response.extras) == {}
 
 
 def test_a_callers_snapshot_reason_other_than_not_pinned_is_refused(tmp_path: Path) -> None:
@@ -664,7 +850,7 @@ def test_a_callers_not_sent_is_refused_since_only_the_dispatcher_gives_it(tmp_pa
         upgrade_log(
             log,
             requests=[_wire()],
-            reasons={"usage.passes": "not-sent", "versions": "not-applicable"},
+            reasons={"usage.input_tokens": "not-sent", "versions": "not-applicable"},
         )
 
 
@@ -684,7 +870,7 @@ def test_the_suite_reads_values_as_core_does_and_flags_an_empty_request_id() -> 
     response = _response(
         request_id="",
         unreported={"snapshot": "not-pinned", "usage.input_tokens": "not-reported"}
-        | {"usage.output_tokens": "not-reported", "usage.passes": "not-reported"}
+        | {"usage.output_tokens": "not-reported"}
         | {"versions": "not-applicable", "prompt_sent": "not-reported"},
     )
     assert profile_problems(response) == ["the request id is empty; a leaf with none gives None"]
@@ -873,26 +1059,6 @@ def test_a_call_whose_write_fails_is_not_kept_for_replay(tmp_path: Path) -> None
     assert len(leaf.calls) == 2  # the refused call was not replayed from memory
 
 
-def test_a_callers_reason_for_the_passes_wins_over_not_exposed(tmp_path: Path) -> None:
-    from idia.providers.recorded import upgrade_log
-
-    usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"passes": 2})
-    log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
-    reasons: dict[Any, Any] = {"versions": "not-applicable", "usage.passes": "hidden"}
-    assert upgrade_log(log, requests=[_wire()], reasons=reasons) == 0
-    (response,) = _replayed(log)
-    assert response.unreported["usage.passes"] == "hidden"
-
-
-def test_an_unknown_leaf_whose_reasons_leave_out_the_passes_is_refused(tmp_path: Path) -> None:
-    from idia.providers.recorded import upgrade_log
-
-    usage = Usage(input_tokens=1, output_tokens=1, raw_usage={"passes": 2})
-    log = _old_log(tmp_path, "someone-else", _bare(usage=usage))
-    with pytest.raises(ValueError, match=r"leave out usage\.passes"):
-        upgrade_log(log, requests=[_wire()], reasons={"versions": "not-applicable"})
-
-
 # ----------------------------------------------------------------------------------------
 # Re-keying a format-2 log, keyed before the key kept key order
 # ----------------------------------------------------------------------------------------
@@ -915,7 +1081,7 @@ def test_an_old_log_is_re_keyed_for_a_request_with_one_order_only(tmp_path: Path
     assert upgrade_log(log, requests=[_wire(), _wire()]) == 0
     document = json.loads(log.read_text(encoding="utf-8"))
     assert list(document) == ["format", "name", "model", "enabled_features", "calls"]
-    assert document["format"] == 3
+    assert document["format"] == 4
     assert list(document["calls"]) == [_KEY]
     assert document["calls"][_KEY]["request"] == json.loads(_REQUEST)
     replayed = _replay(log)

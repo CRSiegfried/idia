@@ -1,6 +1,6 @@
 [project]
 name = "idia"
-version = "0.1.0"
+version = "0.2.0"
 description = "Ask decision models many closed questions about one input, packed into calls within each provider's limits, and get their probabilities back, with retries, limits and provenance handled once."
 readme = "README.md"
 license = "MIT"

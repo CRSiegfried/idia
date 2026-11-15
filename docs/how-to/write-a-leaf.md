@@ -381,10 +381,13 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
   `WARNING_NO_SNAPSHOT` warning.
 - `prompt_sent`: what was sent, as JSON values; `None` only where the wire hides it.
   `SpanLeaf` leaves the text itself out on purpose and records its length and the labels.
-- `usage`: `Usage(input_tokens, output_tokens, passes=None, raw_usage=...)`, each count as
+- `usage`: `Usage(input_tokens, output_tokens, raw_usage=...)`, each count as
   the wire or the runtime reports it and `None` where it reports none, never an estimate;
   the raw figures go in `raw_usage`. A model in your own process reports its input as its
   own tokenizer counts what it encoded, as `SpanLeaf` does.
+- `extras`: any figure your wire reports that the shared vocabulary has no field for, as a
+  JSON object under keys you name and document, such as Clairic's `{"passes": 2}`; empty
+  when there is none. It is not part of the profile below, so it needs no reason.
 - `request_id`: the wire's id for the call, `None` where nothing assigns one, as in process.
 - `versions`: the versions of the runtime that ran the model, package to version, with
   `python` for the interpreter, read from the installed packages; empty for a wire API,
@@ -402,8 +405,8 @@ A `WireResponse` carries the answers and the provenance only the leaf knows:
 Every detail of the provenance profile is a value or has a reason in `unreported`, a map
 from the detail's name to one of `UnreportedReason`'s codes; `DETAILS` and `REASONS` name
 them all. The profile's details are `model_reported`, `snapshot`, `versions`,
-`elicitation`, `calibrated`, `prompt_sent`, `usage.input_tokens`, `usage.output_tokens`,
-`usage.passes` and `request_id`. The codes a leaf gives:
+`elicitation`, `calibrated`, `prompt_sent`, `usage.input_tokens`, `usage.output_tokens`
+and `request_id`. The codes a leaf gives:
 
 - `not-reported`: the wire or the runtime gives none, such as a missing request id;
 - `not-pinned`: the snapshot, exactly when you give the `no-snapshot` warning;
@@ -623,7 +626,6 @@ class SpanLeaf:
         spans: dict[str, JsonValue] = {label: tuple(found[label]) for label in found}
         unreported: dict[ProvenanceDetail, UnreportedReason] = {
             "usage.output_tokens": "not-applicable",
-            "usage.passes": "not-reported",
             "request_id": "not-reported",
         }
         if self._snapshot is None:

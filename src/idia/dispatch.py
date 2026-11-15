@@ -379,6 +379,7 @@ class Dispatcher:
             client_versions={**result.client_versions, "idia": VERSION},
             unreported=result.unreported,
             claimed=result.claimed,
+            extras=result.extras,
         )
         return outcome, result.answers
 

@@ -258,6 +258,10 @@ class _CloudflareLeaf(HttpLeaf):
     """What the two leaves share: the account and token, the envelope, the status mapper
     and the provenance."""
 
+    _reports_passes: bool = False
+    """Whether the wire's ``usage.passes`` is this leaf's to read into ``extras``: Clairic's
+    only, so Clef's ``extras`` stays empty whatever its usage holds."""
+
     def __init__(
         self,
         *,
@@ -352,7 +356,6 @@ class _CloudflareLeaf(HttpLeaf):
             Usage(
                 input_tokens=_count(raw_usage.get("input_tokens")),
                 output_tokens=_count(raw_usage.get("output_tokens")),
-                passes=_count(raw_usage.get("passes")),
                 raw_usage=raw_usage,
             ),
         )
@@ -379,6 +382,7 @@ class _CloudflareLeaf(HttpLeaf):
             field="snapshot",
         )
         request_id = self.request_id(response)
+        passes = _count(usage.raw_usage.get("passes")) if self._reports_passes else None
         return WireResponse(
             answers=answers,
             elicitation="passthrough",
@@ -391,6 +395,7 @@ class _CloudflareLeaf(HttpLeaf):
             raw_body=envelope,
             client_versions=client_versions("httpx2"),
             unreported=wire_unreported(snapshot=None, usage=usage, request_id=request_id),
+            extras={} if passes is None else {"passes": passes},
             warnings=(
                 *validated,
                 *warnings,
@@ -480,8 +485,11 @@ class Clairic(_CloudflareLeaf):
     It reads one request option, ``reference_date``, an ISO date that resolves dates
     written without a year, and sends it when given. ``model`` is ``clairic`` or its full
     name ``@cf/cloudflare/clairic``, its only model; the leaf reports ``clairic`` either
-    way. Credentials, ``capabilities`` and ``client`` are as for :class:`Clef`.
+    way. Credentials, ``capabilities`` and ``client`` are as for :class:`Clef`. The passes
+    its usage reports go in ``extras`` as ``{"passes": n}``.
     """
+
+    _reports_passes = True
 
     def __init__(
         self,
