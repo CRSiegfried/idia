@@ -96,7 +96,6 @@ def wire_unreported(
     figures: dict[ProvenanceDetail, int | None] = {
         "usage.input_tokens": None if usage is None else usage.input_tokens,
         "usage.output_tokens": None if usage is None else usage.output_tokens,
-        "usage.passes": None if usage is None else usage.passes,
     }
     reasons.update({detail: "not-reported" for detail, held in figures.items() if held is None})
     if request_id is None:

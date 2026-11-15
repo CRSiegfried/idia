@@ -14,7 +14,7 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import fields, replace
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import pytest
 
@@ -30,6 +30,7 @@ from idia import (
     Kind,
     Leaf,
     MappedAnswer,
+    Outcome,
     Provider,
     ProviderError,
     Question,
@@ -1656,7 +1657,7 @@ def _stripped(
     return lambda: Harness(record)
 
 
-_WIRE = {"usage.passes": "not-reported", "versions": "not-applicable"}
+_WIRE = {"versions": "not-applicable"}
 _LOCAL = {**_WIRE, "usage.output_tokens": "not-applicable", "request_id": "not-reported"}
 
 
@@ -1682,8 +1683,12 @@ def test_l26_and_p8_pass_a_leaf_that_gives_a_reason_for_each_detail_it_has_none_
         pytest.param({"request_id": None}, "request_id has neither", id="no-reason"),
         pytest.param({"request_id": ""}, "the request id is empty", id="empty-request-id"),
         pytest.param(
-            {"versions": {"torch": "2.1"}, "unreported": {}},
-            "usage.passes has neither",
+            {
+                "versions": {"torch": "2.1"},
+                "usage": Usage(input_tokens=1, output_tokens=None),
+                "unreported": {},
+            },
+            "usage.output_tokens has neither",
             id="a-dropped-reason",
         ),
         pytest.param(
@@ -1726,14 +1731,40 @@ def test_l28_fails_a_missing_snapshot_whose_reason_is_not_not_pinned() -> None:
 def test_p8_fails_a_wrapped_leaf_whose_outcome_is_not_what_the_leaf_gave() -> None:
     class Differs(ScriptedProviders):
         def _wrap(self, leaf: Scripted) -> Leaf:
-            return Strips(
-                leaf, versions={"runtime": "2"}, unreported={"usage.passes": "not-reported"}
-            )
+            return Strips(leaf, versions={"runtime": "2"}, unreported={})
 
     p8 = _check(provider_checks(lambda: Differs("leaf", [CAPABILITIES], CAPABILITIES)), "P8")
     assert p8.result == "fail"
     assert p8.reason is not None
     assert "is not the leaf's" in p8.reason
+
+
+def test_p8_fails_a_wrapped_leaf_whose_outcome_extras_are_not_the_leafs() -> None:
+    class Adds(ScriptedProviders):
+        def _wrap(self, leaf: Scripted) -> Leaf:
+            return Strips(leaf, extras={"passes": 1})
+
+    p8 = _check(provider_checks(lambda: Adds("leaf", [CAPABILITIES], CAPABILITIES)), "P8")
+    assert p8.result == "fail"
+    assert p8.reason is not None
+    assert "extras" in p8.reason
+
+
+def test_p8_fails_a_failed_outcome_that_carries_extras(monkeypatch: pytest.MonkeyPatch) -> None:
+    from idia import dispatch
+
+    built = dispatch.Outcome
+
+    def with_extras(**fields: Any) -> Outcome:
+        if fields["error"] is not None:
+            fields["extras"] = {"passes": 1}
+        return built(**fields)
+
+    monkeypatch.setattr(dispatch, "Outcome", with_extras)
+    p8 = _check(provider_checks(_wrapped), "P8")
+    assert p8.result == "fail"
+    assert p8.reason is not None
+    assert "a failed outcome carries extras" in p8.reason
 
 
 def test_p8_checks_the_failed_outcomes_where_the_harness_can_make_a_failure() -> None:
@@ -1853,7 +1884,7 @@ def test_p19_fails_a_replay_that_loses_the_provenance_it_recorded(
             response = await super().call(wire_request, deadline)
             if self._records:  # pyright: ignore[reportPrivateUsage]
                 return response
-            kept = {d: r for d, r in response.unreported.items() if d != "usage.passes"}
+            kept = {d: r for d, r in response.unreported.items() if d != "versions"}
             return replace(response, unreported=kept)
 
     monkeypatch.setattr(_provider, "Recorded", Forgets)

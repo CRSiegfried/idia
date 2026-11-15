@@ -146,10 +146,10 @@ call; it moves to PyPI later, and the extras keep their names. The core installs
 dependency:
 
 ```sh
-pip install "idia[system-one] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
-pip install "idia[openai] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
-pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
-pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
+pip install "idia[system-one] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
+pip install "idia[openai] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
+pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
+pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
 ```
 
 The `gliner` extra runs a model in process on torch. pip takes torch from PyPI, whose default

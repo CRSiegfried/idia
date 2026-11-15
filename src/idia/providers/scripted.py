@@ -70,6 +70,10 @@ class ScriptExhausted(AssertionError):
     """
 
 
+def _no_extras() -> dict[str, JsonValue]:
+    return {}
+
+
 def _no_versions() -> dict[str, str]:
     return {}
 
@@ -83,7 +87,8 @@ class Reply:
     model is an alias, not a pinned version, so no snapshot exists even on a record whose
     ``snapshot_pinnable`` is true.
 
-    ``versions``, ``client_versions`` and ``claimed`` go on the wire response as given.
+    ``versions``, ``client_versions``, ``claimed`` and ``extras`` go on the wire response as
+    given.
     ``unreported`` left ``None`` is derived so the response states a passing profile: the
     snapshot ``not-pinned`` when there is none, each usage figure it has none of
     ``not-reported`` and empty ``versions`` ``not-applicable``; given, even empty, it is
@@ -99,6 +104,7 @@ class Reply:
     client_versions: Mapping[str, str] = field(default_factory=_no_versions)
     unreported: Mapping[ProvenanceDetail, UnreportedReason] | None = None
     claimed: frozenset[ProvenanceDetail] = frozenset()
+    extras: Mapping[str, JsonValue] = field(default_factory=_no_extras)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -236,6 +242,7 @@ class Scripted:
             client_versions=reply.client_versions,
             unreported=unreported,
             claimed=reply.claimed,
+            extras=reply.extras,
         )
 
 
@@ -251,7 +258,6 @@ def _derived(
     figures: dict[ProvenanceDetail, int | None] = {
         "usage.input_tokens": usage.input_tokens,
         "usage.output_tokens": usage.output_tokens,
-        "usage.passes": usage.passes,
     }
     reasons.update({detail: "not-reported" for detail, held in figures.items() if held is None})
     return reasons

@@ -13,10 +13,10 @@ limits allow, each call sending the input once.
 ## Install
 
 ```sh
-pip install "idia[system-one] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
-pip install "idia[openai] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
-pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
-pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
+pip install "idia[system-one] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
+pip install "idia[openai] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
+pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
+pip install "idia[gliner] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
 ```
 
 Credentials come from the environment unless passed to `idia.provider`: `TYPESAFE_API_KEY`
@@ -69,7 +69,7 @@ async def main(messages: list[str]) -> None:
   tuple. A provider whose `capabilities.carries_noul_descriptions` or
   `carries_structured_instructions` is false raises `DoesNotFit` before any call, so check
   those fields first to leave such a question out (see the
-  [providers spec](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/providers.md)).
+  [providers spec](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/providers.md)).
 
 ## Handling results
 
@@ -86,25 +86,26 @@ async def main(messages: list[str]) -> None:
   outcome, each with its `error`.
 
 The answer shapes are in the vocabulary spec's
-[Answers](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/vocabulary.md#answers)
+[Answers](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/vocabulary.md#answers)
 and the errors under its
-[Errors](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/vocabulary.md#errors),
+[Errors](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/vocabulary.md#errors),
 and when each ending happens is in the
-[dispatch spec](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/dispatch.md#three-endings).
+[dispatch spec](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/dispatch.md#three-endings).
 
 ## Testing offline
 
 `Scripted`, from `idia.providers.scripted`, answers from a script with no keys. Give it a
 `Capabilities` record written out in full and wrap it in a `Dispatcher`; the
-[README demo](https://github.com/CRSiegfried/idia/blob/v0.1.0/README.md#try-it-without-keys)
+[README demo](https://github.com/CRSiegfried/idia/blob/v0.2.0/README.md#try-it-without-keys)
 is a complete example, and the
-[test-doubles spec](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/test-doubles.md#the-scripted-leaf)
+[test-doubles spec](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/test-doubles.md#the-scripted-leaf)
 covers `Scripted` and `Recorded`. The scripted leaf logs each call in `calls`, and raises
-`ScriptExhausted` when its script runs out. Recorded logs are in format 3, whose keys
-hold key order, so every key recorded before changed. A format-2 log is re-keyed into
-format 3 offline with `upgrade_log(log, *, requests, reasons=None)`, in
-`idia.providers.recorded`, given the wire requests its leaf was sent; a request holding a
-mapping with two or more keys cannot be re-keyed and must be recorded again.
+`ScriptExhausted` when its script runs out. Recorded logs are in format 4. A format-3 log,
+whose Clairic responses may hold `usage.passes`, is brought to format 4 offline with
+`upgrade_log(log)`, in `idia.providers.recorded`, each pass count moving to `extras`. A
+format-2 log, keyed before keys held key order, is re-keyed the same way given the wire
+requests its leaf was sent, `upgrade_log(log, requests=..., reasons=None)`; a request
+holding a mapping with two or more keys cannot be re-keyed and must be recorded again.
 
 ## Pitfalls
 
@@ -127,13 +128,13 @@ mapping with two or more keys cannot be re-keyed and must be recorded again.
 
 ## Details
 
-- [Providers](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/providers.md):
+- [Providers](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/providers.md):
   each provider's options, limits and models.
-- [Dispatch](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/spec/dispatch.md):
+- [Dispatch](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/spec/dispatch.md):
   the deadline, retries, rate limits, outcomes, the re-ask, `Router` and `Fallback`.
-- [Tutorial](https://github.com/CRSiegfried/idia/blob/v0.1.0/docs/tutorials/ask-a-provider.md):
+- [Tutorial](https://github.com/CRSiegfried/idia/blob/v0.2.0/docs/tutorials/ask-a-provider.md):
   live calls to Clef and Clairic, the router, and handling `RequestFailed`.
-- [README demo](https://github.com/CRSiegfried/idia/blob/v0.1.0/README.md#try-it-without-keys):
+- [README demo](https://github.com/CRSiegfried/idia/blob/v0.2.0/README.md#try-it-without-keys):
   a runnable example with no keys.
-- [Public API](https://github.com/CRSiegfried/idia/blob/v0.1.0/CONTRIBUTING.md#ground-rules-for-changes):
+- [Public API](https://github.com/CRSiegfried/idia/blob/v0.2.0/CONTRIBUTING.md#ground-rules-for-changes):
   the modules whose `__all__` is public.

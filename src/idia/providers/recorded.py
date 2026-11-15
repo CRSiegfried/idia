@@ -21,8 +21,9 @@ The modes:
 The log is one JSON file, rewritten whole after each recorded call. It holds the caller's
 state and instructions as written, image bytes included: secrets are filtered from a wire's
 headers and bodies by the leaves that record them, never from a caller's own content. A log
-of another format is refused when the leaf is built; a format-2 log, keyed before the key
-kept key order, is re-keyed offline by :func:`upgrade_log`. A replayed error is a
+of another format is refused when the leaf is built; an older log is brought to this
+format offline by :func:`upgrade_log`: a format-3 log, whose usage may hold Clairic's
+passes, and a format-2 log, keyed before the key kept key order. A replayed error is a
 plain :class:`~idia.core.ProviderError` carrying the recorded fields. A replay runs
 through the call loop like any call, so the attempts, outcomes and ``RequestFailed`` are
 the loop's, made again; pass the dispatcher a zero-delay retry policy so a recorded retry
@@ -83,13 +84,17 @@ __all__ = [
 _Mode: TypeAlias = Literal["none", "once", "new"]
 """How the recorded leaf treats a call: replay only, record a fresh log, or add to one."""
 
-_FORMAT: Final = 3
+_FORMAT: Final = 4
 """The log format this module reads and writes. A change to ``_canon``'s rendering, which
 the log is written in, bumps it."""
 
 _OLD_FORMAT: Final = 2
-"""The one older format :func:`upgrade_log` reads: calls keyed on the canonical request
+"""The oldest format :func:`upgrade_log` reads: calls keyed on the canonical request
 written with sorted keys, and no request stored."""
+
+_PASSES_FORMAT: Final = 3
+"""The format before ``Usage.passes`` left the vocabulary: keyed and stored as format 4,
+a response's pass count in its usage and ``usage.passes`` a provenance detail."""
 
 _MODES: Final = frozenset(get_args(_Mode))
 
@@ -234,7 +239,7 @@ def _document(
     requests: typing.Mapping[str, object],
     calls: typing.Mapping[str, list[_Entry]],
 ) -> dict[str, object]:
-    """A format-3 log: its header in a fixed order, then each key's canonical request and
+    """A format-4 log: its header in a fixed order, then each key's canonical request and
     calls, the keys sorted."""
     return {
         "format": _FORMAT,
@@ -303,28 +308,32 @@ class _Log:
 def _load(log: Path, *, version: int = _FORMAT) -> _Log:
     """Read ``log``, refusing with ``ValueError`` a log not in format ``version`` and a
     document that is not a recorded leaf's log, each entry read as a replay would read it
-    and, in format 3, each stored request checked against its key."""
+    and, from format 3, each stored request checked against its key. An older format's
+    entries have their pass count moved into ``extras`` first (:func:`_moved_passes`)."""
     text = log.read_text(encoding="utf-8")
     try:
         document: object = json.loads(text, parse_constant=_no_constant)
     except RecursionError:
         raise ValueError(f"{log} is not a recorded leaf's log: it nests too deep") from None
-    except _Constant as error:
+    except (_Constant, json.JSONDecodeError) as error:
         raise ValueError(f"{log} is not a recorded leaf's log: {error}") from None
     if not isinstance(document, dict):
         raise ValueError(f"{log} is not a recorded leaf's log")
     held = cast(dict[str, object], document)
     found = held.get("format")
     if type(found) is not int or found != version:
-        if version == _OLD_FORMAT:
-            raise ValueError(f"{log} is in format {found!r}; upgrade_log reads only format 2")
+        if version != _FORMAT:
+            raise ValueError(
+                f"{log} is in format {found!r}; upgrade_log reads only formats 2 and 3"
+            )
         raise ValueError(
-            f"{log} is in format {found!r}; this reads {_FORMAT}: re-key a format-2 log with "
-            "upgrade_log, or record it again"
+            f"{log} is in format {found!r}; this reads {_FORMAT}: bring a format-2 or "
+            "format-3 log up with upgrade_log, or record it again"
         )
+    old = version != _FORMAT
     try:
         calls, requests = (
-            _old_calls(held["calls"]) if version == _OLD_FORMAT else _calls(held["calls"])
+            _old_calls(held["calls"]) if version == _OLD_FORMAT else _calls(held["calls"], old)
         )
         loaded = _Log(
             name=_string(held["name"]),
@@ -359,9 +368,10 @@ def _string(value: object) -> str:
     return value
 
 
-def _calls(value: object) -> tuple[dict[str, list[_Entry]], dict[str, object]]:
-    """A format-3 log's calls and requests by key, each request checked to hash to its key
-    and each entry checked by reading it as a replay does."""
+def _calls(value: object, old: bool) -> tuple[dict[str, list[_Entry]], dict[str, object]]:
+    """A format-3 or format-4 log's calls and requests by key, each request checked to hash
+    to its key and each entry checked by reading it as a replay does, a format-3 entry's
+    pass count moved first when ``old``."""
     if not isinstance(value, dict):
         raise TypeError("the calls are not a mapping")
     calls: dict[str, list[_Entry]] = {}
@@ -376,7 +386,7 @@ def _calls(value: object) -> tuple[dict[str, list[_Entry]], dict[str, object]]:
         if hash_of(cast(JsonValue, call["request"])) != key:
             raise ValueError(f"the request stored under {key!r} does not hash to its key")
         requests[key] = call["request"]
-        calls[key] = _entries(key, call["entries"])
+        calls[key] = _entries(key, call["entries"], old)
     return calls, requests
 
 
@@ -386,17 +396,20 @@ def _old_calls(value: object) -> tuple[dict[str, list[_Entry]], dict[str, object
     if not isinstance(value, dict):
         raise TypeError("the calls are not a mapping")
     calls = cast(dict[str, object], value)
-    return {key: _entries(key, entries) for key, entries in calls.items()}, {}
+    return {key: _entries(key, entries, True) for key, entries in calls.items()}, {}
 
 
-def _entries(key: str, entries: object) -> list[_Entry]:
-    """The entries under ``key``, each checked by reading it as a replay does."""
+def _entries(key: str, entries: object, old: bool = False) -> list[_Entry]:
+    """The entries under ``key``, each checked by reading it as a replay does, an older
+    format's entry with its pass count moved into ``extras`` first when ``old``."""
     if not isinstance(entries, list):
         raise TypeError(f"the calls under {key!r} are not a list")
     for entry in cast(list[object], entries):
         if not isinstance(entry, dict):
             raise TypeError(f"an entry under {key!r} is not a mapping")
         checked = cast(_Entry, entry)
+        if old:
+            _moved_passes(checked)
         if ("error" in checked) == ("response" in checked):
             raise TypeError(f"an entry under {key!r} holds not exactly one of error, response")
         if "error" in checked:
@@ -404,6 +417,29 @@ def _entries(key: str, entries: object) -> list[_Entry]:
         else:
             _replay(checked)
     return cast(list[_Entry], entries)
+
+
+def _moved_passes(entry: _Entry) -> None:
+    """Bring an older format's entry, in place, to the vocabulary without ``Usage.passes``:
+    a pass count its usage holds moves to ``extras`` as ``{"passes": n}``, and the detail
+    ``usage.passes`` leaves its ``unreported`` and ``claimed``. Nothing else is touched."""
+    response = entry.get("response")
+    if not isinstance(response, dict):
+        return
+    held = cast(dict[str, object], response)
+    usage = held.get("usage")
+    if isinstance(usage, dict) and "passes" in usage:
+        passes = cast(dict[str, object], usage).pop("passes")
+        if passes is not None:
+            if "extras" in held:
+                raise ValueError("a response holds both a pass count and extras")
+            held["extras"] = {"passes": passes}
+    unreported = held.get("unreported")
+    if isinstance(unreported, dict):
+        cast(dict[str, object], unreported).pop("usage.passes", None)
+    claimed = held.get("claimed")
+    if isinstance(claimed, list):
+        held["claimed"] = [d for d in cast(list[object], claimed) if d != "usage.passes"]
 
 
 def _missing(log: Path) -> FileNotFoundError:
@@ -499,20 +535,32 @@ reported."""
 _GLINER_RUNTIME: Final = ("python", "gliner2", "torch", "transformers")
 _GLINER_CLIENT: Final = ("huggingface_hub",)
 _ALWAYS: Final[frozenset[ProvenanceDetail]] = frozenset({"elicitation", "calibrated"})
-_PROVENANCE_KEYS: Final = frozenset({"versions", "client_versions", "unreported", "claimed"})
+_PROVENANCE_KEYS: Final = frozenset(
+    {"versions", "client_versions", "unreported", "claimed", "extras"}
+)
+"""What an upgrade may add to a response: its provenance fields, and the ``extras`` its leaf
+reads today from what the response already recorded."""
 
 
 def upgrade_log(
     log: Path,
     *,
-    requests: Iterable[WireRequest],
+    requests: Iterable[WireRequest] = (),
     reasons: typing.Mapping[ProvenanceDetail, UnreportedReason] | None = None,
 ) -> int:
-    """Re-key a format-2 log into format 3, offline, for the wire requests its leaf
-    received, and return how many entries it left out.
+    """Bring a format-2 or format-3 log to format 4, offline, and return how many entries
+    it left out.
 
-    A format-2 log filed each call under its canonical request written with sorted keys,
-    and stored no request, so the order a call was recorded in is gone. Pass ``requests``,
+    A format-3 log is keyed and stored as format 4 is, so every entry is kept under its key
+    and ``requests`` and ``reasons`` are not read: a pass count a response's usage holds
+    moves to its ``extras`` as ``{"passes": n}``, and the detail ``usage.passes`` leaves its
+    ``unreported`` and ``claimed``, since neither is in the vocabulary any longer. Nothing
+    else recorded changes, so it returns 0.
+
+    A format-2 log is re-keyed for the wire requests its leaf received, its pass counts
+    moved as a format-3 log's are. A format-2 log filed each call under its canonical
+    request written with sorted keys, and stored no request, so the order a call was
+    recorded in is gone. Pass ``requests``,
     each as the recorded leaf's ``call`` would see it, a plan's, a re-ask's and a router
     member's alike; each is keyed as the log's header names the leaf and model. A request
     whose old key the log holds is re-keyed only when no mapping its caller built, a JSON
@@ -529,27 +577,32 @@ def upgrade_log(
     by the rules its leaf, the log's ``name``, states: for a wire leaf (System One, OpenAI's
     two, Cloudflare's two) and the scripted leaf, ``versions`` ``not-applicable``, the
     snapshot ``not-pinned`` beside its ``no-snapshot`` warning, and every other missing
-    detail ``not-reported``, but the passes ``not-exposed`` where the raw usage holds a pass
-    count the recording idia did not read; for ``gliner``, ``versions`` and
+    detail ``not-reported``; for ``gliner``, ``versions`` and
     ``client_versions`` from the versions its raw body recorded, the output tokens
     ``not-applicable``, the other missing details as a wire leaf's, and ``model_reported``
     and a snapshot claimed, since a log cannot show the snapshot was resolved rather than
     given. Any other leaf takes its reasons from ``reasons``, the reason for each detail it
     gives none of.
 
-    Nothing recorded changes: not an answer, a value, a warning or the raw body, and a
-    reason, claim or version a response already holds stays. A re-keyed response keeps the
-    ``prompt_sent`` and raw body its old log holds, with their keys sorted; only a call
-    recorded again holds them in the order sent. The old log is replaced, so keep a copy, or
-    its committed version, until the requests given are complete. The log is refused with
-    ``ValueError``, and nothing written, when it is not in format 2 (a format-3 log included),
-    when a request is refused as above, when a leaf has no rules and no ``reasons`` are
+    Beyond the pass count, nothing recorded changes: not an answer, a value, a warning or
+    the raw body, and a reason, claim or version a response already holds stays. A re-keyed
+    response keeps the ``prompt_sent`` and raw body its old log holds, with their keys
+    sorted; only a call recorded again holds them in the order sent. The old log is
+    replaced, so keep a copy, or its committed version, until the requests given are
+    complete. The log is refused with
+    ``ValueError``, and nothing written, when it is in neither format 2 nor format 3 (a
+    format-4 log included), when a response holds both a pass count and ``extras``, or, for
+    format 2, when a request is refused as above, when a leaf has no rules and no ``reasons`` are
     given, ``reasons`` are given for a leaf with rules, give ``not-sent`` or give a missing
     snapshot a reason other than ``not-pinned``, a ``gliner`` log records no runtime
     version, a missing snapshot has no ``no-snapshot`` warning, a response records an empty
     request id, its ``elicitation`` or ``calibrated`` holds no value or has a reason, or a
     detail would be left with neither a value nor a reason.
     """
+    if _format_of(log) == _PASSES_FORMAT:
+        held = _load(log, version=_PASSES_FORMAT)
+        _write(log, _document(held.name, held.model, held.features, held.requests, held.calls))
+        return 0
     held = _load(log, version=_OLD_FORMAT)
     calls: dict[str, list[_Entry]] = {}
     stored: dict[str, object] = {}
@@ -573,6 +626,16 @@ def upgrade_log(
     left_out = sum(len(entries) for old, entries in held.calls.items() if old not in moved)
     _write(log, _document(held.name, held.model, held.features, stored, calls))
     return left_out
+
+
+def _format_of(log: Path) -> object:
+    """The ``format`` a log's header names, or ``None`` where it is no JSON object; the
+    reader refuses what this does not settle."""
+    with contextlib.suppress(ValueError, RecursionError):
+        document: object = json.loads(log.read_text(encoding="utf-8"), parse_constant=_no_constant)
+        if isinstance(document, dict):
+            return cast(dict[str, object], document).get("format")
+    return None
 
 
 def _has_an_order(wire_request: WireRequest) -> bool:
@@ -668,21 +731,28 @@ def _upgraded(
         elif detail in rules:
             unreported[detail] = rules[detail]
         elif name in _WIRE or name in {"scripted", "gliner"}:
-            # A pass count the wire reported but the recording idia did not read.
-            passes = detail == "usage.passes" and _raw_passes(filled)
-            unreported[detail] = "not-exposed" if passes else "not-reported"
+            unreported[detail] = "not-reported"
         else:
             raise ValueError(f"{log}: the reasons given for {name!r} leave out {detail}")
-    return replace(filled, unreported=unreported, claimed=frozenset(claimed - set(unreported)))
+    return replace(
+        filled,
+        unreported=unreported,
+        claimed=frozenset(claimed - set(unreported)),
+        extras=_extras_today(filled, name),
+    )
 
 
-def _raw_passes(response: WireResponse) -> bool:
-    """Whether the raw usage holds a pass count that ``Usage.passes`` was not read from."""
+def _extras_today(response: WireResponse, name: str) -> typing.Mapping[str, JsonValue]:
+    """The ``extras`` the leaf ``name`` gives today for what ``response`` recorded: for
+    Clairic, an integer pass count its raw usage holds, as the leaf reads it now; otherwise,
+    and wherever the response already holds ``extras``, those it holds."""
     usage = response.usage
-    if usage is None:
-        return False
+    if response.extras or name != "cloudflare-clairic" or usage is None:
+        return response.extras
     passes = usage.raw_usage.get("passes")
-    return isinstance(passes, int) and not isinstance(passes, bool)
+    if isinstance(passes, int) and not isinstance(passes, bool):
+        return {"passes": passes}
+    return response.extras
 
 
 def _recorded_versions(raw_body: object) -> dict[str, str] | None:

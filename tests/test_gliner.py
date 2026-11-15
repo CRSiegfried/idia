@@ -621,7 +621,6 @@ def test_the_response_carries_the_snapshot_usage_versions_and_its_reasons() -> N
     assert set(response.client_versions) <= {"huggingface_hub"}
     assert dict(response.unreported) == {
         "usage.output_tokens": "not-applicable",
-        "usage.passes": "not-reported",
         "request_id": "not-reported",
     }
     # The caller names the revision of a model it loaded itself, which the leaf cannot read.

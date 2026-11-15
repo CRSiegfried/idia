@@ -13,7 +13,7 @@ Install idia with its `cloudflare` extra, and export the two credentials it read
 no `.env` file:
 
 ```sh
-pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.1.0"
+pip install "idia[cloudflare] @ git+https://github.com/CRSiegfried/idia@v0.2.0"
 export CLOUDFLARE_ACCOUNT_ID=...
 export CLOUDFLARE_API_TOKEN=...
 ```

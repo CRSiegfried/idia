@@ -9,7 +9,7 @@ import json
 import os
 import re
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
@@ -34,7 +34,7 @@ from idia import (
 )
 from idia.conformance import Check, CheckNotApplicable, leaf_checks, run_checks
 from idia.conformance._scripted import ScriptedHarness
-from idia.core import Capabilities, TokenEstimator
+from idia.core import Capabilities, JsonValue, TokenEstimator
 from idia.providers import _REGISTRY
 from idia.providers._canon import CharacterEstimator, canonical_hash, canonical_request, plain
 from idia.providers.recorded import Recorded, ReplayMiss
@@ -88,7 +88,7 @@ def test_once_records_then_none_replays_without_calling_the_leaf(tmp_path: Path)
     document = _read(log)
     assert list(document) == ["format", "name", "model", "enabled_features", "calls"]
     assert (document["format"], document["name"], document["model"]) == (
-        3,
+        4,
         "scripted",
         "scripted-1",
     )
@@ -364,40 +364,47 @@ def test_a_response_with_no_usage_replays_with_none(tmp_path: Path) -> None:
     assert replayed.usage is None
 
 
-class _Passes(_Raw):
-    """A leaf whose usage reports ``passes``, as a wire that splits a call into passes."""
+class _Extras(_Raw):
+    """A leaf whose wire reports figures beyond the shared vocabulary, in ``extras``."""
 
-    def __init__(self, passes: int | None) -> None:
+    def __init__(self, extras: Mapping[str, JsonValue]) -> None:
         super().__init__(None)
-        self._passes = passes
+        self._extras = extras
 
     async def call(self, wire_request: WireRequest, deadline: Deadline) -> WireResponse:
-        usage = Usage(input_tokens=1, output_tokens=0, passes=self._passes, raw_usage={"p": 1})
-        return WireResponse(answers={}, elicitation="passthrough", calibrated=False, usage=usage)
+        usage = Usage(input_tokens=1, output_tokens=0, raw_usage={"p": 1})
+        return WireResponse(
+            answers={},
+            elicitation="passthrough",
+            calibrated=False,
+            usage=usage,
+            extras=self._extras,
+        )
 
 
-def _logged_usage(log: Path) -> dict[str, object]:
+def _logged_response(log: Path) -> dict[str, object]:
     [entry] = _entries(log)
-    return entry["response"]["usage"]  # type: ignore[index,no-any-return]
+    return entry["response"]  # type: ignore[index,no-any-return]
 
 
-def test_usage_passes_is_recorded_and_replayed(tmp_path: Path) -> None:
+def test_extras_are_recorded_and_replayed_in_the_order_held(tmp_path: Path) -> None:
     log = tmp_path / "log.json"
-    recorded = _call(Recorded(_Passes(3), log, "once"), _wire("a"))
-    replayed = _call(Recorded(_Passes(None), log, "none"), _wire("a"))
+    extras = {"passes": 3, "detail": {"z": 1.5, "a": (None, True)}}
+    recorded = _call(Recorded(_Extras(extras), log, "once"), _wire("a"))
+    replayed = _call(Recorded(_Extras({}), log, "none"), _wire("a"))
     assert replayed == recorded
-    assert replayed.usage is not None
-    assert replayed.usage.passes == 3
-    assert _logged_usage(log)["passes"] == 3
+    assert dict(replayed.extras) == extras
+    assert list(replayed.extras) == ["passes", "detail"]
+    assert list(cast(Mapping[str, object], replayed.extras["detail"])) == ["z", "a"]
+    assert _logged_response(log)["extras"] == {"passes": 3, "detail": {"z": 1.5, "a": [None, True]}}
 
 
-def test_a_log_without_passes_replays_with_none(tmp_path: Path) -> None:
+def test_empty_extras_are_left_out_of_the_log_and_replay_empty(tmp_path: Path) -> None:
     log = tmp_path / "log.json"
-    _call(Recorded(_Passes(None), log, "once"), _wire("a"))
-    assert "passes" not in _logged_usage(log)  # a log written before passes reads the same
-    replayed = _call(Recorded(_Passes(7), log, "none"), _wire("a"))
-    assert replayed.usage is not None
-    assert replayed.usage.passes is None
+    _call(Recorded(_Extras({}), log, "once"), _wire("a"))
+    assert "extras" not in _logged_response(log)  # a log written before extras reads the same
+    replayed = _call(Recorded(_Extras({"passes": 7}), log, "none"), _wire("a"))
+    assert dict(replayed.extras) == {}
 
 
 def test_the_recorded_leaf_forwards_the_wrapped_leafs_surface(tmp_path: Path) -> None:
@@ -587,12 +594,12 @@ def test_the_log_bytes_are_the_same_whatever_order_its_keys_were_recorded_in(
     assert keys == sorted(keys)
 
 
-@pytest.mark.parametrize("format", [1, 2, 4, None, 3.0, "3", True])
+@pytest.mark.parametrize("format", [1, 2, 3, 5, None, 4.0, "4", True])
 def test_a_log_of_another_format_is_refused_at_construction(tmp_path: Path, format: object) -> None:
     log = tmp_path / "log.json"
     _call(Recorded(_scripted(_answer(0.25)), log, "once"), _wire("a"))
     log.write_text(json.dumps({**_read(log), "format": format}))
-    shown = re.escape(f"format {format!r}; this reads 3: ")
+    shown = re.escape(f"format {format!r}; this reads 4: ")
     with pytest.raises(ValueError, match=rf"{shown}.* upgrade_log"):
         Recorded(_scripted(), log, "none")
     with pytest.raises(ValueError, match="upgrade_log"):

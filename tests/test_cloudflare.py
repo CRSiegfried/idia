@@ -1085,7 +1085,7 @@ def test_clairic_truncation_is_a_warning_and_the_usage_is_kept_raw() -> None:
     ]
     assert response.usage is not None
     assert (response.usage.input_tokens, response.usage.output_tokens) == (250, 30)
-    assert response.usage.passes == 1
+    assert dict(response.extras) == {"passes": 1}
     assert response.model_reported == "clairic"
     untruncated = _read(EXTRACTION.questions[:1], answers, truncated=False)
     assert [w.code for w in untruncated.warnings] == [WARNING_NO_SNAPSHOT]
@@ -1113,28 +1113,35 @@ def test_the_past_context_cassette_replays_truncated_with_its_usage() -> None:
     assert response.usage is not None
     assert response.usage.input_tokens == 65_523
     assert response.usage.raw_usage["state_tokens"] == 65_388
-    assert response.usage.passes == 1
+    assert dict(response.extras) == {"passes": 1}
     assert response.usage.raw_usage["passes"] == 1
 
 
-def test_usage_passes_is_normalized_from_the_wire_and_none_when_unreported() -> None:
+def test_clairic_passes_are_in_extras_and_extras_empty_when_unreported() -> None:
     answers = {"home_team": {"type": "text", "value": "Riverside Rovers", "p_null": 0.0}}
     usage = {"input_tokens": 250, "output_tokens": 0, "passes": 2}
-    reported = _read(EXTRACTION.questions[:1], answers, usage=usage).usage
-    assert reported is not None
-    assert (reported.passes, reported.raw_usage["passes"]) == (2, 2)
+    reported = _read(EXTRACTION.questions[:1], answers, usage=usage)
+    assert dict(reported.extras) == {"passes": 2}
+    assert reported.usage is not None
+    assert reported.usage.raw_usage["passes"] == 2
+    zero = _read(EXTRACTION.questions[:1], answers, usage={**usage, "passes": 0})
+    assert dict(zero.extras) == {"passes": 0}  # a reported 0 stays a value
     for odd in ("2", True, 2.0):
-        held = _read(EXTRACTION.questions[:1], answers, usage={**usage, "passes": odd}).usage
-        assert held is not None
-        assert held.passes is None
-        assert held.raw_usage["passes"] == odd
-    missing = _read(EXTRACTION.questions[:1], answers, usage={"input_tokens": 250}).usage
-    assert missing is not None
-    assert missing.passes is None
-    clef = _call(_clef(_Wire(_ok(_clef_result(_NOUL)))), clef_request("noul")).usage
-    assert clef is not None
-    assert clef.passes is None
-    assert "passes" not in clef.raw_usage
+        held = _read(EXTRACTION.questions[:1], answers, usage={**usage, "passes": odd})
+        assert dict(held.extras) == {}
+        assert held.usage is not None
+        assert held.usage.raw_usage["passes"] == odd
+    missing = _read(EXTRACTION.questions[:1], answers, usage={"input_tokens": 250})
+    assert dict(missing.extras) == {}
+    clef = _call(_clef(_Wire(_ok(_clef_result(_NOUL)))), clef_request("noul"))
+    assert dict(clef.extras) == {}
+    assert clef.usage is not None
+    assert "passes" not in clef.usage.raw_usage
+    split = {**_clef_result(_NOUL), "usage": {"input_tokens": 9, "output_tokens": 0, "passes": 2}}
+    clef_passes = _call(_clef(_Wire(_ok(split))), clef_request("noul"))
+    assert dict(clef_passes.extras) == {}  # passes are Clairic's figure alone
+    assert clef_passes.usage is not None
+    assert clef_passes.usage.raw_usage["passes"] == 2
 
 
 # ----------------------------------------------------------------------------------------
@@ -1848,8 +1855,4 @@ def test_each_leaf_states_its_profile_with_these_reasons_and_claims_nothing() ->
         assert response.claimed == frozenset()
         assert dict(response.versions) == {}
     assert dict(clairic.unreported) == {"versions": "not-applicable", "snapshot": "not-pinned"}
-    assert dict(clef.unreported) == {
-        "versions": "not-applicable",
-        "snapshot": "not-pinned",
-        "usage.passes": "not-reported",
-    }
+    assert dict(clef.unreported) == {"versions": "not-applicable", "snapshot": "not-pinned"}

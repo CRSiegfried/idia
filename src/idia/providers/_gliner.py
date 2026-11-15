@@ -370,7 +370,6 @@ class Gliner:
         warnings += unknown_options(wire_request.options, frozenset())
         unreported: dict[ProvenanceDetail, UnreportedReason] = {
             "usage.output_tokens": "not-applicable",
-            "usage.passes": "not-reported",
             "request_id": "not-reported",
         }
         if self._snapshot is None:
