@@ -2,7 +2,7 @@
 
 All notable changes to idia are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0, a minor release may break the API; each break is listed under **Changed** or **Removed**. A new question kind, a new elicitation or a new validation rule is a minor release and is listed here.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-11-15
 
 ### Added
 
@@ -46,5 +46,5 @@ The first release.
 
 - The binding to ommat ships with ommat, as `ommat[idia]`; idia has no dependency on ommat.
 
-[0.2.0]: https://github.com/CRSiegfried/idia/compare/v0.1.0...HEAD
+[0.2.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.2.0
 [0.1.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.1.0
