@@ -572,14 +572,32 @@ def _errors(code: int, message: str) -> dict[str, object]:
         (429, _errors(4006, _ALLOCATION), False, f"HTTP 429: 4006: {_ALLOCATION}"),
         (503, _errors(4006, _ALLOCATION), False, f"HTTP 503: 4006: {_ALLOCATION}"),
         (404, _errors(3042, "no such model"), False, "HTTP 404: 3042: no such model"),
-        (400, _errors(5007, "x" * 400), False, "HTTP 400: 5007: " + "x" * 294 + "..."),
+        (400, _errors(5007, "x" * 400), False, "HTTP 400: 5007: " + "x" * 400),
         (503, b"<html>bad gateway</html>", True, "HTTP 503: <html>bad gateway</html>"),
-        (500, {"errors": "none"}, True, "HTTP 500"),
-        (500, {"errors": []}, True, "HTTP 500"),
-        (500, {"errors": ["text"]}, True, "HTTP 500"),
-        (500, [1], True, "HTTP 500"),
+        (500, {"errors": "none"}, True, 'HTTP 500: {"errors":"none"}'),
+        (500, {"errors": []}, True, 'HTTP 500: {"errors":[]}'),
+        (500, {"errors": ["text"]}, True, 'HTTP 500: {"errors":["text"]}'),
+        (500, [1], True, "HTTP 500: [1]"),
+        (
+            400,
+            {
+                "errors": [
+                    {"code": 5007, "message": "bad input"},
+                    {"code": 3030, "message": "too long"},
+                ]
+            },
+            False,
+            "HTTP 400: 5007: bad input; 3030: too long",
+        ),
+        (
+            429,
+            {"errors": [{"code": 3040, "message": "busy"}, {"code": 4006, "message": _ALLOCATION}]},
+            False,
+            f"HTTP 429: 3040: busy; 4006: {_ALLOCATION}",
+        ),
         (502, {"errors": [{"code": "x", "message": "upstream"}]}, True, "HTTP 502: upstream"),
         (422, {"errors": [{"code": 3030}]}, False, "HTTP 422: 3030"),
+        (400, {"errors": [{"x": 1}, {"code": 5007, "message": "m"}]}, False, "HTTP 400: 5007: m"),
     ],
 )
 def test_the_status_mapper_reads_the_envelopes_error(
@@ -609,10 +627,9 @@ def test_a_legend_key_too_long_to_be_an_index_sorts_last() -> None:
     assert answer.mapped.echo == ("mid", "low")
 
 
-def test_an_envelope_error_quoting_a_bearer_is_filtered_before_it_is_cut() -> None:
+def test_an_envelope_error_quoting_a_bearer_is_filtered() -> None:
     token = "Bearer " + "a" * 40
-    # Cut first, only six of the token's characters would remain, which no shape matches.
-    wire = _Wire(_failing(400, _errors(5007, "x" * 280 + " " + token)))
+    wire = _Wire(_failing(400, _errors(5007, "x" * 1000 + " " + token)))
     error = _raises(_clef(wire), clef_request("noul"))
     assert "aaaa" not in error.message
     assert "<filtered>" in error.message
@@ -631,13 +648,19 @@ def _holding(wire: _Wire) -> Clef:
     [
         pytest.param(_errors(10000, f"Authentication error: {_CF_TOKEN}"), id="envelope"),
         pytest.param({"detail": f"invalid token {_CF_TOKEN}"}, id="no-envelope"),
-        pytest.param(_errors(10000, "x" * 280 + " " + _CF_TOKEN), id="straddles-the-cut"),
+        pytest.param(_errors(10000, "x" * 1000 + " " + _CF_TOKEN), id="long"),
     ],
 )
-def test_the_leafs_own_token_echoed_in_an_error_is_filtered_before_the_cut(body: object) -> None:
+def test_the_leafs_own_token_echoed_in_an_error_is_filtered(body: object) -> None:
     error = _raises(_holding(_Wire(_failing(401, body))), clef_request("noul"))
     assert "cfut_" not in error.message
-    assert "<filtered" in error.message
+    assert "<filtered>" in error.message
+
+
+def test_a_long_reference_date_is_quoted_whole_in_its_refusal() -> None:
+    held = "2026-" + "x" * 10_000
+    error = _raises(_clairic(_Wire()), replace(EXTRACTION, options={"reference_date": held}))
+    assert repr(held) in error.message
 
 
 def test_a_clairic_sharing_clefs_client_filters_its_own_token() -> None:

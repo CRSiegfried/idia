@@ -79,7 +79,6 @@ _QUOTA_CODES: Final = frozenset({3036, 4006})
 """Workers AI error codes that mark a quota spent, not a rate, which waiting will not cure:
 the errors page names 3036 for the daily neuron allowance, and the wire answered 4006 when
 the free allocation ran out."""
-_MESSAGE_CHARS: Final = 300
 
 _CLEF_MODELS: Final[Mapping[str, int]] = {"clef": 65_536, "clef-flash": 24_000}
 """Each Clef model and its hosted context in tokens; clef-flash's was cut on 2026-10-09."""
@@ -301,23 +300,24 @@ class _CloudflareLeaf(HttpLeaf):
         return self._lender._client_for_this_loop()
 
     def map_status(self, response: httpx2.Response) -> ProviderError:
-        """The status table, with the envelope's first error code and message in the
-        message; codes 3036 and 4006, the daily quota spent, are not retryable on any status."""
+        """The status table, with every envelope error's code and message, in order, in the
+        message, whole; codes 3036 and 4006, the daily quota spent, in any error are not
+        retryable on any status."""
         base = super().map_status(response)
-        code, message = _envelope_error(response.content)
-        if code is None and message is None:
+        errors = _envelope_errors(response.content)
+        if not errors:
             return base
-        # Key-shaped text and the leaf's own token are filtered before the cut, so no piece
-        # of either survives it.
         detail = _without_keys(
-            ": ".join(str(part) for part in (code, message) if part is not None),
+            "; ".join(
+                ": ".join(str(part) for part in (code, message) if part is not None)
+                for code, message in errors
+            ),
             *self._credentials,
         )
-        if len(detail) > _MESSAGE_CHARS:
-            detail = detail[:_MESSAGE_CHARS] + "..."
+        quota = any(code in _QUOTA_CODES for code, _ in errors)
         return ProviderError(
             f"HTTP {response.status_code}: {detail}",
-            is_retryable=base.is_retryable and code not in _QUOTA_CODES,
+            is_retryable=base.is_retryable and not quota,
             retry_after=base.retry_after,
             status_code=base.status_code,
             request_id=base.request_id,
@@ -734,7 +734,7 @@ def _reference_date(wire_request: WireRequest) -> datetime.date | None:
             raise ValueError
         return datetime.date.fromisoformat(held)
     except ValueError:
-        shown = repr(held)[:_MESSAGE_CHARS] if isinstance(held, str) else type(held).__name__
+        shown = repr(held) if isinstance(held, str) else type(held).__name__
         raise ProviderError(
             f"the reference_date option must be an ISO date string, not {shown}"
         ) from None
@@ -810,27 +810,32 @@ def _count(value: JsonValue) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
-def _envelope_error(content: bytes) -> tuple[int | None, str | None]:
-    """The first error's code and message from a Cloudflare envelope, where there is one."""
+def _envelope_errors(content: bytes) -> list[tuple[int | None, str | None]]:
+    """Each error's code and message from a Cloudflare envelope, in order, leaving out an
+    entry that holds neither; empty where there is no envelope."""
     try:
         body: object = json.loads(content)
     except (ValueError, RecursionError):
-        return None, None
+        return []
     if not isinstance(body, dict):
-        return None, None
+        return []
     errors = cast(dict[str, object], body).get("errors")
-    if not isinstance(errors, list) or not errors:
-        return None, None
-    first = cast(list[object], errors)[0]
-    if not isinstance(first, dict):
-        return None, None
-    held = cast(dict[str, object], first)
-    code = held.get("code")
-    message = held.get("message")
-    return (
-        code if isinstance(code, int) and not isinstance(code, bool) else None,
-        message if isinstance(message, str) else None,
-    )
+    if not isinstance(errors, list):
+        return []
+    read: list[tuple[int | None, str | None]] = []
+    for entry in cast(list[object], errors):
+        if not isinstance(entry, dict):
+            continue
+        held = cast(dict[str, object], entry)
+        code = held.get("code")
+        message = held.get("message")
+        pair = (
+            code if isinstance(code, int) and not isinstance(code, bool) else None,
+            message if isinstance(message, str) else None,
+        )
+        if pair != (None, None):
+            read.append(pair)
+    return read
 
 
 def _map_answers(

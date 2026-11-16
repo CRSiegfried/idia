@@ -151,7 +151,7 @@ async def send(
     other SDK error is not retryable. A bare ``RuntimeError`` the SDK lets through mid-call,
     the backstop for a connection that died under the client, is :func:`client_failed`'s
     retryable error, and a subclass propagates. Each error's text has the keys
-    ``credentials`` gives, read when the error is built, filtered out before any cut.
+    ``credentials`` gives, read when the error is built, filtered out.
     """
     try:
         raw = await within(deadline, make_call())

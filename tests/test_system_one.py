@@ -1227,7 +1227,7 @@ _TS_KEY: Final = "tsk_live_0123456789abcdefABCDEF"
     "body",
     [
         pytest.param({"error": {"message": f"invalid API key {_TS_KEY}"}}, id="json"),
-        pytest.param({"detail": "x" * 280 + " " + _TS_KEY}, id="straddles-the-cut"),
+        pytest.param({"detail": "x" * 1000 + " " + _TS_KEY}, id="long"),
         pytest.param(f"invalid API key {_TS_KEY}".encode(), id="plain-text"),
     ],
 )

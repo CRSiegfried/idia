@@ -152,19 +152,17 @@ def test_a_401_body_echoing_a_bearer_token_yields_the_placeholder() -> None:
     assert error.status_code == 401
 
 
-def test_a_key_that_straddles_the_cut_is_filtered_before_it() -> None:
-    key = "sk-" + "a" * 40
-    error = _error(_respond(400, {"message": "x" * 280 + " " + key}))
-    # Cut first, the key would keep fewer than the twenty characters the sk- shape needs.
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"message": "x" * 1000 + " sk-" + "a" * 40 + " y"}, id="json"),
+        pytest.param(("x" * 1000 + " sk-" + "a" * 40 + " y").encode(), id="plain-text"),
+    ],
+)
+def test_a_key_deep_in_a_long_body_is_filtered_and_the_rest_kept(body: object) -> None:
+    error = _error(_respond(400, body))
     assert "aaaa" not in error.message
-    assert "<filtered>" in error.message
-
-
-def test_a_key_that_straddles_the_cut_of_a_plain_text_body_is_filtered_before_it() -> None:
-    body = ("x" * 290 + " sk-" + "a" * 40).encode()
-    error = _error(_respond(502, body))
-    assert "aaaa" not in error.message
-    assert "<filtered" in error.message  # the placeholder itself may meet the cut
+    assert "x" * 1000 + " <filtered> y" in error.message
 
 
 async def _post_with(leaf: HttpLeaf, headers: Mapping[str, str] | None = None) -> object:
@@ -221,15 +219,27 @@ def test_a_malformed_request_the_client_refuses_is_not_retried(
     assert "XYZsecret" not in raised.message
 
 
-def test_a_long_error_is_cut_short() -> None:
-    error = _error(_respond(400, {"message": "x" * 1000}))
-    assert len(error.message) < 400
-    assert error.message.endswith("...")
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        pytest.param({"message": "x" * 1000}, 'HTTP 400: "' + "x" * 1000 + '"', id="json"),
+        pytest.param(b"x" * 1000, "HTTP 400: " + "x" * 1000, id="plain-text"),
+    ],
+)
+def test_a_long_error_is_kept_whole(body: object, message: str) -> None:
+    assert _error(_respond(400, body)).message == message
 
 
 @pytest.mark.parametrize(
     ("body", "detail"),
-    [(b"Bad Gateway", "Bad Gateway"), (b"[1]", ""), (b"{}", ""), (b"", "")],
+    [
+        (b"Bad Gateway", "Bad Gateway"),
+        (b"[1]", "[1]"),
+        (b'{"code": 7}', '{"code":7}'),
+        (b"{}", ""),
+        (b"[]", ""),
+        (b"", ""),
+    ],
 )
 def test_an_error_body_without_a_message(body: bytes, detail: str) -> None:
     error = _error(_respond(502, body))
@@ -740,14 +750,14 @@ def test_a_leafs_own_credential_echoed_in_a_body_is_filtered_from_the_error(body
 @pytest.mark.parametrize(
     "body",
     [
-        pytest.param({"message": "x" * 280 + " " + _CREDENTIAL}, id="json"),
-        pytest.param(("x" * 290 + " " + _CREDENTIAL).encode(), id="plain-text"),
+        pytest.param({"message": "x" * 1000 + " " + _CREDENTIAL + " y"}, id="json"),
+        pytest.param(("x" * 1000 + " " + _CREDENTIAL + " y").encode(), id="plain-text"),
     ],
 )
-def test_a_leafs_own_credential_that_straddles_the_cut_is_filtered_before_it(body: object) -> None:
+def test_a_leafs_own_credential_in_a_long_body_is_filtered_and_the_rest_kept(body: object) -> None:
     error = _held_error(_respond(400, body))
-    # Cut first, the credential's first characters would survive, matching nothing.
     assert "ts-key" not in error.message
+    assert "x" * 1000 + " <filtered> y" in error.message
 
 
 @pytest.mark.parametrize(

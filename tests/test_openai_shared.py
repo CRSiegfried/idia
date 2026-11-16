@@ -402,16 +402,14 @@ def _answer(status: int, body: object) -> Callable[[httpx2.Request], httpx2.Resp
     "message",
     [
         pytest.param(f"Incorrect API key provided: {_OWN_KEY}.", id="echoed"),
-        pytest.param("x" * 280 + " " + _OWN_KEY, id="straddles-the-cut"),
+        pytest.param("x" * 1000 + " " + _OWN_KEY, id="long"),
     ],
 )
-def test_the_clients_own_key_echoed_in_an_error_body_is_filtered_before_the_cut(
-    message: str,
-) -> None:
+def test_the_clients_own_key_echoed_in_an_error_body_is_filtered(message: str) -> None:
     client = _keyed(_answer(401, {"error": {"message": message}}), api_key=_OWN_KEY)
     error = _raised(client)
     assert "proj_" not in error.message
-    assert "<filter" in error.message  # the placeholder itself may meet the cut
+    assert "<filtered>" in error.message
     assert error.request_id == "req-9"
 
 
