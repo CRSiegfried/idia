@@ -697,3 +697,92 @@ def test_an_empty_request_id_header_is_no_request_id() -> None:
     assert leaf.request_id(httpx2.Response(200, headers={"x-req": ""})) is None
     assert leaf.request_id(httpx2.Response(200, headers={"x-req": "r-1"})) == "r-1"
     assert leaf.request_id(httpx2.Response(200)) is None
+
+
+# ----------------------------------------------------------------------------------------
+# The leaf's own credential
+# ----------------------------------------------------------------------------------------
+
+_CREDENTIAL: Final = "ts-key-0123456789abcdefABCDEF"
+"""A credential of no key shape, which only the leaf that holds it can filter."""
+
+
+def _holding(handler: Handler) -> HttpLeaf:
+    client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
+    return HttpLeaf(
+        base_url="https://wire.test/",
+        request_id_header="x-req",
+        client=client,
+        credentials=(_CREDENTIAL,),
+    )
+
+
+def _held_error(handler: Handler) -> ProviderError:
+    raised = asyncio.run(_post(_holding(handler)))
+    assert isinstance(raised, ProviderError), raised
+    return raised
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"error": f"invalid key {_CREDENTIAL}"}, id="json"),
+        pytest.param(f"invalid key {_CREDENTIAL}".encode(), id="plain-text"),
+    ],
+)
+def test_a_leafs_own_credential_echoed_in_a_body_is_filtered_from_the_error(body: object) -> None:
+    error = _held_error(_respond(401, body))
+    assert _CREDENTIAL not in error.message
+    assert "<filtered>" in error.message
+    assert error.status_code == 401
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"message": "x" * 280 + " " + _CREDENTIAL}, id="json"),
+        pytest.param(("x" * 290 + " " + _CREDENTIAL).encode(), id="plain-text"),
+    ],
+)
+def test_a_leafs_own_credential_that_straddles_the_cut_is_filtered_before_it(body: object) -> None:
+    error = _held_error(_respond(400, body))
+    # Cut first, the credential's first characters would survive, matching nothing.
+    assert "ts-key" not in error.message
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        pytest.param(httpx2.ConnectError(f"refused for {_CREDENTIAL}"), id="connection"),
+        pytest.param(httpx2.ReadTimeout(f"timed out for {_CREDENTIAL}"), id="timeout"),
+        pytest.param(httpx2.DecodingError(f"cannot decode {_CREDENTIAL}"), id="request"),
+        pytest.param(httpx2.InvalidURL(f"bad URL {_CREDENTIAL}"), id="malformed"),
+        pytest.param(RuntimeError(f"socket closed under {_CREDENTIAL}"), id="client-failed"),
+    ],
+)
+def test_a_leafs_own_credential_in_a_client_error_is_filtered(error: Exception) -> None:
+    raised = _held_error(_raising(error))
+    assert _CREDENTIAL not in raised.message
+    assert "<filtered>" in raised.message
+
+
+def test_the_status_table_filters_the_credentials_it_is_given() -> None:
+    body = json.dumps({"detail": f"bad {_CREDENTIAL}"}).encode()
+    assert _CREDENTIAL in status_error(401, {}, body, None).message
+    assert _CREDENTIAL not in status_error(401, {}, body, None, (_CREDENTIAL,)).message
+
+
+def test_a_credential_json_escapes_is_filtered_from_a_json_body() -> None:
+    credential = 'ab"cd\\ef0123456789'
+    client = httpx2.AsyncClient(
+        transport=httpx2.MockTransport(_respond(401, {"error": f"bad {credential}"}))
+    )
+    leaf = HttpLeaf(
+        base_url="https://wire.test/",
+        request_id_header="x-req",
+        client=client,
+        credentials=(credential,),
+    )
+    raised = asyncio.run(_post(leaf))
+    assert isinstance(raised, ProviderError)
+    assert "0123456789" not in raised.message

@@ -618,6 +618,39 @@ def test_an_envelope_error_quoting_a_bearer_is_filtered_before_it_is_cut() -> No
     assert "<filtered>" in error.message
 
 
+_CF_TOKEN: Final = "cfut_0123456789abcdefABCDEF0123456789abcd"
+"""A token of Cloudflare's own shape, which no key shape of Core's matches."""
+
+
+def _holding(wire: _Wire) -> Clef:
+    return Clef(account_id=ACCOUNT, api_token=_CF_TOKEN, client=wire.client())
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param(_errors(10000, f"Authentication error: {_CF_TOKEN}"), id="envelope"),
+        pytest.param({"detail": f"invalid token {_CF_TOKEN}"}, id="no-envelope"),
+        pytest.param(_errors(10000, "x" * 280 + " " + _CF_TOKEN), id="straddles-the-cut"),
+    ],
+)
+def test_the_leafs_own_token_echoed_in_an_error_is_filtered_before_the_cut(body: object) -> None:
+    error = _raises(_holding(_Wire(_failing(401, body))), clef_request("noul"))
+    assert "cfut_" not in error.message
+    assert "<filtered" in error.message
+
+
+def test_a_clairic_sharing_clefs_client_filters_its_own_token() -> None:
+    wire = _Wire(_failing(401, _errors(10000, f"Authentication error: {_CF_TOKEN}")))
+    client = wire.client()
+    clef = Clef(account_id=ACCOUNT, api_token=TOKEN, client=client)
+    clairic = Clairic(account_id=ACCOUNT, api_token=_CF_TOKEN, client=client)
+    _share_client(clairic, clef)
+    error = _raises(clairic, EXTRACTION)
+    assert _CF_TOKEN not in error.message
+    assert "<filtered>" in error.message
+
+
 def test_a_passed_deadline_is_a_retryable_error_and_sends_nothing() -> None:
     wire = _Wire()
     leaf = _clef(wire)

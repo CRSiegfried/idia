@@ -15,7 +15,7 @@ Each registered leaf is installed by an optional extra: `idia.provider(name, **o
 
 ## The HTTP base
 
-`HttpLeaf(*, base_url, request_id_header, client=None)`, in `idia.providers.http`, is what a leaf over a raw HTTP API may inherit.
+`HttpLeaf(*, base_url, request_id_header, client=None, credentials=())`, in `idia.providers.http`, is what a leaf over a raw HTTP API may inherit; `credentials` are the secrets the leaf was built with, filtered out of every error text it builds from the wire or the client before any cut.
 Inheriting it is a convenience: satisfying `Leaf` is structural.
 
 - **The client.** An injected `httpx2.AsyncClient` is used as it is and never closed by the leaf.
@@ -29,7 +29,7 @@ Inheriting it is a convenience: satisfying `Leaf` is structural.
 - **One POST per call.** Each request carries `User-Agent: idia/<version>`, set per request so an injected client's own headers stay as they are.
   The call runs under `within(deadline, awaitable)`: a deadline already passed, as `Deadline.passed()` reads it, raises a retryable `ProviderError` before anything is sent, and one reached while waiting raises the same.
   Nothing is retried below the leaf.
-- **The status table** is `status_error(status, headers, content, request_id) -> ProviderError`, behind `map_status(response)`, which a leaf may override.
+- **The status table** is `status_error(status, headers, content, request_id, credentials=()) -> ProviderError`, behind `map_status(response)`, which a leaf may override; it, `malformed_request(error, credentials=())` and `client_failed(error, credentials=())` filter the credentials they are given before any cut.
   `within`, `status_error`, `retry_after`, `created_client`, `follow_the_loop`, `on_this_loop`, `malformed_request` and `client_failed`, and `read_object` and `unreadable` for a success's body, serve a leaf that does not inherit the base.
 - **Provenance helpers.** `client_versions(*packages) -> dict[str, str]` gives the installed version of each package, read from its metadata so an injected client gives the same, a package with no metadata, and `idia`, left out; `wire_unreported(*, snapshot, usage, request_id)` gives a wire leaf's reasons for the details its wire left unfilled: `versions` `not-applicable`, the snapshot `not-pinned` when `None`, and each usage figure and the request id `not-reported` when `None`.
   Every wire leaf fills its `client_versions` and `unreported` with them.
@@ -121,7 +121,7 @@ The client follows the event loop as `HttpLeaf`'s does: a created client is made
 Each call goes through the SDK's `with_raw_response` under `within(deadline, ...)` and the raw body is read as a whole, as above.
 The SDK's errors map to `ProviderError`: a status error through the status table, except that a 429 whose error `code` is `insufficient_quota` is not retryable; a connection error or timeout is retryable, but one whose cause is a request the client refuses as malformed before sending, as in the status table above, is not, and nor is a value the SDK cannot encode, a key among them; any other SDK error is not; a bare `RuntimeError` the SDK lets through during the call is retryable, the backstop for a connection that died under the client, and such a call may have reached the wire; a subclass propagates.
 The request id is `x-request-id`.
-The key a 401 echoes, which the wire masks itself (`sk-idia-***alid`, its first characters, stars and its last four), is not key-shaped and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
+The client's own `api_key` and `admin_api_key`, whatever their shape, are filtered out of every error's text before any cut, as the vocabulary says; the key a 401 echoes, which the wire masks itself (`sk-idia-***alid`, its first characters, stars and its last four), is neither key-shaped nor the whole key and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
 
 **The decisions leaf**, `OpenAIDecisions(*, model="gpt-6-luna", api_key=None, client=None, max_questions=200, capabilities=None)`, named `openai-decisions`, sends one `POST /v1/decisions`.
 Any model name is sent; the record is `gpt-6-luna`'s.

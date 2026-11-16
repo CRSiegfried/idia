@@ -58,6 +58,7 @@ from idia import (
     WireResponse,
     core,
 )
+from idia.core import _without_keys  # pyright: ignore[reportPrivateUsage]
 from tests._support import FixedEstimator, capabilities, choice, noul, png_header, text_state
 
 # ----------------------------------------------------------------------------------------
@@ -1273,3 +1274,28 @@ def test_text_that_is_not_key_shaped_passes_unchanged() -> None:
         "the request id is req_76f189c39eda412dbdf7edef202ea06b",
     ):
         assert ProviderError(text).message == text
+
+
+# A credential of no key shape, as a Cloudflare token or a TypeSafe key is.
+_CREDENTIAL: Final = "cf-token-0123456789abcdefABCDEF"
+
+
+def test_a_given_credential_is_filtered_out_of_text_wherever_it_appears() -> None:
+    text = f"invalid token {_CREDENTIAL}; again: {_CREDENTIAL}."
+    assert _without_keys(text, _CREDENTIAL) == "invalid token <filtered>; again: <filtered>."
+    assert _without_keys(text) == text  # not key-shaped, so nothing given leaves it as it is
+
+
+def test_a_credential_holding_another_is_filtered_whole() -> None:
+    inner = _CREDENTIAL[:12]
+    assert _without_keys(f"key {_CREDENTIAL}", inner, _CREDENTIAL) == "key <filtered>"
+
+
+@pytest.mark.parametrize("credential", ["", "k", "1234567"])
+def test_a_credential_shorter_than_the_floor_is_left_in_the_text(credential: str) -> None:
+    text = "HTTP 401: invalid credentials 1234567"
+    assert _without_keys(text, credential) == text
+
+
+def test_a_credential_at_the_floor_is_filtered() -> None:
+    assert _without_keys("key 12345678", "12345678") == "key <filtered>"

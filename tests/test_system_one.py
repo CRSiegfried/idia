@@ -14,7 +14,7 @@ import sys
 import zlib
 from collections.abc import Callable, Mapping
 from types import MappingProxyType
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import httpx2
 import pytest
@@ -1217,3 +1217,22 @@ def test_every_recorded_request_plans_one_wire_request_with_no_warning(
     assert len(plan.wire_requests) == 1
     assert plan.outcome_warnings == ((),)
     assert plan.response_warnings == ()
+
+
+_TS_KEY: Final = "tsk_live_0123456789abcdefABCDEF"
+"""A TypeSafe-shaped key, which no key shape of Core's matches."""
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"error": {"message": f"invalid API key {_TS_KEY}"}}, id="json"),
+        pytest.param({"detail": "x" * 280 + " " + _TS_KEY}, id="straddles-the-cut"),
+        pytest.param(f"invalid API key {_TS_KEY}".encode(), id="plain-text"),
+    ],
+)
+def test_a_key_echoed_in_an_error_body_is_filtered_from_the_error(body: object) -> None:
+    wire = Wire(body, status=401)
+    error = _raised(SystemOne(api_key=_TS_KEY, client=wire.client), _one(_NOUL))
+    assert "tsk_live" not in error.message
+    assert "<filtered" in error.message
