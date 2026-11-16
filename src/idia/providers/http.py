@@ -104,7 +104,6 @@ def wire_unreported(
 
 
 _RETRYABLE: Final = frozenset({408, 409, 429})
-_MESSAGE_CHARS: Final = 300
 _T = TypeVar("_T")
 OTHER_LOOP: Final = (
     "this client was first used on another event loop; "
@@ -211,8 +210,8 @@ def status_error(
 
     408, 409, 429 and every 5xx are retryable and every other status is not;
     ``retry_after`` is read by :func:`retry_after`; the message names the body's
-    ``error``, ``message`` or ``detail``, cut short, with ``credentials``, the leaf's own,
-    filtered out before the cut, and the body itself is not kept.
+    ``error``, ``message`` or ``detail``, whole, with ``credentials``, the leaf's own,
+    filtered out, and the body itself is not kept.
     """
     detail = _detail(content, credentials)
     return ProviderError(
@@ -233,7 +232,7 @@ class HttpLeaf:
     it was first used on (:func:`follow_the_loop`). ``request_id_header`` names the
     response header that carries the wire's request id. ``credentials`` are the secrets
     the leaf was built with: every error text it builds from the wire or the client has
-    them filtered out by Core's filter, before any cut.
+    them filtered out by Core's filter.
     """
 
     _created: bool
@@ -453,25 +452,24 @@ def _seconds(value: str | None) -> float | None:
 
 
 def _detail(content: bytes, credentials: tuple[str, ...] = ()) -> str:
-    """A short message from an error body: its ``error``, ``message`` or ``detail``, as the
-    wire put it, cut to a few hundred characters; the body itself is not kept. Key-shaped
-    text and ``credentials`` are filtered before the cut, so no piece of a key survives it."""
+    """The message from an error body, whole: its ``error``, ``message`` or ``detail``
+    written again as compact JSON, the whole body as JSON when it holds none of them, or
+    the body's text when it is not JSON, an empty object or array giving no message; the
+    body itself is not kept. Key-shaped text and
+    ``credentials`` are filtered out."""
     try:
         body: object = json.loads(content)
     except (ValueError, RecursionError):
-        text = _without_keys(content.decode(errors="replace"), *credentials)
-        return text[:_MESSAGE_CHARS].strip()
-    if not isinstance(body, dict):
+        return _without_keys(content.decode(errors="replace"), *credentials).strip()
+    quoted: object = body
+    if isinstance(body, dict):
+        fields = cast(dict[str, object], body)
+        named = [fields[name] for name in ("error", "message", "detail") if name in fields]
+        quoted = named[0] if named else fields
+    if quoted in ({}, []):
         return ""
-    fields = cast(dict[str, object], body)
-    for name in ("error", "message", "detail"):
-        if name in fields:
-            # A credential holding a character JSON escapes is matched as written here too.
-            escaped = tuple(json.dumps(c, ensure_ascii=False)[1:-1] for c in credentials)
-            text = _without_keys(
-                json.dumps(fields[name], ensure_ascii=False, separators=(",", ":")),
-                *credentials,
-                *escaped,
-            )
-            return text if len(text) <= _MESSAGE_CHARS else text[:_MESSAGE_CHARS] + "..."
-    return ""
+    # A credential holding a character JSON escapes is matched as written here too.
+    escaped = tuple(json.dumps(c, ensure_ascii=False)[1:-1] for c in credentials)
+    return _without_keys(
+        json.dumps(quoted, ensure_ascii=False, separators=(",", ":")), *credentials, *escaped
+    )

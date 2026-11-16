@@ -15,7 +15,7 @@ Each registered leaf is installed by an optional extra: `idia.provider(name, **o
 
 ## The HTTP base
 
-`HttpLeaf(*, base_url, request_id_header, client=None, credentials=())`, in `idia.providers.http`, is what a leaf over a raw HTTP API may inherit; `credentials` are the secrets the leaf was built with, filtered out of every error text it builds from the wire or the client before any cut.
+`HttpLeaf(*, base_url, request_id_header, client=None, credentials=())`, in `idia.providers.http`, is what a leaf over a raw HTTP API may inherit; `credentials` are the secrets the leaf was built with, filtered out of every error text it builds from the wire or the client.
 Inheriting it is a convenience: satisfying `Leaf` is structural.
 
 - **The client.** An injected `httpx2.AsyncClient` is used as it is and never closed by the leaf.
@@ -29,7 +29,7 @@ Inheriting it is a convenience: satisfying `Leaf` is structural.
 - **One POST per call.** Each request carries `User-Agent: idia/<version>`, set per request so an injected client's own headers stay as they are.
   The call runs under `within(deadline, awaitable)`: a deadline already passed, as `Deadline.passed()` reads it, raises a retryable `ProviderError` before anything is sent, and one reached while waiting raises the same.
   Nothing is retried below the leaf.
-- **The status table** is `status_error(status, headers, content, request_id, credentials=()) -> ProviderError`, behind `map_status(response)`, which a leaf may override; it, `malformed_request(error, credentials=())` and `client_failed(error, credentials=())` filter the credentials they are given before any cut.
+- **The status table** is `status_error(status, headers, content, request_id, credentials=()) -> ProviderError`, behind `map_status(response)`, which a leaf may override; it, `malformed_request(error, credentials=())` and `client_failed(error, credentials=())` filter the credentials they are given.
   `within`, `status_error`, `retry_after`, `created_client`, `follow_the_loop`, `on_this_loop`, `malformed_request` and `client_failed`, and `read_object` and `unreadable` for a success's body, serve a leaf that does not inherit the base.
 - **Provenance helpers.** `client_versions(*packages) -> dict[str, str]` gives the installed version of each package, read from its metadata so an injected client gives the same, a package with no metadata, and `idia`, left out; `wire_unreported(*, snapshot, usage, request_id)` gives a wire leaf's reasons for the details its wire left unfilled: `versions` `not-applicable`, the snapshot `not-pinned` when `None`, and each usage figure and the request id `not-reported` when `None`.
   Every wire leaf fills its `client_versions` and `unreported` with them.
@@ -45,7 +45,7 @@ Inheriting it is a convenience: satisfying `Leaf` is structural.
 | a success whose body is not JSON or not a JSON object | no |
 
 - **`retry_after(headers)`** is `retry-after-ms` divided by 1000 when present and readable, else `retry-after` as seconds or as an HTTP-date (a date in the past waits nothing), else `None`.
-- **The error** carries the status, the request id from the leaf's `request_id_header`, and a message naming the wire's `error`, `message` or `detail`, cut to a few hundred characters.
+- **The error** carries the status, the request id from the leaf's `request_id_header`, and a message quoting the wire's `error`, `message` or `detail` whole, the whole JSON body when it holds none of them, or the body's text when it is not JSON; an empty object or array gives no message.
   It keeps no body.
 
 ## System One
@@ -121,7 +121,7 @@ The client follows the event loop as `HttpLeaf`'s does: a created client is made
 Each call goes through the SDK's `with_raw_response` under `within(deadline, ...)` and the raw body is read as a whole, as above.
 The SDK's errors map to `ProviderError`: a status error through the status table, except that a 429 whose error `code` is `insufficient_quota` is not retryable; a connection error or timeout is retryable, but one whose cause is a request the client refuses as malformed before sending, as in the status table above, is not, and nor is a value the SDK cannot encode, a key among them; any other SDK error is not; a bare `RuntimeError` the SDK lets through during the call is retryable, the backstop for a connection that died under the client, and such a call may have reached the wire; a subclass propagates.
 The request id is `x-request-id`.
-The client's own `api_key` and `admin_api_key`, whatever their shape, are filtered out of every error's text before any cut, as the vocabulary says; the key a 401 echoes, which the wire masks itself (`sk-idia-***alid`, its first characters, stars and its last four), is neither key-shaped nor the whole key and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
+The client's own `api_key` and `admin_api_key`, whatever their shape, are filtered out of every error's text, as the vocabulary says; the key a 401 echoes, which the wire masks itself (`sk-idia-***alid`, its first characters, stars and its last four), is neither key-shaped nor the whole key and passes as sent; a request id quoted in an error body is kept in the message, and the error's `request_id` holds the header's.
 
 **The decisions leaf**, `OpenAIDecisions(*, model="gpt-6-luna", api_key=None, client=None, max_questions=200, capabilities=None)`, named `openai-decisions`, sends one `POST /v1/decisions`.
 Any model name is sent; the record is `gpt-6-luna`'s.
@@ -181,7 +181,7 @@ A request's options reach every member, so a mixed request carrying `reference_d
 - **The envelope.** Every body comes wrapped in `{success, errors, messages, result}`.
   A success whose `success` is not true, or whose `result` is not an object, is a non-retryable `ProviderError`, as is a `result` without an `answers` object, a non-empty string `model` and a `usage` object.
   `raw_body` is the whole envelope.
-- **The status mapper** is the table above, its message the first `errors[]` entry's `code` and `message`; codes 3036 and 4006, each the daily neuron allocation spent, are not retryable on whatever status they arrive, a 429 among them; every other code takes the table's default, so every other 429, 3040 (capacity) among them, is retryable.
+- **The status mapper** is the table above, its message every `errors[]` entry's `code` and `message`, in order, joined by `; `, whole; codes 3036 and 4006, each the daily neuron allocation spent, in any entry make the error not retryable on whatever status it arrives, a 429 among them; every other code takes the table's default, so every other 429, 3040 (capacity) among them, is retryable.
   The request id is `cf-ai-req-id`, the id the wire also writes into its error messages.
 - **Images** go in a top-level `images` array as `{content_type, base64}`, with the type Fit judged: the declared media type when it is PNG, JPEG or WebP (`image/jpg` read as `image/jpeg`), otherwise the type the bytes' signature shows.
   The records declare the image limits (table below), so Fit refuses before any call more than four images, an image over 4 MiB, images over 8 MiB in all, or another type; a leaf called directly with such an image sends it, with its declared type or else `application/octet-stream`, and the wire refuses it.
@@ -202,7 +202,7 @@ No record field holds Clef's 16 MP per image; the wire refuses a larger image.
 
 **Clairic** sends `model[, images][, state], fields[, reference_date]`.
 Its constructor takes `model` as `clairic` or `@cf/cloudflare/clairic` and refuses any other; the leaf reports `clairic` either way.
-It reads one request option, `reference_date`, an ISO date string that resolves dates written without a year; it is sent and kept in `prompt_sent`, and any other value is refused before sending.
+It reads one request option, `reference_date`, an ISO date string that resolves dates written without a year; it is sent and kept in `prompt_sent`, and any other value is refused before sending, a string quoted whole in the refusal.
 Clef reads no option, and takes Clairic's `reference_date` without an `unknown-option` warning and sends nothing for it, since the `cloudflare` router hands both leaves the same options.
 The state is the one text part; several text parts or a JSON part are refused by the leaf with a non-retryable `ProviderError`, one failed attempt with nothing sent, since the spans index the text sent, and a state of images alone sends no `state`.
 Each question becomes a field from its value type and instruction alone, `{type, instructions}`, or for a list `{type: "list", instructions, items: <type>}` (the item type as a string; an object there is refused with 400 and code 5006, and the cassette `list-items-object` keeps that refusal as a probe the leaf no longer sends); a list of `time`, `datetime` or `duration` is refused by the leaf with a non-retryable `ProviderError`, one failed attempt with nothing sent, Clairic's lists holding text, numbers or dates.

@@ -6,11 +6,12 @@ All notable changes to idia are recorded here. The format follows [Keep a Change
 
 ### Changed
 
+- A `ProviderError`'s message quotes the wire's error whole, where it was cut to 300 characters: the body's `error`, `message` or `detail`, the whole JSON body when it holds none of them (it gave no message before), or the body's text. Cloudflare's leaves quote every `errors[]` entry, in order, joined by `; `, where they quoted the first, and a quota code in any entry makes the error not retryable. Clairic's refusal of a `reference_date` string quotes it whole.
 - The package's classifiers name the operating systems its tests run on, macOS and Linux, in place of `OS Independent`; Windows is not yet tested.
 
 ### Security
 
-- Each wire leaf filters the credential it was built with out of every `ProviderError` text it builds from the wire or its client, before any cut, beside the key shapes Core filters: Cloudflare's API token, System One's API key, and the OpenAI client's `api_key` and `admin_api_key`, read when the error is built. A credential shorter than eight characters is left as it is. `HttpLeaf` takes `credentials`, and `status_error`, `malformed_request` and `client_failed` take the credentials to filter.
+- Each wire leaf filters the credential it was built with out of every `ProviderError` text it builds from the wire or its client, beside the key shapes Core filters: Cloudflare's API token, System One's API key, and the OpenAI client's `api_key` and `admin_api_key`, read when the error is built. A credential shorter than eight characters is left as it is. `HttpLeaf` takes `credentials`, and `status_error`, `malformed_request` and `client_failed` take the credentials to filter.
 
 ## [0.2.0] - 2026-11-15
 

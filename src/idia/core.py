@@ -167,8 +167,7 @@ def _without_keys(text: str, *credentials: str) -> str:
     """``text`` with every occurrence of each of ``credentials`` at least
     ``_CREDENTIAL_FLOOR`` characters long, then every key-shaped substring, replaced by
     ``<filtered>``, the longest credential first, so one holding another goes whole. A leaf
-    passes the credential it was built with, before any cut, so no piece of it survives the
-    cut."""
+    passes the credential it was built with."""
     for credential in sorted(credentials, key=len, reverse=True):
         if len(credential) >= _CREDENTIAL_FLOOR:
             text = text.replace(credential, _FILTERED)
