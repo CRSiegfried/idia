@@ -215,7 +215,12 @@ class SystemOne(HttpLeaf):
         key = api_key if api_key is not None else os.environ.get(_API_KEY_ENV)
         if not key:
             raise ValueError(f"System One needs an api_key or the {_API_KEY_ENV} variable")
-        super().__init__(base_url=base_url, request_id_header=_REQUEST_ID_HEADER, client=client)
+        super().__init__(
+            base_url=base_url,
+            request_id_header=_REQUEST_ID_HEADER,
+            client=client,
+            credentials=(key,),
+        )
         self._model = model
         self._key = key
         self._capabilities = (

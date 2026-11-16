@@ -35,6 +35,7 @@ from idia.core import (
     TextPart,
     TokenEstimate,
     Usage,
+    _without_keys,  # pyright: ignore[reportPrivateUsage]
 )
 from idia.providers import http
 from idia.providers.http import (
@@ -97,7 +98,17 @@ class OpenAILeafBase:
         if self._client.is_closed():
             raise ProviderError("the client is closed")
         self._loop = loop
-        return await send(deadline, make_call)
+        return await send(deadline, make_call, self._credentials)
+
+    def _credentials(self) -> tuple[str, ...]:
+        """The keys the client sends with, read when an error is built, since the SDK can
+        refresh ``api_key`` on each request: its ``api_key`` and ``admin_api_key``, each
+        that is a string."""
+        held = (
+            getattr(self._client, "api_key", None),
+            getattr(self._client, "admin_api_key", None),
+        )
+        return tuple(key for key in held if isinstance(key, str))
 
     async def aclose(self) -> None:
         """Close the leaf, and its client if the leaf created it; an injected client is left
@@ -126,7 +137,11 @@ class OpenAILeafBase:
         await self.aclose()
 
 
-async def send(deadline: Deadline, make_call: Callable[[], Awaitable[object]]) -> httpx2.Response:
+async def send(
+    deadline: Deadline,
+    make_call: Callable[[], Awaitable[object]],
+    credentials: Callable[[], tuple[str, ...]] = lambda: (),
+) -> httpx2.Response:
     """Make one SDK call under the deadline and return its raw HTTP response.
 
     ``make_call`` starts a ``with_raw_response`` call. A status that is not a success is
@@ -135,37 +150,47 @@ async def send(deadline: Deadline, make_call: Callable[[], Awaitable[object]]) -
     before sending because it is malformed is not (:func:`http.malformed_request`); any
     other SDK error is not retryable. A bare ``RuntimeError`` the SDK lets through mid-call,
     the backstop for a connection that died under the client, is :func:`client_failed`'s
-    retryable error, and a subclass propagates.
+    retryable error, and a subclass propagates. Each error's text has the keys
+    ``credentials`` gives, read when the error is built, filtered out before any cut.
     """
     try:
         raw = await within(deadline, make_call())
     except openai.APIStatusError as error:
-        raise map_status_error(error) from None
+        raise map_status_error(error, credentials()) from None
     except UnicodeEncodeError as error:  # a header value the SDK cannot encode, before sending
-        raise cast(ProviderError, http.malformed_request(error)) from None
+        raise cast(ProviderError, http.malformed_request(error, credentials())) from None
     except openai.APIConnectionError as error:  # APITimeoutError is a subclass
-        malformed = http.malformed_request(error.__cause__) if error.__cause__ else None
+        keys = credentials()
+        malformed = http.malformed_request(error.__cause__, keys) if error.__cause__ else None
         if malformed is not None:
             raise malformed from None
-        raise ProviderError(f"the connection failed: {error}", is_retryable=True) from None
+        text = _without_keys(str(error), *keys)
+        raise ProviderError(f"the connection failed: {text}", is_retryable=True) from None
     except openai.OpenAIError as error:
-        raise ProviderError(f"the SDK failed: {type(error).__name__}: {error}") from None
+        text = _without_keys(str(error), *credentials())
+        raise ProviderError(f"the SDK failed: {type(error).__name__}: {text}") from None
     except RuntimeError as error:  # the SDK lets a bare one through, as from a closed loop's socket
         if type(error) is not RuntimeError:
             raise
-        raise client_failed(error) from None
+        raise client_failed(error, credentials()) from None
     response = getattr(raw, "http_response", None)
     if not isinstance(response, httpx2.Response):
         raise ProviderError("the SDK returned no raw HTTP response")
     return response
 
 
-def map_status_error(error: openai.APIStatusError) -> ProviderError:
+def map_status_error(
+    error: openai.APIStatusError, credentials: tuple[str, ...] = ()
+) -> ProviderError:
     """The status table over the SDK's error, a quota exhausted arriving as 429 made not
-    retryable."""
+    retryable; ``credentials`` are filtered out of the body's detail before its cut."""
     response = error.response
     mapped = status_error(
-        error.status_code, response.headers, response.content, error.request_id or None
+        error.status_code,
+        response.headers,
+        response.content,
+        error.request_id or None,
+        credentials,
     )
     if error.status_code == 429 and error.code == _QUOTA_CODE:
         return ProviderError(

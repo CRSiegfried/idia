@@ -280,6 +280,7 @@ class _CloudflareLeaf(HttpLeaf):
             base_url=_BASE_URL.format(account=account),
             request_id_header=_REQUEST_ID_HEADER,
             client=client,
+            credentials=(token,),
         )
         self._headers = {"Authorization": f"Bearer {token}"}
         self._lender: _CloudflareLeaf | None = None
@@ -306,8 +307,12 @@ class _CloudflareLeaf(HttpLeaf):
         code, message = _envelope_error(response.content)
         if code is None and message is None:
             return base
-        # Key-shaped text is filtered before the cut, so no piece of a key survives it.
-        detail = _without_keys(": ".join(str(part) for part in (code, message) if part is not None))
+        # Key-shaped text and the leaf's own token are filtered before the cut, so no piece
+        # of either survives it.
+        detail = _without_keys(
+            ": ".join(str(part) for part in (code, message) if part is not None),
+            *self._credentials,
+        )
         if len(detail) > _MESSAGE_CHARS:
             detail = detail[:_MESSAGE_CHARS] + "..."
         return ProviderError(

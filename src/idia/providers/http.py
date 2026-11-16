@@ -153,27 +153,33 @@ _MALFORMED: Final = (*_UNQUOTED, httpx2.UnsupportedProtocol, httpx2.InvalidURL)
 :func:`malformed_request` reads and :meth:`HttpLeaf._post` catches."""
 
 
-def malformed_request(error: BaseException) -> ProviderError | None:
+def malformed_request(
+    error: BaseException, credentials: tuple[str, ...] = ()
+) -> ProviderError | None:
     """The non-retryable error for a request the client refuses before anything is sent
     because it is malformed, or ``None`` for any other error: a retry repeats the refusal,
     and it has no status for the credential stop to read. Each is named by its class. An
     illegal header value, or a value that cannot be encoded, keeps no text, since its text
     quotes the header or the string; a URL with no or another scheme, or one that cannot be
-    parsed, keeps its text, which names the scheme or the reason."""
+    parsed, keeps its text, which names the scheme or the reason, with ``credentials``
+    filtered out."""
     if not isinstance(error, _MALFORMED):
         return None
     if isinstance(error, _UNQUOTED):
         return ProviderError(f"the request is malformed: {type(error).__name__}")
-    return ProviderError(f"the request is malformed: {type(error).__name__}: {error}")
+    text = _without_keys(str(error), *credentials)
+    return ProviderError(f"the request is malformed: {type(error).__name__}: {text}")
 
 
-def client_failed(error: RuntimeError) -> ProviderError:
+def client_failed(error: RuntimeError, credentials: tuple[str, ...] = ()) -> ProviderError:
     """The retryable error for a bare ``RuntimeError`` the client let out mid-call, the
     backstop for a connection that died under the client, as from a pooled connection
     whose event loop has closed; a closed client is refused before sending instead, and a
     subclass, a bug that fails the same way each time, is not passed here. The call may
-    have reached the wire; the next one, on a connection made afresh, may not fail."""
-    return ProviderError(f"the client failed: {type(error).__name__}: {error}", is_retryable=True)
+    have reached the wire; the next one, on a connection made afresh, may not fail. Its
+    text has ``credentials`` filtered out."""
+    text = _without_keys(str(error), *credentials)
+    return ProviderError(f"the client failed: {type(error).__name__}: {text}", is_retryable=True)
 
 
 async def within(deadline: Deadline, awaitable: Awaitable[_T]) -> _T:
@@ -195,15 +201,20 @@ async def within(deadline: Deadline, awaitable: Awaitable[_T]) -> _T:
 
 
 def status_error(
-    status: int, headers: Mapping[str, str], content: bytes, request_id: str | None
+    status: int,
+    headers: Mapping[str, str],
+    content: bytes,
+    request_id: str | None,
+    credentials: tuple[str, ...] = (),
 ) -> ProviderError:
     """The status table: the error for a response whose status is not a success.
 
     408, 409, 429 and every 5xx are retryable and every other status is not;
     ``retry_after`` is read by :func:`retry_after`; the message names the body's
-    ``error``, ``message`` or ``detail``, cut short, and the body itself is not kept.
+    ``error``, ``message`` or ``detail``, cut short, with ``credentials``, the leaf's own,
+    filtered out before the cut, and the body itself is not kept.
     """
-    detail = _detail(content)
+    detail = _detail(content, credentials)
     return ProviderError(
         f"HTTP {status}" + (f": {detail}" if detail else ""),
         is_retryable=status in _RETRYABLE or status >= 500,
@@ -220,7 +231,9 @@ class HttpLeaf:
     ``None``, in which case :func:`created_client` makes one, closed by :meth:`aclose`.
     A created client follows the running event loop; an injected one is used on the loop
     it was first used on (:func:`follow_the_loop`). ``request_id_header`` names the
-    response header that carries the wire's request id.
+    response header that carries the wire's request id. ``credentials`` are the secrets
+    the leaf was built with: every error text it builds from the wire or the client has
+    them filtered out by Core's filter, before any cut.
     """
 
     _created: bool
@@ -233,8 +246,10 @@ class HttpLeaf:
         base_url: str,
         request_id_header: str,
         client: httpx2.AsyncClient | None = None,
+        credentials: tuple[str, ...] = (),
     ) -> None:
         self._base_url = base_url.rstrip("/")
+        self._credentials = credentials
         self._request_id_header = request_id_header
         self._created = client is None
         self._client = client if client is not None else created_client()
@@ -293,7 +308,11 @@ class HttpLeaf:
         as a 429, and may call it for the rest.
         """
         return status_error(
-            response.status_code, response.headers, response.content, self.request_id(response)
+            response.status_code,
+            response.headers,
+            response.content,
+            self.request_id(response),
+            self._credentials,
         )
 
     def request_id(self, response: httpx2.Response) -> str | None:
@@ -329,19 +348,22 @@ class HttpLeaf:
                 deadline, client.post(self._base_url + path, content=json, headers=sent)
             )
         except httpx2.TimeoutException as error:
-            raise ProviderError(f"the transport timed out: {error}", is_retryable=True) from None
+            text = _without_keys(str(error), *self._credentials)
+            raise ProviderError(f"the transport timed out: {text}", is_retryable=True) from None
         except _MALFORMED as error:
-            raise cast(ProviderError, malformed_request(error)) from None
+            raise cast(ProviderError, malformed_request(error, self._credentials)) from None
         except httpx2.TransportError as error:
+            text = _without_keys(str(error), *self._credentials)
             raise ProviderError(
-                f"the connection failed: {type(error).__name__}: {error}", is_retryable=True
+                f"the connection failed: {type(error).__name__}: {text}", is_retryable=True
             ) from None
         except httpx2.RequestError as error:
-            raise ProviderError(f"the request failed: {type(error).__name__}: {error}") from None
+            text = _without_keys(str(error), *self._credentials)
+            raise ProviderError(f"the request failed: {type(error).__name__}: {text}") from None
         except RuntimeError as error:  # httpx2 lets a bare one out, as from a closed loop's socket
             if type(error) is not RuntimeError:
                 raise
-            raise client_failed(error) from None
+            raise client_failed(error, self._credentials) from None
         if not response.is_success:
             raise self.map_status(response)
         return response, self._read(response)
@@ -430,21 +452,26 @@ def _seconds(value: str | None) -> float | None:
     return seconds if math.isfinite(seconds) and seconds >= 0 else None
 
 
-def _detail(content: bytes) -> str:
+def _detail(content: bytes, credentials: tuple[str, ...] = ()) -> str:
     """A short message from an error body: its ``error``, ``message`` or ``detail``, as the
     wire put it, cut to a few hundred characters; the body itself is not kept. Key-shaped
-    text is filtered before the cut, so no piece of a key survives it."""
+    text and ``credentials`` are filtered before the cut, so no piece of a key survives it."""
     try:
         body: object = json.loads(content)
     except (ValueError, RecursionError):
-        return _without_keys(content.decode(errors="replace"))[:_MESSAGE_CHARS].strip()
+        text = _without_keys(content.decode(errors="replace"), *credentials)
+        return text[:_MESSAGE_CHARS].strip()
     if not isinstance(body, dict):
         return ""
     fields = cast(dict[str, object], body)
     for name in ("error", "message", "detail"):
         if name in fields:
+            # A credential holding a character JSON escapes is matched as written here too.
+            escaped = tuple(json.dumps(c, ensure_ascii=False)[1:-1] for c in credentials)
             text = _without_keys(
-                json.dumps(fields[name], ensure_ascii=False, separators=(",", ":"))
+                json.dumps(fields[name], ensure_ascii=False, separators=(",", ":")),
+                *credentials,
+                *escaped,
             )
             return text if len(text) <= _MESSAGE_CHARS else text[:_MESSAGE_CHARS] + "..."
     return ""

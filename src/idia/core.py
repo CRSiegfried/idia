@@ -154,12 +154,24 @@ _KEY_SHAPES: Final[tuple[re.Pattern[str], ...]] = (_OPENAI_KEY_SHAPE, _BEARER_SH
 """The key-shaped substrings no provider error's text carries."""
 
 _FILTERED: Final = "<filtered>"
-"""What replaces a key-shaped substring; it matches no shape, so filtering again changes
-nothing."""
+"""What replaces a key-shaped substring or a given credential; it matches no shape, so
+filtering again changes nothing."""
+
+_CREDENTIAL_FLOOR: Final = 8
+"""The fewest characters a credential given to :func:`_without_keys` has for it to be
+replaced; a shorter one, the empty string among them, is left as it is, since replacing it
+would cut up ordinary text."""
 
 
-def _without_keys(text: str) -> str:
-    """``text`` with every key-shaped substring replaced by ``<filtered>``."""
+def _without_keys(text: str, *credentials: str) -> str:
+    """``text`` with every occurrence of each of ``credentials`` at least
+    ``_CREDENTIAL_FLOOR`` characters long, then every key-shaped substring, replaced by
+    ``<filtered>``, the longest credential first, so one holding another goes whole. A leaf
+    passes the credential it was built with, before any cut, so no piece of it survives the
+    cut."""
+    for credential in sorted(credentials, key=len, reverse=True):
+        if len(credential) >= _CREDENTIAL_FLOOR:
+            text = text.replace(credential, _FILTERED)
     for shape in _KEY_SHAPES:
         text = shape.sub(_FILTERED, text)
     return text

@@ -2,6 +2,16 @@
 
 All notable changes to idia are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0, a minor release may break the API; each break is listed under **Changed** or **Removed**. A new question kind, a new elicitation or a new validation rule is a minor release and is listed here.
 
+## [Unreleased]
+
+### Changed
+
+- The package's classifiers name the operating systems its tests run on, macOS and Linux, in place of `OS Independent`; Windows is not yet tested.
+
+### Security
+
+- Each wire leaf filters the credential it was built with out of every `ProviderError` text it builds from the wire or its client, before any cut, beside the key shapes Core filters: Cloudflare's API token, System One's API key, and the OpenAI client's `api_key` and `admin_api_key`, read when the error is built. A credential shorter than eight characters is left as it is. `HttpLeaf` takes `credentials`, and `status_error`, `malformed_request` and `client_failed` take the credentials to filter.
+
 ## [0.2.0] - 2026-11-15
 
 ### Added
@@ -46,5 +56,6 @@ The first release.
 
 - The binding to ommat ships with ommat, as `ommat[idia]`; idia has no dependency on ommat.
 
+[Unreleased]: https://github.com/CRSiegfried/idia/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.2.0
 [0.1.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.1.0

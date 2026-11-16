@@ -235,7 +235,8 @@ Idia puts them to the models; Ommat is the engine that asks them.
 
 ## Status
 
-idia 0.1.0 is the first release. Before 1.0 a minor release may break the API, each break
+idia 0.2.0 is an alpha release. It is pure Python and should work wherever Python 3.11
+to 3.14 runs; its tests run on macOS and Linux, and Windows is not yet tested. Before 1.0 a minor release may break the API, each break
 listed in the [changelog](CHANGELOG.md). A public name, one in `idia.__all__` or in the
 `__all__` of a module [CONTRIBUTING.md](CONTRIBUTING.md#ground-rules-for-changes) lists, is
 removed or changed only after one minor release in which it raises a `DeprecationWarning`.

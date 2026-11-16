@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Final
 
 import httpx2
 import openai
@@ -368,3 +368,93 @@ def test_the_estimate_counts_overhead_state_questions_and_images() -> None:
     asked = json.dumps([["choice", "Which?", [["a", None], ["b", None]]]])
     with_question = estimator.estimate(state, (question,))
     assert with_question.tokens == alone.tokens + 7 + -(-len(asked) // 4)
+
+
+# ----------------------------------------------------------------------------------------
+# The client's own keys
+# ----------------------------------------------------------------------------------------
+
+_OWN_KEY: Final = "proj_0123456789abcdefABCDEF"
+"""A key of no shape Core's filter knows, which only the leaf holding it can filter."""
+
+
+def _keyed(
+    handle: Callable[[httpx2.Request], httpx2.Response],
+    *,
+    api_key: str,
+    admin_api_key: str | None = None,
+) -> AsyncOpenAI:
+    return AsyncOpenAI(
+        api_key=api_key,
+        admin_api_key=admin_api_key,
+        http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handle)),
+    )
+
+
+def _answer(status: int, body: object) -> Callable[[httpx2.Request], httpx2.Response]:
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(status, json=body, headers={"x-request-id": "req-9"})
+
+    return handle
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        pytest.param(f"Incorrect API key provided: {_OWN_KEY}.", id="echoed"),
+        pytest.param("x" * 280 + " " + _OWN_KEY, id="straddles-the-cut"),
+    ],
+)
+def test_the_clients_own_key_echoed_in_an_error_body_is_filtered_before_the_cut(
+    message: str,
+) -> None:
+    client = _keyed(_answer(401, {"error": {"message": message}}), api_key=_OWN_KEY)
+    error = _raised(client)
+    assert "proj_" not in error.message
+    assert "<filter" in error.message  # the placeholder itself may meet the cut
+    assert error.request_id == "req-9"
+
+
+def test_the_clients_admin_key_is_filtered_too() -> None:
+    admin = "admin_0123456789abcdefABCDEF"
+    body = {"error": {"message": f"not allowed for {admin} or {_OWN_KEY}"}}
+    error = _raised(_keyed(_answer(403, body), api_key=_OWN_KEY, admin_api_key=admin))
+    assert admin not in error.message
+    assert _OWN_KEY not in error.message
+
+
+def test_the_clients_own_key_in_a_connection_error_is_filtered() -> None:
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError(f"refused for {_OWN_KEY}")
+
+    error = _raised(_keyed(handle, api_key=_OWN_KEY))
+    assert error.is_retryable
+    assert _OWN_KEY not in str(error)
+
+
+def test_the_key_the_wire_masked_still_passes_beside_the_full_key_filtered() -> None:
+    masked = "proj_***CDEF"
+    body = {"error": {"message": f"Incorrect API key provided: {masked}; held {_OWN_KEY}"}}
+    error = _raised(_keyed(_answer(401, body), api_key=_OWN_KEY))
+    assert masked in error.message
+    assert _OWN_KEY not in error.message
+
+
+def test_a_key_set_on_the_client_after_the_build_is_filtered_as_held() -> None:
+    later = "proj_later_0123456789abcdef"
+    body = {"error": {"message": f"Incorrect API key provided: {later}."}}
+    leaf = OpenAIDecisions(client=_keyed(_answer(401, body), api_key=_OWN_KEY))
+    leaf.client.api_key = later
+    with pytest.raises(ProviderError) as raised:
+        asyncio.run(leaf.call(_REQUEST, Deadline.after(5)))
+    assert later not in raised.value.message
+
+
+def test_the_clients_own_key_in_an_sdk_error_is_filtered() -> None:
+    async def make_call() -> object:
+        raise openai.OpenAIError(f"the SDK refused {_OWN_KEY}")
+
+    with pytest.raises(ProviderError) as raised:
+        asyncio.run(send(Deadline.after(5), make_call, lambda: (_OWN_KEY,)))
+    assert _OWN_KEY not in raised.value.message
+    assert "<filtered>" in raised.value.message
