@@ -2,18 +2,7 @@
 
 All notable changes to idia are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0, a minor release may break the API; each break is listed under **Changed** or **Removed**. A new question kind, a new elicitation or a new validation rule is a minor release and is listed here.
 
-## [Unreleased]
-
-### Changed
-
-- A `ProviderError`'s message quotes the wire's error whole, where it was cut to 300 characters: the body's `error`, `message` or `detail`, the whole JSON body when it holds none of them (it gave no message before), or the body's text. Cloudflare's leaves quote every `errors[]` entry, in order, joined by `; `, where they quoted the first, and a quota code in any entry makes the error not retryable. Clairic's refusal of a `reference_date` string quotes it whole.
-- The package's classifiers name the operating systems its tests run on, macOS and Linux, in place of `OS Independent`; Windows is not yet tested.
-
-### Security
-
-- Each wire leaf filters the credential it was built with out of every `ProviderError` text it builds from the wire or its client, beside the key shapes Core filters: Cloudflare's API token, System One's API key, and the OpenAI client's `api_key` and `admin_api_key`, read when the error is built. A credential shorter than eight characters is left as it is. `HttpLeaf` takes `credentials`, and `status_error`, `malformed_request` and `client_failed` take the credentials to filter.
-
-## [0.2.0] - 2026-11-15
+## [0.2.0] - 2026-11-16
 
 ### Added
 
@@ -21,11 +10,17 @@ All notable changes to idia are recorded here. The format follows [Keep a Change
 
 ### Changed
 
+- A `ProviderError`'s message quotes the wire's error whole, where it was cut to 300 characters: the body's `error`, `message` or `detail`, the whole JSON body when it holds none of them (it gave no message before), or the body's text. Cloudflare's leaves quote every `errors[]` entry, in order, joined by `; `, where they quoted the first, and a quota code in any entry makes the error not retryable. Clairic's refusal of a `reference_date` string quotes it whole.
+- The package's classifiers name the operating systems its tests run on, macOS and Linux, in place of `OS Independent`; Windows is not yet tested.
 - The recorded leaf's log is format 4, and a format-3 log is refused until upgraded. `upgrade_log` brings a format-3 log to format 4, moving each logged pass count from the usage to `extras` and dropping `usage.passes` from the reasons and claims, with its keys and everything else unchanged; it still re-keys a format-2 log, now to format 4, and its `requests` default to none. A log that is not JSON is refused as not a recorded leaf's log.
 
 ### Removed
 
 - `Usage.passes`, and `usage.passes` from `DETAILS` and `ProvenanceDetail`: a figure only one provider reports is no longer a typed field of the shared vocabulary. Read Clairic's passes from `outcome.extras["passes"]`. No leaf gives `usage.passes` a reason any longer, and `upgrade_log` no longer gives it `not-exposed`.
+
+### Security
+
+- Each wire leaf filters the credential it was built with out of every `ProviderError` text it builds from the wire or its client, beside the key shapes Core filters: Cloudflare's API token, System One's API key, and the OpenAI client's `api_key` and `admin_api_key`, read when the error is built. A credential shorter than eight characters is left as it is. `HttpLeaf` takes `credentials`, and `status_error`, `malformed_request` and `client_failed` take the credentials to filter.
 
 ## [0.1.0] - 2026-10-23
 
@@ -57,6 +52,5 @@ The first release.
 
 - The binding to ommat ships with ommat, as `ommat[idia]`; idia has no dependency on ommat.
 
-[Unreleased]: https://github.com/CRSiegfried/idia/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.2.0
 [0.1.0]: https://github.com/CRSiegfried/idia/releases/tag/v0.1.0
