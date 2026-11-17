@@ -34,3 +34,11 @@ A script run outside pytest that imports `tests`, such as a one-off live recordi
 - **Every provider passes the conformance suite** before it is used, a leaf half for the leaf and a provider half once wrapped.
 - **The public API is what `idia.__all__` lists, and what the `__all__` of each of these modules lists:** `idia.cloudflare`, `idia.conformance`, `idia.providers.http`, `idia.providers.system_one`, `idia.providers.openai_decisions`, `idia.providers.chat`, `idia.providers.cloudflare`, `idia.providers.scripted` and `idia.providers.recorded`. The leaves live in their own modules rather than in `idia`, since each needs its extra and `import idia` needs none. Every other name is internal: modules and names starting with an underscore, a name a listed module leaves out of its `__all__`, and `idia.providers` itself. Removing or changing a public name needs a deprecation first: one minor release with a `DeprecationWarning`. A new `Capabilities` field is required, so adding one breaks a record written by hand; list each such field under **Changed**.
 - **Record user-visible changes** in [CHANGELOG.md](CHANGELOG.md), under the release being prepared: the top section until it is tagged, then a new `Unreleased` section above it. A new kind, elicitation or validation rule is a minor release.
+
+## Releasing
+
+A release is cut from `main` once the checks above pass on it:
+
+1. Set `version` in `pyproject.toml`, date the top section of [CHANGELOG.md](CHANGELOG.md) and point its link at the new tag, and move the `v<version>` links in the README, the tutorials and [skills/idia/SKILL.md](skills/idia/SKILL.md) to the new tag; `tests/test_docs.py` fails until they match the version.
+2. Tag the commit `v<version>`, annotated, and push `main` and the tag.
+3. Run the `publish` workflow by hand with the tag and `testpypi` for a dry run, then publish a GitHub release for the tag, or run it by hand with `pypi` for a tag made before the workflow: the workflow checks that the tag names the version, builds the sdist and wheel, checks them and installs the wheel alone, then uploads to PyPI by Trusted Publishing once the `pypi` environment approves it.
